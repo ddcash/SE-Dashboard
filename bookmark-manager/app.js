@@ -384,10 +384,10 @@ function renderCard(bm, catId, dimmed) {
     ? `<span class="hidden-badge"><i data-lucide="EyeOff" style="width:9px;height:9px"></i> hidden</span>`
     : '';
   const hideBtn = hidden
-    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" onclick="unhideItem('bookmarks','${bm.id}')">
+    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks','${bm.id}')">
          <i data-lucide="Eye" style="width:12px;height:12px"></i>
        </button>`
-    : `<button class="btn-icon btn-icon--hide" title="Hide from view" onclick="hideItem('bookmarks','${bm.id}')">
+    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks','${bm.id}')">
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
@@ -411,7 +411,7 @@ function renderCard(bm, catId, dimmed) {
         </div>
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon btn-icon--edit" title="Edit" onclick="openCardModal('${catId}','${bm.id}')">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
         ${hideBtn}
@@ -532,12 +532,12 @@ function renderDashboard() {
       <div class="header-center">
         <div class="search-wrap">
           <i data-lucide="Search" class="search-icon" style="width:14px;height:14px"></i>
-          <input type="text" id="search-input" class="search-input"
+          <input type="text" id="search-input" class="search-input" aria-label="Search bookmarks"
             placeholder="Search… (Ctrl+K for commands)"
             value="${esc(S.query)}"
             oninput="handleSearch(this.value)"
             onkeydown="if(event.key==='Escape')handleSearch('')">
-          ${S.query ? `<button class="search-clear" onclick="handleSearch('')">
+          ${S.query ? `<button class="search-clear" onclick="handleSearch('')" aria-label="Clear search">
             <i data-lucide="X" style="width:12px;height:12px"></i></button>` : ''}
         </div>
       </div>
@@ -621,7 +621,7 @@ function openCardModal(catId, bmId) {
   const cs     = bm?.customStyle || {};
 
   const iconGrid = LUCIDE_ICONS.map(n => `
-    <button type="button" class="icon-option ${iType === 'lucide' && iVal === n ? 'selected' : ''}"
+    <button type="button" aria-label="${n} icon" class="icon-option ${iType === 'lucide' && iVal === n ? 'selected' : ''}"
       data-icon="${n}" onclick="pickLucideIcon(this,'${n}')">
       <i data-lucide="${n}" style="width:16px;height:16px"></i>
     </button>`).join('');
@@ -632,7 +632,7 @@ function openCardModal(catId, bmId) {
   openModal(`
     <div class="modal-header">
       <h2>${bm ? 'Edit Bookmark' : 'New Bookmark'}</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
@@ -733,19 +733,19 @@ function openCategoryModal(catId) {
   const cColor   = cat?.color || CAT_COLORS[0];
 
   const iconGrid = LUCIDE_ICONS.map(n => `
-    <button type="button" class="icon-option ${cIcon===n?'selected':''}"
+    <button type="button" aria-label="${n} icon" class="icon-option ${cIcon===n?'selected':''}"
       data-icon="${n}" onclick="pickLucideIcon(this,'${n}')">
       <i data-lucide="${n}" style="width:16px;height:16px"></i>
     </button>`).join('');
 
   const swatches = CAT_COLORS.map(c => `
-    <button type="button" class="color-swatch ${c===cColor?'selected':''}"
+    <button type="button" aria-label="${c} color" class="color-swatch ${c===cColor?'selected':''}"
       style="background:${c}" onclick="pickCatColor(this,'${c}')"></button>`).join('');
 
   openModal(`
     <div class="modal-header">
       <h2>${cat ? 'Edit Category' : 'New Category'}</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
@@ -786,7 +786,7 @@ function openImportModal() {
   openModal(`
     <div class="modal-header">
       <h2>Import Bookmarks</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <p class="hint-text">Supports Chrome/Safari HTML export, JSON, and CSV files.</p>
@@ -1128,7 +1128,7 @@ function openPalette() {
     <div class="palette">
       <div class="palette-search-wrap">
         <i data-lucide="Terminal" style="width:15px;height:15px"></i>
-        <input type="text" id="palette-input" class="palette-input"
+        <input type="text" id="palette-input" class="palette-input" aria-label="Command palette input"
           placeholder="Search bookmarks or type a command…"
           oninput="updatePalette(this.value)"
           onkeydown="onPaletteKey(event)">
