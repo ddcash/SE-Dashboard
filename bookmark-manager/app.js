@@ -232,10 +232,10 @@ function renderCard(bm, catId) {
         </div>
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon btn-icon--edit" title="Edit" onclick="openCardModal('${catId}','${bm.id}')">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
-        <button class="btn-icon btn-icon--del" title="Delete" onclick="deleteCard('${catId}','${bm.id}')">
+        <button class="btn-icon btn-icon--del" title="Delete" aria-label="Delete bookmark" onclick="deleteCard('${catId}','${bm.id}')">
           <i data-lucide="Trash2" style="width:12px;height:12px"></i>
         </button>
       </div>
@@ -260,10 +260,10 @@ function renderCategory(cat) {
         <span class="category-name">${esc(cat.name)}</span>
         <span class="category-count">${cat.bookmarks.length}</span>
         <div class="category-actions">
-          <button class="btn-icon" title="Edit category" onclick="openCategoryModal('${cat.id}')">
+          <button class="btn-icon" title="Edit category" aria-label="Edit category" onclick="openCategoryModal('${cat.id}')">
             <i data-lucide="Settings2" style="width:12px;height:12px"></i>
           </button>
-          <button class="btn-icon btn-icon--del" title="Delete category" onclick="deleteCategory('${cat.id}')">
+          <button class="btn-icon btn-icon--del" title="Delete category" aria-label="Delete category" onclick="deleteCategory('${cat.id}')">
             <i data-lucide="Trash2" style="width:12px;height:12px"></i>
           </button>
         </div>
@@ -334,7 +334,7 @@ function renderDashboard() {
             value="${esc(S.query)}"
             oninput="handleSearch(this.value)"
             onkeydown="if(event.key==='Escape')handleSearch('')">
-          ${S.query ? `<button class="search-clear" onclick="handleSearch('')">
+          ${S.query ? `<button class="search-clear" title="Clear search" aria-label="Clear search" onclick="handleSearch('')">
             <i data-lucide="X" style="width:12px;height:12px"></i></button>` : ''}
         </div>
       </div>
@@ -407,7 +407,7 @@ function openCardModal(catId, bmId) {
   openModal(`
     <div class="modal-header">
       <h2>${bm ? 'Edit Bookmark' : 'New Bookmark'}</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" title="Close" aria-label="Close modal" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
@@ -517,7 +517,7 @@ function openCategoryModal(catId) {
   openModal(`
     <div class="modal-header">
       <h2>${cat ? 'Edit Category' : 'New Category'}</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" title="Close" aria-label="Close modal" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
@@ -556,7 +556,7 @@ function openImportModal() {
   openModal(`
     <div class="modal-header">
       <h2>Import Bookmarks</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" title="Close" aria-label="Close modal" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <p class="hint-text">Supports Chrome/Safari HTML export, JSON, and CSV files.</p>
