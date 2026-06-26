@@ -1,69 +1,22 @@
 'use strict';
-
-// ═══════════════════════════════════════════════════════════════
-//  CONSTANTS
-// ═══════════════════════════════════════════════════════════════
-const LUCIDE_ICONS = [
-  'Globe','Code','Github','GitBranch','Folder','FolderOpen','File','FileText','FileCode',
-  'Link','Link2','Bookmark','BookMarked','Star','Heart','Home','Search','Settings','Settings2',
-  'Terminal','Database','Server','Cloud','CloudUpload','Download','Upload','Archive',
-  'Mail','MessageSquare','MessageCircle','Video','Music','Image','Camera','Mic',
-  'Monitor','Smartphone','Laptop','Tablet','Cpu','HardDrive','Wifi','Lock','Key','Shield',
-  'User','Users','Building','Building2','Map','MapPin','Navigation','Compass',
-  'Calendar','Clock','Bell','BellRing','Zap','Flame','Award','Trophy','Gem',
-  'Layers','Package','Box','Book','BookOpen','Newspaper','Rss','Hash','Tag','AtSign',
-  'Wrench','Cog','Braces','Brackets','Code2','Play','Pause','Headphones','Radio',
-  'Coffee','Briefcase','Figma','Slack','Chrome','Youtube','Twitter','Linkedin',
-  'ExternalLink','ArrowRight','Pencil','Pen','Edit2','Eye','EyeOff','Grid','List',
-  'PieChart','BarChart','Activity','TrendingUp','Rocket','Sparkles','Brain','Bot'
-];
-
-const CAT_COLORS = [
-  '#6366f1','#8b5cf6','#a855f7','#ec4899','#f43f5e',
-  '#f97316','#eab308','#84cc16','#22c55e','#14b8a6',
-  '#06b6d4','#3b82f6','#89b4fa','#cba6f7','#78716c'
-];
-
-const DEFAULT_DATA = {
-  version: 1,
-  categories: [
-    {
-      id: 'cat-start',
-      name: 'Getting Started',
-      icon: 'BookOpen',
-      color: '#89b4fa',
-      bookmarks: [
-        {
-          id: 'bm-github', title: 'GitHub', url: 'https://github.com',
-          description: 'Code hosting & version control', tags: ['dev','git'],
-          clicks: 0, icon: { type: 'lucide', value: 'Github' }, customStyle: {}
-        },
-        {
-          id: 'bm-hn', title: 'Hacker News', url: 'https://news.ycombinator.com',
-          description: 'Tech news & discussion', tags: ['news','tech'],
-          clicks: 0, icon: { type: 'lucide', value: 'Newspaper' }, customStyle: {}
-        },
-        {
-          id: 'bm-mdn', title: 'MDN Web Docs', url: 'https://developer.mozilla.org',
-          description: 'Web platform documentation', tags: ['docs','web'],
-          clicks: 0, icon: { type: 'lucide', value: 'BookOpen' }, customStyle: {}
-        }
-      ]
-    }
-  ]
-};
+// Constants and APP_CONFIG are defined in config.js (loaded first)
 
 // ═══════════════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════════════
 const S = {
-  dir:        null,
-  data:       JSON.parse(JSON.stringify(DEFAULT_DATA)),
-  cfg:        { theme: 'dark', layout: { gridColumns: 4 } },
-  assetUrls:  {},
-  query:      '',
-  paletteOpen: false,
+  dir:           null,
+  pendingHandle: null,
+  data:          JSON.parse(JSON.stringify(DEFAULT_DATA)),
+  cfg:           { theme: 'dark', layout: {}, hidden: { bookmarks: [], categories: [] }, cardPositions: {} },
+  assetUrls:     {},
+  query:         '',
+  paletteOpen:   false,
+  showHidden:    false,
+  activeCat:     null, // active category filter pill
 };
+
+let _lastModified = 0; // tracks master_bookmarks.json mtime for external-change detection
 
 // ═══════════════════════════════════════════════════════════════
 //  UTILITIES
@@ -84,12 +37,166 @@ function fuzzyMatch(str, q) {
   return true;
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
+// ═══════════════════════════════════════════════════════════════
+function isHidden(type, id) {
+  return (S.cfg.hidden?.[type] || []).includes(id);
+}
+
+function hideItem(type, id) {
+  if (!S.cfg.hidden[type].includes(id)) S.cfg.hidden[type].push(id);
+  render();
+  saveData();
+}
+
+function unhideItem(type, id) {
+  S.cfg.hidden[type] = S.cfg.hidden[type].filter(x => x !== id);
+  render();
+  saveData();
+}
+
+function toggleShowHidden() {
+  S.showHidden = !S.showHidden;
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FREEFORM CANVAS — position, arrange, drag
+// ═══════════════════════════════════════════════════════════════
+
+function setActiveCat(id) {
+  S.activeCat = (S.activeCat === id) ? null : id; // toggle
+  render();
+}
+
+function openNewBookmarkModal() {
+  const cats = S.data.categories;
+  if (!cats.length) { showToast('Create a category first.'); openCategoryModal(null); return; }
+  openCardModal(S.activeCat || cats[0].id, null);
+}
+
+function resetLayout() {
+  S.cfg.cardPositions = {};
+  render();
+  showToast('Layout reset — cards re-arranged.');
+}
+
+// Assign a grid position (in vw units) to every card that has no saved position.
+// Called after loadData and after every render (idempotent — only acts on new cards).
+function autoArrangeCards() {
+  if (!S.cfg.cardPositions) S.cfg.cardPositions = {};
+  const vw       = window.innerWidth || 1200;
+  const { cardWidth: CARD_W, cardHeight: CARD_H, gap: GAP, padding: PAD } = APP_CONFIG.canvas;
+  const cols     = Math.max(1, Math.floor((vw - PAD * 2) / (CARD_W + GAP)));
+  const toVw     = px => px / vw * 100;
+  let col = 0, row = 0, changed = false;
+
+  for (const cat of S.data.categories) {
+    for (const bm of cat.bookmarks) {
+      if (!(bm.id in S.cfg.cardPositions)) {
+        S.cfg.cardPositions[bm.id] = {
+          x: toVw(PAD + col * (CARD_W + GAP)),
+          y: toVw(PAD + row * (CARD_H + GAP)),
+        };
+        col++;
+        if (col >= cols) { col = 0; row++; }
+        changed = true;
+      }
+    }
+  }
+  if (changed) saveData();
+}
+
+// Expand canvas so all positioned cards are fully visible.
+function updateCanvasHeight() {
+  const canvas = document.getElementById('canvas');
+  if (!canvas) return;
+  const vw  = window.innerWidth;
+  const minH = window.innerHeight - 120; // header + filter bar
+  let maxYPx = minH;
+
+  Object.entries(S.cfg.cardPositions || {}).forEach(([id, pos]) => {
+    // Use live drag Y if this card is being dragged right now
+    const y = (_drag && _drag.bmId === id) ? _drag.curY : pos.y;
+    maxYPx = Math.max(maxYPx, (y * vw / 100) + 150);
+  });
+  // Also account for a drag that hasn't been saved yet (new position beyond stored one)
+  if (_drag) maxYPx = Math.max(maxYPx, (_drag.curY * vw / 100) + 150);
+  canvas.style.minHeight = maxYPx + 60 + 'px';
+}
+
+// ── Pointer-event drag ───────────────────────────────────────
+let _drag = null;
+
+function initFreeDrag() {
+  document.querySelectorAll('#canvas .card').forEach(card => {
+    // Remove any previous listener to avoid double-binding after re-render
+    card.removeEventListener('pointerdown', onDragStart);
+    card.addEventListener('pointerdown', onDragStart, { passive: false });
+  });
+}
+
+function onDragStart(e) {
+  if (e.button !== 0) return;
+  // Don't drag when interacting with links, buttons, or action overlays
+  if (e.target.closest('a, button, .card-actions')) return;
+  e.preventDefault();
+
+  const card   = e.currentTarget;
+  const vw     = window.innerWidth;
+  const startX = parseFloat(card.style.left) || 0; // current position in vw
+  const startY = parseFloat(card.style.top)  || 0;
+
+  _drag = {
+    bmId: card.dataset.id,
+    el:   card,
+    startClientX: e.clientX,
+    startClientY: e.clientY,
+    startX, startY, vw,
+    canvas: document.getElementById('canvas'),
+    curX: startX, curY: startY,
+    moved: false,
+  };
+
+  card.classList.add('card--dragging');
+  document.body.style.userSelect = 'none';
+}
+
 function getProtocolTag(url) {
   if (!url) return null;
   if (url.startsWith('file://')) return 'local';
   if (/^https?:\/\//.test(url)) return null;
   const m = url.match(/^([a-z][a-z0-9+\-.]+):/i);
   return m ? m[1] : null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INDEXED DB — persist directory handle across page loads
+// ═══════════════════════════════════════════════════════════════
+function _idbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('bookmark-mgr', 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+    r.onsuccess = e => res(e.target.result);
+    r.onerror   = () => rej(r.error);
+  });
+}
+async function idbGet(key) {
+  const db = await _idbOpen();
+  return new Promise((res, rej) => {
+    const r = db.transaction('kv').objectStore('kv').get(key);
+    r.onsuccess = () => res(r.result);
+    r.onerror   = () => rej(r.error);
+  });
+}
+async function idbSet(key, val) {
+  const db = await _idbOpen();
+  return new Promise((res, rej) => {
+    const r = db.transaction('kv','readwrite').objectStore('kv').put(val, key);
+    r.onsuccess = () => res();
+    r.onerror   = () => rej(r.error);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -102,6 +209,7 @@ async function openDirectory() {
   }
   try {
     S.dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+    idbSet('dirHandle', S.dir).catch(() => {}); // persist for next page load
     await loadData();
     return true;
   } catch (e) {
@@ -125,14 +233,30 @@ async function writeJSON(name, obj) {
 }
 
 async function createBackup() {
+  if (!APP_CONFIG.backup.enabled) return;
   try {
-    const bkDir = await S.dir.getDirectoryHandle('backups', { create: true });
+    const bkDir = await S.dir.getDirectoryHandle(APP_CONFIG.backup.subdir, { create: true });
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const fh = await bkDir.getFileHandle(`bookmarks-${ts}.json`, { create: true });
-    const w = await fh.createWritable();
+    const w  = await fh.createWritable();
     await w.write(JSON.stringify(S.data, null, 2));
     await w.close();
+    await pruneBackups(bkDir);
   } catch (e) { console.warn('Backup skipped:', e.message); }
+}
+
+async function pruneBackups(bkDir) {
+  try {
+    if (!bkDir) bkDir = await S.dir.getDirectoryHandle(APP_CONFIG.backup.subdir, { create: false });
+    const names = [];
+    for await (const [name, handle] of bkDir.entries()) {
+      if (handle.kind === 'file' && name.endsWith('.json')) names.push(name);
+    }
+    names.sort(); // ISO timestamps compare correctly as strings (oldest first)
+    while (names.length > APP_CONFIG.backup.maxCount) {
+      await bkDir.removeEntry(names.shift());
+    }
+  } catch (e) { console.warn('Backup prune skipped:', e.message); }
 }
 
 async function saveAsset(file) {
@@ -164,8 +288,35 @@ async function loadData() {
   else     await writeJSON('master_bookmarks.json', S.data);
   if (cfg) S.cfg  = cfg;
   else     await writeJSON('local_settings.json', S.cfg);
+  // Ensure structures exist for older local_settings files
+  if (!S.cfg.hidden)             S.cfg.hidden = { bookmarks: [], categories: [] };
+  if (!S.cfg.hidden.bookmarks)   S.cfg.hidden.bookmarks  = [];
+  if (!S.cfg.hidden.categories)  S.cfg.hidden.categories = [];
+  if (!S.cfg.cardPositions)      S.cfg.cardPositions = {};
   await loadAssets();
+  // Record mtime so pollChanges() can detect external edits
+  try {
+    const fh = await S.dir.getFileHandle('master_bookmarks.json');
+    _lastModified = (await fh.getFile()).lastModified;
+  } catch {}
 }
+
+// Poll every 4 s for external edits to master_bookmarks.json
+// (e.g. the user edited the file directly in a text editor)
+async function pollChanges() {
+  if (!S.dir || document.hidden || _lastModified === 0) return;
+  try {
+    const fh   = await S.dir.getFileHandle('master_bookmarks.json');
+    const file = await fh.getFile();
+    if (file.lastModified > _lastModified) {
+      _lastModified = file.lastModified;
+      S.data = JSON.parse(await file.text());
+      render();
+      showToast('Bookmarks reloaded — external change detected');
+    }
+  } catch {}
+}
+setInterval(pollChanges, APP_CONFIG.poll.intervalMs);
 
 async function saveData() {
   if (!S.dir) return;
@@ -204,115 +355,167 @@ function renderIcon(icon, size = 16) {
   return `<i data-lucide="Link" style="width:${size}px;height:${size}px"></i>`;
 }
 
-function renderCard(bm, catId) {
-  const proto = getProtocolTag(bm.url);
-  const cs    = bm.customStyle || {};
-  const style = [
-    cs.cardColor   ? `background:${cs.cardColor}`   : '',
-    cs.borderColor ? `border-color:${cs.borderColor}` : ''
+function renderCard(bm, catId, dimmed) {
+  const hidden = isHidden('bookmarks', bm.id);
+  const proto  = getProtocolTag(bm.url);
+  const cs     = bm.customStyle || {};
+  const pos    = S.cfg.cardPositions?.[bm.id] || { x: 0, y: 0 };
+
+  const inlineStyle = [
+    `left:${pos.x}vw`,
+    `top:${pos.y}vw`,
+    cs.cardColor   ? `background:${cs.cardColor}`     : '',
+    cs.borderColor ? `border-color:${cs.borderColor}` : '',
   ].filter(Boolean).join(';');
 
-  const tags     = (bm.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
-  const protoTag = proto
+  const cat        = S.data.categories.find(c => c.id === catId);
+  const catColor   = cat?.color || '#6366f1';
+  const catBadge   = `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
+                        ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
+                      </span>`;
+  const tags       = (bm.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const protoTag   = proto
     ? `<span class="proto-tag proto-tag--${proto === 'local' ? 'local' : 'app'}">${proto === 'local' ? 'Local File' : proto + '://'}</span>`
     : '';
-  const clicks   = bm.clicks
+  const clicks     = bm.clicks
     ? `<span class="click-count"><i data-lucide="MousePointerClick" style="width:10px;height:10px"></i>${bm.clicks}</span>`
     : '';
+  const hiddenBadge = hidden
+    ? `<span class="hidden-badge"><i data-lucide="EyeOff" style="width:9px;height:9px"></i> hidden</span>`
+    : '';
+  const hideBtn = hidden
+    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" onclick="unhideItem('bookmarks','${bm.id}')">
+         <i data-lucide="Eye" style="width:12px;height:12px"></i>
+       </button>`
+    : `<button class="btn-icon btn-icon--hide" title="Hide from view" onclick="hideItem('bookmarks','${bm.id}')">
+         <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
+       </button>`;
+
+  const classes = ['card',
+    hidden  ? 'card--hidden' : '',
+    dimmed  ? 'card--dim'    : '',
+  ].filter(Boolean).join(' ');
 
   return `
-    <div class="card" data-id="${bm.id}" data-cat="${catId}" style="${style}">
+    <div class="${classes}" data-id="${bm.id}" data-cat="${catId}" style="${inlineStyle}">
+      <div class="card-drag-handle">
+        <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
+      </div>
       <a href="${esc(bm.url)}" target="_blank" rel="noreferrer" class="card-link"
          onclick="trackClick(event,'${bm.id}','${catId}')">
         <div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
         <div class="card-body">
           <div class="card-title">${esc(bm.title)}</div>
           ${bm.description ? `<div class="card-desc">${esc(bm.description)}</div>` : ''}
-          <div class="card-meta">${protoTag}${tags}${clicks}</div>
+          <div class="card-meta">${catBadge}${protoTag}${tags}${hiddenBadge}${clicks}</div>
         </div>
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
         <button class="btn-icon btn-icon--edit" title="Edit" onclick="openCardModal('${catId}','${bm.id}')">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
-        <button class="btn-icon btn-icon--del" title="Delete" onclick="deleteCard('${catId}','${bm.id}')">
-          <i data-lucide="Trash2" style="width:12px;height:12px"></i>
-        </button>
+        ${hideBtn}
       </div>
     </div>`;
 }
 
-function renderCategory(cat) {
-  const bms = S.query
-    ? cat.bookmarks.filter(b =>
-        fuzzyMatch(b.title, S.query) || fuzzyMatch(b.url, S.query) ||
-        fuzzyMatch(b.description || '', S.query) || (b.tags||[]).some(t => fuzzyMatch(t, S.query)))
-    : cat.bookmarks;
+// Flat list of all visible cards for the canvas layout
+function renderAllCards() {
+  const searching = !!S.query;
+  let html = '';
 
-  if (S.query && bms.length === 0) return '';
+  for (const cat of S.data.categories) {
+    const catHidden  = isHidden('categories', cat.id);
+    if (!searching && !S.showHidden && catHidden) continue;
 
-  return `
-    <div class="category" data-cat-id="${cat.id}" style="--cat-color:${esc(cat.color || '#6366f1')}">
-      <div class="category-header">
-        <div class="category-icon" style="color:${esc(cat.color || '#6366f1')}">
-          ${renderIcon({ type: 'lucide', value: cat.icon || 'Folder' }, 16)}
-        </div>
-        <span class="category-name">${esc(cat.name)}</span>
-        <span class="category-count">${cat.bookmarks.length}</span>
-        <div class="category-actions">
-          <button class="btn-icon" title="Edit category" onclick="openCategoryModal('${cat.id}')">
-            <i data-lucide="Settings2" style="width:12px;height:12px"></i>
-          </button>
-          <button class="btn-icon btn-icon--del" title="Delete category" onclick="deleteCategory('${cat.id}')">
-            <i data-lucide="Trash2" style="width:12px;height:12px"></i>
-          </button>
-        </div>
-      </div>
-      <div class="cards-grid" data-cat-id="${cat.id}">
-        ${bms.map(b => renderCard(b, cat.id)).join('')}
-      </div>
-      <button class="btn-add-card" onclick="openCardModal('${cat.id}',null)">
-        <i data-lucide="Plus" style="width:13px;height:13px"></i> Add Bookmark
-      </button>
-    </div>`;
+    for (const bm of cat.bookmarks) {
+      const bmHidden = isHidden('bookmarks', bm.id);
+      if (!searching && !S.showHidden && bmHidden) continue;
+
+      if (searching) {
+        const match =
+          fuzzyMatch(bm.title,           S.query) ||
+          fuzzyMatch(bm.url,             S.query) ||
+          fuzzyMatch(bm.description||'', S.query) ||
+          (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
+        if (!match) continue;
+      }
+
+      // Dim card when category filter is active and this card isn't in that category
+      const dimmed = !searching && !!S.activeCat && S.activeCat !== cat.id;
+      html += renderCard(bm, cat.id, dimmed);
+    }
+  }
+  return html;
 }
 
 function render() {
+  if (S.dir) autoArrangeCards(); // fill in positions for any new cards before DOM build
   const app = document.getElementById('app');
   app.innerHTML = S.dir ? renderDashboard() : renderConnect();
   if (typeof lucide !== 'undefined') lucide.createIcons();
-  initDragDrop();
+  if (S.dir) { initFreeDrag(); updateCanvasHeight(); }
 }
 
 function renderConnect() {
   const ok = 'showDirectoryPicker' in window;
-  return `
-    <div class="connect-screen">
-      <div class="connect-card">
-        <div class="connect-logo">
-          <i data-lucide="Bookmark" style="width:36px;height:36px"></i>
-        </div>
-        <h1>Bookmark Manager</h1>
-        <p>A local-first bookmark manager. All data stays on your device — no servers, no accounts, no tracking.</p>
-        ${ok ? `
-          <button class="btn btn--primary btn--lg" onclick="handleConnect()">
-            <i data-lucide="FolderOpen" style="width:17px;height:17px"></i>
-            Connect Directory
-          </button>
-          <p class="hint">Select or create a folder to store your bookmarks data.</p>
-        ` : `
-          <div class="error-box">
-            <i data-lucide="AlertTriangle" style="width:16px;height:16px;flex-shrink:0"></i>
-            <div>This app requires the <strong>File System Access API</strong>.<br>Please open in <strong>Chrome</strong> or <strong>Edge</strong>.</div>
-          </div>
-        `}
+  const logo = `<div class="connect-logo"><i data-lucide="Bookmark" style="width:36px;height:36px"></i></div>`;
+
+  if (!ok) return `
+    <div class="connect-screen"><div class="connect-card">
+      ${logo}<h1>Bookmark Manager</h1>
+      <div class="error-box">
+        <i data-lucide="AlertTriangle" style="width:16px;height:16px;flex-shrink:0"></i>
+        <div>This app requires the <strong>File System Access API</strong>.<br>Please open in <strong>Chrome</strong> or <strong>Edge</strong>.</div>
       </div>
-    </div>`;
+    </div></div>`;
+
+  // Returning from a page reload — one click to restore
+  if (S.pendingHandle) return `
+    <div class="connect-screen"><div class="connect-card">
+      ${logo}<h1>Bookmark Manager</h1>
+      <p>Grant access to resume your last session.</p>
+      <button class="btn btn--primary btn--lg" onclick="handleResume()">
+        <i data-lucide="FolderOpen" style="width:17px;height:17px"></i>
+        Resume &ldquo;${esc(S.pendingHandle.name)}&rdquo;
+      </button>
+      <p style="margin:14px 0 6px;color:var(--text3);font-size:12px">or</p>
+      <button class="btn btn--ghost" onclick="handleConnect()">Connect Different Directory</button>
+    </div></div>`;
+
+  // First visit
+  return `
+    <div class="connect-screen"><div class="connect-card">
+      ${logo}<h1>Bookmark Manager</h1>
+      <p>A local-first bookmark manager. All data stays on your device — no servers, no accounts, no tracking.</p>
+      <button class="btn btn--primary btn--lg" onclick="handleConnect()">
+        <i data-lucide="FolderOpen" style="width:17px;height:17px"></i>
+        Connect Directory
+      </button>
+      <p class="hint">Select or create a folder to store your bookmarks data.</p>
+    </div></div>`;
 }
 
 function renderDashboard() {
-  const cats = S.data.categories || [];
-  const isEmpty = cats.length === 0 && !S.query;
+  const cats        = S.data.categories || [];
+  const isEmpty     = cats.length === 0 && !S.query;
+  const hiddenBmCount  = (S.cfg.hidden?.bookmarks  || []).length;
+  const hiddenCatCount = (S.cfg.hidden?.categories || []).length;
+  const hiddenTotal    = hiddenBmCount + hiddenCatCount;
+
+  const catPills = cats.map(cat => {
+    const active   = S.activeCat === cat.id;
+    const catHidden = isHidden('categories', cat.id);
+    const visCount = cat.bookmarks.filter(b => !isHidden('bookmarks', b.id)).length;
+    return `
+      <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
+        style="--pill-color:${esc(cat.color||'#6366f1')}"
+        onclick="setActiveCat('${cat.id}')" title="${esc(cat.name)}">
+        ${renderIcon({ type:'lucide', value: cat.icon||'Folder' }, 12)}
+        <span>${esc(cat.name)}</span>
+        <span class="cat-pill-count">${visCount}</span>
+      </button>`;
+  }).join('');
 
   return `
     <header class="app-header">
@@ -339,6 +542,12 @@ function renderDashboard() {
         </div>
       </div>
       <div class="header-right">
+        ${hiddenTotal > 0 ? `
+        <button class="btn ${S.showHidden ? 'btn--hidden-active' : 'btn--ghost'}" onclick="toggleShowHidden()"
+          title="${S.showHidden ? 'Click to hide hidden items again' : `${hiddenTotal} item${hiddenTotal>1?'s':''} hidden — click to reveal`}">
+          <i data-lucide="${S.showHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
+          <span>${S.showHidden ? 'Showing hidden' : hiddenTotal + ' hidden'}</span>
+        </button>` : ''}
         <button class="btn btn--ghost" onclick="openImportModal()" title="Import bookmarks">
           <i data-lucide="Upload" style="width:13px;height:13px"></i>
           <span>Import</span>
@@ -347,12 +556,27 @@ function renderDashboard() {
           <i data-lucide="Download" style="width:13px;height:13px"></i>
           <span>Export</span>
         </button>
+        <button class="btn btn--ghost" onclick="resetLayout()" title="Reset card positions">
+          <i data-lucide="LayoutGrid" style="width:13px;height:13px"></i>
+          <span>Reset Layout</span>
+        </button>
         <button class="btn btn--primary" onclick="openCategoryModal(null)">
           <i data-lucide="FolderPlus" style="width:13px;height:13px"></i>
           <span>New Category</span>
         </button>
       </div>
     </header>
+
+    <div class="cat-filter-bar">
+      ${catPills}
+      <button class="cat-pill-action" onclick="openNewBookmarkModal()" title="Add bookmark">
+        <i data-lucide="Plus" style="width:13px;height:13px"></i> Add Bookmark
+      </button>
+      <button class="cat-pill-action cat-pill-action--cat" onclick="openCategoryModal(null)" title="New category">
+        <i data-lucide="FolderPlus" style="width:13px;height:13px"></i> New Category
+      </button>
+    </div>
+
     <main class="dashboard">
       ${isEmpty ? `
         <div class="empty-state">
@@ -362,8 +586,8 @@ function renderDashboard() {
             <i data-lucide="FolderPlus" style="width:13px;height:13px"></i> Create Category
           </button>
         </div>` : ''}
-      <div class="categories-grid" id="categories-grid">
-        ${cats.map(renderCategory).join('')}
+      <div class="canvas" id="canvas">
+        ${renderAllCards()}
       </div>
     </main>`;
 }
@@ -389,11 +613,12 @@ function closeModal() {
 //  CARD MODAL
 // ═══════════════════════════════════════════════════════════════
 function openCardModal(catId, bmId) {
-  const cat  = S.data.categories.find(c => c.id === catId);
-  const bm   = bmId ? cat?.bookmarks.find(b => b.id === bmId) : null;
-  const iType = bm?.icon?.type || 'lucide';
-  const iVal  = bm?.icon?.value || 'Link';
-  const cs    = bm?.customStyle || {};
+  const cat    = S.data.categories.find(c => c.id === catId);
+  const bm     = bmId ? cat?.bookmarks.find(b => b.id === bmId) : null;
+  const bmHidden = bm ? isHidden('bookmarks', bmId) : false;
+  const iType  = bm?.icon?.type || 'lucide';
+  const iVal   = bm?.icon?.value || 'Link';
+  const cs     = bm?.customStyle || {};
 
   const iconGrid = LUCIDE_ICONS.map(n => `
     <button type="button" class="icon-option ${iType === 'lucide' && iVal === n ? 'selected' : ''}"
@@ -486,8 +711,10 @@ function openCardModal(catId, bmId) {
         </div>
 
         <div class="modal-footer">
-          ${bm ? `<button type="button" class="btn btn--danger"
-            onclick="deleteCard('${catId}','${bmId}');closeModal()">Delete</button>` : ''}
+          ${bm ? `<button type="button" class="btn ${bmHidden ? 'btn--primary' : 'btn--ghost'}"
+            onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks','${bmId}');closeModal()">
+            <i data-lucide="${bmHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
+            ${bmHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
           <button type="button" class="btn btn--ghost" onclick="closeModal()">Cancel</button>
           <button type="submit" class="btn btn--primary">Save</button>
@@ -500,9 +727,10 @@ function openCardModal(catId, bmId) {
 //  CATEGORY MODAL
 // ═══════════════════════════════════════════════════════════════
 function openCategoryModal(catId) {
-  const cat   = catId ? S.data.categories.find(c => c.id === catId) : null;
-  const cIcon = cat?.icon  || 'Folder';
-  const cColor= cat?.color || CAT_COLORS[0];
+  const cat      = catId ? S.data.categories.find(c => c.id === catId) : null;
+  const catHidden = cat ? isHidden('categories', catId) : false;
+  const cIcon    = cat?.icon  || 'Folder';
+  const cColor   = cat?.color || CAT_COLORS[0];
 
   const iconGrid = LUCIDE_ICONS.map(n => `
     <button type="button" class="icon-option ${cIcon===n?'selected':''}"
@@ -538,8 +766,10 @@ function openCategoryModal(catId) {
         <input type="hidden" name="color" value="${cColor}">
 
         <div class="modal-footer">
-          ${cat ? `<button type="button" class="btn btn--danger"
-            onclick="deleteCategory('${catId}');closeModal()">Delete</button>` : ''}
+          ${cat ? `<button type="button" class="btn ${catHidden ? 'btn--primary' : 'btn--ghost'}"
+            onclick="${catHidden ? 'unhide' : 'hide'}Item('categories','${catId}');closeModal()">
+            <i data-lucide="${catHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
+            ${catHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
           <button type="button" class="btn btn--ghost" onclick="closeModal()">Cancel</button>
           <button type="submit" class="btn btn--primary">Save</button>
@@ -684,8 +914,8 @@ async function submitCard(e, catId, bmId) {
   }
 
   closeModal();
-  await saveData();
-  render();
+  render();      // immediate — user sees the change at once
+  saveData();    // background write, no await
 }
 
 async function submitCategory(e, catId) {
@@ -703,26 +933,12 @@ async function submitCategory(e, catId) {
   }
 
   closeModal();
-  await saveData();
-  render();
+  render();      // immediate
+  saveData();    // background
 }
 
-async function deleteCard(catId, bmId) {
-  const cat = S.data.categories.find(c => c.id === catId);
-  const bm  = cat?.bookmarks.find(b => b.id === bmId);
-  if (!bm || !confirm(`Delete "${bm.title}"?`)) return;
-  cat.bookmarks = cat.bookmarks.filter(b => b.id !== bmId);
-  await saveData();
-  render();
-}
-
-async function deleteCategory(catId) {
-  const cat = S.data.categories.find(c => c.id === catId);
-  if (!cat || !confirm(`Delete category "${cat.name}" and all ${cat.bookmarks.length} bookmark(s)?`)) return;
-  S.data.categories = S.data.categories.filter(c => c.id !== catId);
-  await saveData();
-  render();
-}
+// Items are never removed from master_bookmarks.json.
+// Use hideItem() / unhideItem() to control per-user visibility via local_settings.json.
 
 // ═══════════════════════════════════════════════════════════════
 //  CLICK TRACKING
@@ -896,8 +1112,8 @@ async function confirmImport() {
   }
 
   closeModal();
-  await saveData();
   render();
+  saveData();
   showToast(`Imported ${addedBms} bookmarks into ${addedCats} new categories.${dupes ? ` (${dupes} duplicates skipped)` : ''}`);
 }
 
@@ -1003,64 +1219,7 @@ function showToast(msg) {
   setTimeout(() => { t.classList.remove('toast--visible'); setTimeout(() => t.remove(), 300); }, 3800);
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  DRAG & DROP  (SortableJS)
-// ═══════════════════════════════════════════════════════════════
-let _sortables = [];
-
-function initDragDrop() {
-  _sortables.forEach(s => { try { s.destroy(); } catch {} });
-  _sortables = [];
-  if (typeof Sortable === 'undefined') return;
-
-  // Category column reordering
-  const grid = document.getElementById('categories-grid');
-  if (grid) {
-    _sortables.push(Sortable.create(grid, {
-      animation: 180,
-      handle: '.category-header',
-      ghostClass: 'sortable-ghost',
-      dragClass: 'sortable-drag',
-      onEnd(evt) {
-        const moved = S.data.categories.splice(evt.oldIndex, 1)[0];
-        S.data.categories.splice(evt.newIndex, 0, moved);
-        saveData();
-      }
-    }));
-  }
-
-  // Card reordering (within & across categories)
-  document.querySelectorAll('.cards-grid').forEach(el => {
-    _sortables.push(Sortable.create(el, {
-      group: 'cards',
-      animation: 180,
-      ghostClass: 'sortable-ghost',
-      dragClass: 'sortable-drag',
-      onEnd(evt) {
-        const fromId  = evt.from.dataset.catId;
-        const toId    = evt.to.dataset.catId;
-        const movedId = evt.item.dataset.id;
-        const fromCat = S.data.categories.find(c => c.id === fromId);
-        const toCat   = S.data.categories.find(c => c.id === toId);
-        if (!fromCat || !toCat) return;
-
-        // Read authoritative order from DOM
-        const moved = fromCat.bookmarks.find(b => b.id === movedId);
-        if (!moved) return;
-        fromCat.bookmarks = fromCat.bookmarks.filter(b => b.id !== movedId);
-
-        const newOrder = Array.from(evt.to.children).map(el => el.dataset.id);
-        const bmMap = Object.fromEntries(toCat.bookmarks.map(b => [b.id, b]));
-        bmMap[movedId] = moved;
-        toCat.bookmarks = newOrder.map(id => bmMap[id]).filter(Boolean);
-        // Append any items not in DOM (edge case)
-        for (const b of toCat.bookmarks) if (!newOrder.includes(b.id)) toCat.bookmarks.push(b);
-
-        saveData();
-      }
-    }));
-  });
-}
+// initDragDrop replaced by initFreeDrag (pointer-event canvas drag)
 
 // ═══════════════════════════════════════════════════════════════
 //  GLOBAL EVENT LISTENERS
@@ -1081,12 +1240,85 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
   if (e.target.id === 'modal-overlay') closeModal();
 });
 
+document.addEventListener('pointermove', e => {
+  if (!_drag) return;
+  e.preventDefault();
+  const dx = (e.clientX - _drag.startClientX) / _drag.vw * 100;
+  const dy = (e.clientY - _drag.startClientY) / _drag.vw * 100;
+  _drag.curX = Math.max(0, _drag.startX + dx);
+  _drag.curY = Math.max(0, _drag.startY + dy);
+  _drag.el.style.left = _drag.curX + 'vw';
+  _drag.el.style.top  = _drag.curY + 'vw';
+  _drag.moved = true;
+  updateCanvasHeight();
+}, { passive: false });
+
+document.addEventListener('pointerup', e => {
+  if (!_drag) return;
+  _drag.el.classList.remove('card--dragging');
+  document.body.style.userSelect = '';
+  if (_drag.moved) {
+    S.cfg.cardPositions[_drag.bmId] = { x: _drag.curX, y: _drag.curY };
+    saveData();
+    updateCanvasHeight();
+  }
+  _drag = null;
+});
+
+document.addEventListener('pointercancel', () => {
+  if (!_drag) return;
+  _drag.el.classList.remove('card--dragging');
+  document.body.style.userSelect = '';
+  _drag = null;
+});
+
+window.addEventListener('resize', () => {
+  updateCanvasHeight();
+});
+
 // ═══════════════════════════════════════════════════════════════
-//  INIT
+//  INIT & CONNECT HANDLERS
 // ═══════════════════════════════════════════════════════════════
 async function handleConnect() {
   const ok = await openDirectory();
   if (ok) { render(); showToast(`Connected to "${S.dir.name}"`); }
 }
 
-render();
+async function handleResume() {
+  if (!S.pendingHandle) return;
+  try {
+    const perm = await S.pendingHandle.requestPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      S.dir = S.pendingHandle;
+      S.pendingHandle = null;
+      await loadData();
+      render();
+      showToast(`Resumed — ${S.dir.name}`);
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error(e);
+  }
+}
+
+async function init() {
+  // Try to restore the directory handle saved from the last session
+  try {
+    const saved = await idbGet('dirHandle');
+    if (saved) {
+      // queryPermission doesn't require a user gesture — succeeds silently in the same browser session
+      const perm = await saved.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        S.dir = saved;
+        await loadData();
+      } else {
+        // Different session: permission expired, but we can offer a one-click restore
+        S.pendingHandle = saved;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not restore directory handle:', e.message);
+  }
+  render();
+}
+
+init();

@@ -284,15 +284,92 @@ body::before {
 
 .btn-icon:hover { background: var(--surface2); color: var(--text2); }
 .btn-icon--edit:hover { background: var(--accent-dim); color: var(--accent); }
-.btn-icon--del:hover { background: var(--red-dim); color: var(--red); }
+.btn-icon--del:hover    { background: var(--red-dim);                color: var(--red); }
+.btn-icon--hide:hover   { background: rgba(249,226,175,0.1);        color: var(--yellow); }
+.btn-icon--unhide:hover { background: rgba(166,227,161,0.12);       color: var(--green); }
 
 /* ═══════════════════════════════════════════════
    DASHBOARD & CATEGORY GRID
 ═══════════════════════════════════════════════ */
 .dashboard {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
+  position: relative;
+}
+
+/* ── Category filter pill bar ──────────────────────────── */
+.cat-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  overflow-x: auto;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  scrollbar-width: thin;
+}
+.cat-filter-bar::-webkit-scrollbar { height: 4px; }
+.cat-filter-bar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.cat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pill-color) 35%, transparent);
+  background: color-mix(in srgb, var(--pill-color) 8%, transparent);
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--t), color var(--t), border-color var(--t);
+  flex-shrink: 0;
+}
+.cat-pill:hover {
+  background: color-mix(in srgb, var(--pill-color) 18%, transparent);
+  color: var(--pill-color);
+  border-color: color-mix(in srgb, var(--pill-color) 55%, transparent);
+}
+.cat-pill--active {
+  background: color-mix(in srgb, var(--pill-color) 22%, transparent);
+  color: var(--pill-color);
+  border-color: color-mix(in srgb, var(--pill-color) 65%, transparent);
+  font-weight: 600;
+}
+.cat-pill--hidden { opacity: 0.5; }
+
+.cat-pill-count {
+  font-size: 10px;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.cat-pill-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--border2);
+  background: transparent;
+  color: var(--text3);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--t), color var(--t);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.cat-pill-action:hover { background: var(--surface2); color: var(--text); }
+.cat-pill-action--cat { margin-left: 4px; }
+
+/* ── Freeform canvas ────────────────────────────────────── */
+.canvas {
+  position: relative;
+  min-height: calc(100vh - 120px);
 }
 
 .categories-grid {
@@ -304,7 +381,6 @@ body::before {
 }
 
 .empty-state {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -314,6 +390,8 @@ body::before {
   padding: 80px 24px;
   width: 100%;
   text-align: center;
+  position: absolute;
+  inset: 0;
 }
 
 /* ═══════════════════════════════════════════════
@@ -414,19 +492,69 @@ body::before {
    BOOKMARK CARD
 ═══════════════════════════════════════════════ */
 .card {
-  position: relative;
+  position: absolute;
+  width: 280px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   overflow: hidden;
-  transition: background var(--t), border-color var(--t), transform var(--t), box-shadow var(--t);
+  cursor: grab;
+  transition: background var(--t), border-color var(--t), box-shadow var(--t), opacity var(--t), filter var(--t);
+  touch-action: none;
+  user-select: none;
+  z-index: 1;
 }
 
 .card:hover {
   background: var(--surface2);
   border-color: var(--border2);
-  transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+  z-index: 2;
+}
+
+.card--dragging {
+  cursor: grabbing;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 2px var(--accent);
+  opacity: 0.92;
+  z-index: 1000;
+  transition: box-shadow var(--t), opacity var(--t);
+}
+
+.card--dim {
+  opacity: 0.28;
+  filter: saturate(0.2);
+  transition: opacity 0.2s, filter 0.2s;
+}
+.card--dim:hover {
+  opacity: 0.6;
+  filter: saturate(0.6);
+}
+
+/* Drag handle area at the top of the card */
+.card-drag-handle {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--border2);
+  opacity: 0;
+  transition: opacity var(--t);
+  pointer-events: none;
+  line-height: 0;
+}
+.card:hover .card-drag-handle { opacity: 1; }
+
+/* Category badge inside card meta */
+.card-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .card-link {
@@ -498,6 +626,56 @@ body::before {
 }
 
 .card:hover .card-actions { display: flex; }
+
+/* ═══════════════════════════════════════════════
+   HIDDEN ITEM STATES
+═══════════════════════════════════════════════ */
+
+/* Cards that are hidden — dimmed when revealed */
+.card--hidden {
+  opacity: 0.42;
+  filter: saturate(0.25);
+  transition: opacity var(--t), filter var(--t);
+}
+.card--hidden:hover {
+  opacity: 0.72;
+  filter: saturate(0.5);
+}
+
+/* Hidden categories */
+.category--hidden {
+  opacity: 0.4;
+  filter: saturate(0.2);
+}
+.category--hidden:hover {
+  opacity: 0.65;
+  filter: saturate(0.4);
+}
+
+/* Small "hidden" badge shown on hidden items in search / reveal mode */
+.hidden-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--yellow);
+  background: rgba(249,226,175,0.08);
+  border: 1px solid rgba(249,226,175,0.18);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* "X hidden" toggle button — active state */
+.btn--hidden-active {
+  background: rgba(249,226,175,0.1);
+  color: var(--yellow);
+  border: 1px solid rgba(249,226,175,0.25);
+}
+.btn--hidden-active:hover {
+  background: rgba(249,226,175,0.18);
+  border-color: rgba(249,226,175,0.4);
+}
 
 /* ═══════════════════════════════════════════════
    TAGS & BADGES
