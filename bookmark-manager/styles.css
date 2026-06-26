@@ -625,7 +625,7 @@ body::before {
   z-index: 2;
 }
 
-.card:hover .card-actions { display: flex; }
+.card:hover .card-actions, .card:focus-within .card-actions { display: flex; }
 
 /* ═══════════════════════════════════════════════
    HIDDEN ITEM STATES
@@ -1164,4 +1164,12 @@ select.form-input {
 @media (max-width: 480px) {
   .connect-card { padding: 32px 24px; }
   .modal { max-height: 95vh; }
+}
+
+/* ═══════════════════════════════════════════════
+   ACCESSIBILITY
+═══════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

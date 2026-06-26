@@ -1,0 +1,1 @@
+Added `:focus-visible` outline to `styles.css` for focusability, `:focus-within` for `.card-actions` to support edit/hide via keyboard on cards, and `aria-label` attributes to icon-only buttons like `closeModal` buttons, `search-clear` buttons, edit/hide buttons, `color-swatch` buttons, and `icon-option` buttons, as well as the search and command palette inputs.
