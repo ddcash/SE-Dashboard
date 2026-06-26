@@ -384,10 +384,10 @@ function renderCard(bm, catId, dimmed) {
     ? `<span class="hidden-badge"><i data-lucide="EyeOff" style="width:9px;height:9px"></i> hidden</span>`
     : '';
   const hideBtn = hidden
-    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" onclick="unhideItem('bookmarks','${bm.id}')">
+    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks','${bm.id}')">
          <i data-lucide="Eye" style="width:12px;height:12px"></i>
        </button>`
-    : `<button class="btn-icon btn-icon--hide" title="Hide from view" onclick="hideItem('bookmarks','${bm.id}')">
+    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks','${bm.id}')">
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
@@ -411,7 +411,7 @@ function renderCard(bm, catId, dimmed) {
         </div>
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon btn-icon--edit" title="Edit" onclick="openCardModal('${catId}','${bm.id}')">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
         ${hideBtn}
@@ -533,11 +533,12 @@ function renderDashboard() {
         <div class="search-wrap">
           <i data-lucide="Search" class="search-icon" style="width:14px;height:14px"></i>
           <input type="text" id="search-input" class="search-input"
+            aria-label="Search bookmarks"
             placeholder="Search… (Ctrl+K for commands)"
             value="${esc(S.query)}"
             oninput="handleSearch(this.value)"
             onkeydown="if(event.key==='Escape')handleSearch('')">
-          ${S.query ? `<button class="search-clear" onclick="handleSearch('')">
+          ${S.query ? `<button class="search-clear" aria-label="Clear search" onclick="handleSearch('')">
             <i data-lucide="X" style="width:12px;height:12px"></i></button>` : ''}
         </div>
       </div>
@@ -632,33 +633,33 @@ function openCardModal(catId, bmId) {
   openModal(`
     <div class="modal-header">
       <h2>${bm ? 'Edit Bookmark' : 'New Bookmark'}</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" aria-label="Close dialog" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
         <div class="form-row">
-          <label>Title *</label>
-          <input type="text" name="title" class="form-input" required
+          <label for="card-title">Title *</label>
+          <input type="text" id="card-title" name="title" class="form-input" required
             value="${esc(bm?.title||'')}" placeholder="My Bookmark">
         </div>
         <div class="form-row">
-          <label>URL *</label>
-          <input type="text" name="url" class="form-input" required
+          <label for="card-url">URL *</label>
+          <input type="text" id="card-url" name="url" class="form-input" required
             value="${esc(bm?.url||'')}" placeholder="https://… or file:/// or vscode://…">
         </div>
         <div class="form-row">
-          <label>Description</label>
-          <textarea name="description" class="form-input form-textarea"
+          <label for="card-desc">Description</label>
+          <textarea id="card-desc" name="description" class="form-input form-textarea"
             placeholder="Optional notes…">${esc(bm?.description||'')}</textarea>
         </div>
         <div class="form-row">
-          <label>Tags <span class="hint-inline">(comma-separated)</span></label>
-          <input type="text" name="tags" class="form-input"
+          <label for="card-tags">Tags <span class="hint-inline">(comma-separated)</span></label>
+          <input type="text" id="card-tags" name="tags" class="form-input"
             value="${esc((bm?.tags||[]).join(', '))}" placeholder="dev, work, tools">
         </div>
         <div class="form-row">
-          <label>Category</label>
-          <select name="categoryId" class="form-input">${catOptions}</select>
+          <label for="card-category">Category</label>
+          <select id="card-category" name="categoryId" class="form-input">${catOptions}</select>
         </div>
 
         <div class="form-section">Icon</div>
@@ -740,18 +741,18 @@ function openCategoryModal(catId) {
 
   const swatches = CAT_COLORS.map(c => `
     <button type="button" class="color-swatch ${c===cColor?'selected':''}"
-      style="background:${c}" onclick="pickCatColor(this,'${c}')"></button>`).join('');
+      aria-label="Color ${c}" style="background:${c}" onclick="pickCatColor(this,'${c}')"></button>`).join('');
 
   openModal(`
     <div class="modal-header">
       <h2>${cat ? 'Edit Category' : 'New Category'}</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" aria-label="Close dialog" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
         <div class="form-row">
-          <label>Name *</label>
-          <input type="text" name="name" class="form-input" required
+          <label for="cat-name">Name *</label>
+          <input type="text" id="cat-name" name="name" class="form-input" required
             value="${esc(cat?.name||'')}" placeholder="Dev Tools">
         </div>
 
@@ -786,7 +787,7 @@ function openImportModal() {
   openModal(`
     <div class="modal-header">
       <h2>Import Bookmarks</h2>
-      <button class="btn-icon" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button class="btn-icon" aria-label="Close dialog" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <p class="hint-text">Supports Chrome/Safari HTML export, JSON, and CSV files.</p>
