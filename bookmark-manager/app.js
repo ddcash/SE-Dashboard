@@ -332,23 +332,26 @@ function renderIcon(icon, size = 16) {
   if (!icon || icon.type === 'lucide') {
     return `<i data-lucide="${esc(icon?.value || 'Link')}" style="width:${size}px;height:${size}px"></i>`;
   }
+  // ⚡ Bolt: Added loading="lazy" to all icon <img> tags below.
+  // When rendering the freeform canvas, all cards are added to the DOM to calculate layout.
+  // Lazy loading prevents massive network contention from fetching hundreds of favicons simultaneously.
   if (icon.type === 'favicon') {
     // Direct /favicon.ico — works for internet sites AND internal/intranet hosts; fails gracefully offline
     const origin = (() => { try { const u = new URL(icon.value || ''); return u.origin; } catch { return ''; } })();
     const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Globe\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
     return origin
-      ? `<img src="${esc(origin)}/favicon.ico" class="card-favicon" onerror="${fb}">`
+      ? `<img src="${esc(origin)}/favicon.ico" class="card-favicon" loading="lazy" onerror="${fb}">`
       : `<i data-lucide="Globe" style="width:${size}px;height:${size}px"></i>`;
   }
   if (icon.type === 'url') {
     const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Link\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
-    return `<img src="${esc(icon.value)}" class="card-favicon" onerror="${fb}">`;
+    return `<img src="${esc(icon.value)}" class="card-favicon" loading="lazy" onerror="${fb}">`;
   }
   if (icon.type === 'local') {
     const url = S.assetUrls[icon.value];
     if (url) {
       const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Image\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
-      return `<img src="${url}" class="card-favicon" onerror="${fb}">`;
+      return `<img src="${url}" class="card-favicon" loading="lazy" onerror="${fb}">`;
     }
     return `<i data-lucide="Image" style="width:${size}px;height:${size}px"></i>`;
   }
