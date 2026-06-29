@@ -29,6 +29,16 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function sanitizeUrl(url) {
+  if (!url) return '#';
+  const trimmed = url.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith('javascript:') || lower.startsWith('vbscript:') || lower.startsWith('data:')) {
+    return 'about:blank';
+  }
+  return trimmed;
+}
+
 function fuzzyMatch(str, q) {
   if (!q) return true;
   str = str.toLowerCase(); q = q.toLowerCase();
@@ -401,7 +411,7 @@ function renderCard(bm, catId, dimmed) {
       <div class="card-drag-handle">
         <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
       </div>
-      <a href="${esc(bm.url)}" target="_blank" rel="noreferrer" class="card-link"
+      <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
          onclick="trackClick(event,'${bm.id}','${catId}')">
         <div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
         <div class="card-body">
@@ -1174,6 +1184,7 @@ function updatePalette(q) {
 
   // Store action refs
   window._palActions = matchCmds.map(c => c.fn);
+  window._palBms = matchBms.map(m => m.bm);
 
   const cmdsHtml = matchCmds.map((c, i) => `
     <div class="palette-item" onclick="window._palActions[${i}]()">
@@ -1182,8 +1193,8 @@ function updatePalette(q) {
       <span class="palette-item-type">Command</span>
     </div>`).join('');
 
-  const bmsHtml = matchBms.map(({ bm, cat }) => `
-    <div class="palette-item" onclick="window.open('${esc(bm.url)}','_blank');closePalette()">
+  const bmsHtml = matchBms.map(({ bm, cat }, i) => `
+    <div class="palette-item" onclick="window.open(sanitizeUrl(window._palBms[${i}].url),'_blank');closePalette()">
       <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
       <span>${esc(bm.title)}</span>
       <span class="palette-item-type">${esc(cat.name)}</span>
