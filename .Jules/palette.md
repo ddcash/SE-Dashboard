@@ -1,1 +1,3 @@
-Added `:focus-visible` outline to `styles.css` for focusability, `:focus-within` for `.card-actions` to support edit/hide via keyboard on cards, and `aria-label` attributes to icon-only buttons like `closeModal` buttons, `search-clear` buttons, edit/hide buttons, `color-swatch` buttons, and `icon-option` buttons, as well as the search and command palette inputs.
+## 2024-03-24 - Modal Autofocus Bug with Dynamic innerHTML
+**Learning:** Browsers sometimes fail to trigger autofocus on inputs when their parent elements are added to the DOM dynamically via innerHTML (e.g., in a modal engine).
+**Action:** Always include a programmatic fallback (like querying for `[autofocus]` and calling `.focus()` after a small timeout) when building or modifying vanilla JS modal engines that rely on innerHTML for rendering.
