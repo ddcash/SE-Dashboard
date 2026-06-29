@@ -424,12 +424,16 @@ function renderAllCards() {
   const searching = !!S.query;
   let html = '';
 
+  // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
+  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
+  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+
   for (const cat of S.data.categories) {
-    const catHidden  = isHidden('categories', cat.id);
+    const catHidden  = hiddenCats.has(cat.id);
     if (!searching && !S.showHidden && catHidden) continue;
 
     for (const bm of cat.bookmarks) {
-      const bmHidden = isHidden('bookmarks', bm.id);
+      const bmHidden = hiddenBms.has(bm.id);
       if (!searching && !S.showHidden && bmHidden) continue;
 
       if (searching) {
@@ -503,10 +507,14 @@ function renderDashboard() {
   const hiddenCatCount = (S.cfg.hidden?.categories || []).length;
   const hiddenTotal    = hiddenBmCount + hiddenCatCount;
 
+  // ⚡ Bolt optimization: O(1) lookups for hidden status
+  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
+  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+
   const catPills = cats.map(cat => {
     const active   = S.activeCat === cat.id;
-    const catHidden = isHidden('categories', cat.id);
-    const visCount = cat.bookmarks.filter(b => !isHidden('bookmarks', b.id)).length;
+    const catHidden = hiddenCats.has(cat.id);
+    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}"
