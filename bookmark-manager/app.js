@@ -26,7 +26,15 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 function esc(s) {
   return String(s ?? '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function sanitizeUrl(url) {
+  if (!url) return '';
+  const u = String(url).trim();
+  if (/^(javascript|data|vbscript):/i.test(u)) return '#';
+  return u;
 }
 
 function fuzzyMatch(str, q) {
@@ -401,7 +409,7 @@ function renderCard(bm, catId, dimmed) {
       <div class="card-drag-handle">
         <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
       </div>
-      <a href="${esc(bm.url)}" target="_blank" rel="noreferrer" class="card-link"
+      <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
          onclick="trackClick(event,'${bm.id}','${catId}')">
         <div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
         <div class="card-body">
@@ -1183,7 +1191,7 @@ function updatePalette(q) {
     </div>`).join('');
 
   const bmsHtml = matchBms.map(({ bm, cat }) => `
-    <div class="palette-item" onclick="window.open('${esc(bm.url)}','_blank');closePalette()">
+    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()">
       <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
       <span>${esc(bm.title)}</span>
       <span class="palette-item-type">${esc(cat.name)}</span>
