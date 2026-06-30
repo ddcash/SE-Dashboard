@@ -1,1 +1,3 @@
-Added `:focus-visible` outline to `styles.css` for focusability, `:focus-within` for `.card-actions` to support edit/hide via keyboard on cards, and `aria-label` attributes to icon-only buttons like `closeModal` buttons, `search-clear` buttons, edit/hide buttons, `color-swatch` buttons, and `icon-option` buttons, as well as the search and command palette inputs.
+## 2026-06-28 - Modal Form Accessibility
+**Learning:** HTML templates injected via JavaScript can often lack basic accessibility features like programmatic association between labels and inputs, making them difficult for screen readers and keyboard users to navigate.
+**Action:** Always ensure that dynamically generated forms use `id` attributes on inputs and matching `for` attributes on `label` elements to guarantee accessibility, even for simple string-based templates.
