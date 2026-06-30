@@ -26,7 +26,24 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 function esc(s) {
   return String(s ?? '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function sanitizeUrl(url) {
+  if (!url) return '';
+  const u = String(url).trim();
+  try {
+    const parsed = new URL(u, 'http://dummy');
+    if (['javascript:', 'vbscript:', 'data:'].includes(parsed.protocol)) {
+      return 'about:blank';
+    }
+  } catch (e) {
+    if (/^\s*(javascript|vbscript|data):/i.test(u)) {
+      return 'about:blank';
+    }
+  }
+  return u;
 }
 
 function fuzzyMatch(str, q) {
@@ -367,12 +384,12 @@ function renderCard(bm, catId, dimmed) {
   const inlineStyle = [
     `left:${pos.x}vw`,
     `top:${pos.y}vw`,
-    cs.cardColor   ? `background:${cs.cardColor}`     : '',
-    cs.borderColor ? `border-color:${cs.borderColor}` : '',
+    cs.cardColor   ? `background:${esc(cs.cardColor)}`     : '',
+    cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
   ].filter(Boolean).join(';');
 
   const cat        = S.data.categories.find(c => c.id === catId);
-  const catColor   = cat?.color || '#6366f1';
+  const catColor   = esc(cat?.color || '#6366f1');
   const catBadge   = `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
                       </span>`;
@@ -404,7 +421,7 @@ function renderCard(bm, catId, dimmed) {
       <div class="card-drag-handle">
         <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
       </div>
-      <a href="${esc(bm.url)}" target="_blank" rel="noreferrer" class="card-link"
+      <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
          onclick="trackClick(event,'${bm.id}','${catId}')">
         <div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
         <div class="card-body">
@@ -1186,7 +1203,7 @@ function updatePalette(q) {
     </div>`).join('');
 
   const bmsHtml = matchBms.map(({ bm, cat }) => `
-    <div class="palette-item" onclick="window.open('${esc(bm.url)}','_blank');closePalette()">
+    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.dataset.url,'_blank');closePalette()">
       <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
       <span>${esc(bm.title)}</span>
       <span class="palette-item-type">${esc(cat.name)}</span>
