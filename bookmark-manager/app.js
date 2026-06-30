@@ -400,7 +400,9 @@ function renderIcon(icon, size = 16) {
   return `<i data-lucide="Link" style="width:${size}px;height:${size}px"></i>`;
 }
 
-function renderCard(bm, catId, dimmed) {
+// ⚡ Bolt: Pass cat object directly to avoid O(N) lookup per card during render
+function renderCard(bm, cat, dimmed) {
+  const catId  = cat.id;
   const hidden = isHidden('bookmarks', bm.id);
   const proto  = getProtocolTag(bm.url);
   const cs     = bm.customStyle || {};
@@ -492,7 +494,7 @@ function renderAllCards() {
 
       // Dim card when category filter is active and this card isn't in that category
       const dimmed = !searching && !!S.activeCat && S.activeCat !== cat.id;
-      html += renderCard(bm, cat.id, dimmed);
+      html += renderCard(bm, cat, dimmed);
     }
   }
   return html;
