@@ -33,27 +33,8 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  try {
-    const parsed = new URL(u, 'http://dummy');
-    if (['javascript:', 'vbscript:', 'data:'].includes(parsed.protocol)) {
-      return 'about:blank';
-    }
-  } catch (e) {
-    if (/^\s*(javascript|vbscript|data):/i.test(u)) {
-      return 'about:blank';
-    }
-  }
+  if (/^(javascript|data|vbscript):/i.test(u)) return '#';
   return u;
-}
-
-function sanitizeUrl(url) {
-  if (!url) return '#';
-  const trimmed = url.trim();
-  const lower = trimmed.toLowerCase();
-  if (lower.startsWith('javascript:') || lower.startsWith('vbscript:') || lower.startsWith('data:')) {
-    return 'about:blank';
-  }
-  return trimmed;
 }
 
 function fuzzyMatch(str, q) {
@@ -1246,7 +1227,7 @@ function updatePalette(q) {
     </div>`).join('');
 
   const bmsHtml = matchBms.map(({ bm, cat }) => `
-    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.dataset.url,'_blank');closePalette()">
+    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()">
       <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
       <span>${esc(bm.title)}</span>
       <span class="palette-item-type">${esc(cat.name)}</span>
