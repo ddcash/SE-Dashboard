@@ -46,6 +46,16 @@ function sanitizeUrl(url) {
   return u;
 }
 
+function sanitizeUrl(url) {
+  if (!url) return '#';
+  const trimmed = url.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith('javascript:') || lower.startsWith('vbscript:') || lower.startsWith('data:')) {
+    return 'about:blank';
+  }
+  return trimmed;
+}
+
 function fuzzyMatch(str, q) {
   if (!q) return true;
   str = str.toLowerCase(); q = q.toLowerCase();
@@ -1217,6 +1227,7 @@ function updatePalette(q) {
 
   // Store action refs
   window._palActions = matchCmds.map(c => c.fn);
+  window._palBms = matchBms.map(m => m.bm);
 
   const cmdsHtml = matchCmds.map((c, i) => `
     <div class="palette-item" onclick="window._palActions[${i}]()">
