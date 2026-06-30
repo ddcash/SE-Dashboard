@@ -1,0 +1,3 @@
+## 2024-11-20 - Lazy Loading Favicons in Freeform Canvas
+**Learning:** In a freeform canvas application like bookmark-manager where all items (cards) are rendered immediately in the DOM to calculate dimensions and positions, loading external assets (like favicons or images) synchronously causes massive network contention. If a user imports hundreds of bookmarks, the browser attempts to fetch all favicons at once, severely degrading performance and potentially causing the page load to stall.
+**Action:** Always add `loading="lazy"` to `<img>` tags for user-generated content or external assets when rendering large lists or grids, especially in canvas-like layouts that render all items upfront.
