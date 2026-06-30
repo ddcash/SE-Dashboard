@@ -396,7 +396,6 @@ function renderCard(bm, cat, dimmed) {
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
   ].filter(Boolean).join(';');
 
-  const cat        = S.data.categories.find(c => c.id === catId);
   const catColor   = esc(cat?.color || '#6366f1');
   const catBadge   = `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
