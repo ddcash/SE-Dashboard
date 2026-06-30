@@ -116,11 +116,15 @@ function updateCanvasHeight() {
   const minH = window.innerHeight - 120; // header + filter bar
   let maxYPx = minH;
 
-  Object.entries(S.cfg.cardPositions || {}).forEach(([id, pos]) => {
+  // ⚡ Bolt: Use for...in to avoid GC allocations on pointermove
+  const positions = S.cfg.cardPositions || {};
+  for (const id in positions) {
+    if (!Object.hasOwn(positions, id)) continue;
+    const pos = positions[id];
     // Use live drag Y if this card is being dragged right now
     const y = (_drag && _drag.bmId === id) ? _drag.curY : pos.y;
     maxYPx = Math.max(maxYPx, (y * vw / 100) + 150);
-  });
+  }
   // Also account for a drag that hasn't been saved yet (new position beyond stored one)
   if (_drag) maxYPx = Math.max(maxYPx, (_drag.curY * vw / 100) + 150);
   canvas.style.minHeight = maxYPx + 60 + 'px';
@@ -355,7 +359,9 @@ function renderIcon(icon, size = 16) {
   return `<i data-lucide="Link" style="width:${size}px;height:${size}px"></i>`;
 }
 
-function renderCard(bm, catId, dimmed) {
+// ⚡ Bolt: Pass cat object directly to avoid O(N) lookup per card during render
+function renderCard(bm, cat, dimmed) {
+  const catId  = cat.id;
   const hidden = isHidden('bookmarks', bm.id);
   const proto  = getProtocolTag(bm.url);
   const cs     = bm.customStyle || {};
@@ -368,7 +374,6 @@ function renderCard(bm, catId, dimmed) {
     cs.borderColor ? `border-color:${cs.borderColor}` : '',
   ].filter(Boolean).join(';');
 
-  const cat        = S.data.categories.find(c => c.id === catId);
   const catColor   = cat?.color || '#6366f1';
   const catBadge   = `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
@@ -443,7 +448,7 @@ function renderAllCards() {
 
       // Dim card when category filter is active and this card isn't in that category
       const dimmed = !searching && !!S.activeCat && S.activeCat !== cat.id;
-      html += renderCard(bm, cat.id, dimmed);
+      html += renderCard(bm, cat, dimmed);
     }
   }
   return html;
