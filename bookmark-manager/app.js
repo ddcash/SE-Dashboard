@@ -126,6 +126,9 @@ function autoArrangeCards() {
 }
 
 // Expand canvas so all positioned cards are fully visible.
+// ⚡ Bolt: Optimized canvas height recalculation during drag.
+// Instead of O(N) array allocation via Object.entries() on every 60fps pointermove,
+// we cache the max static Y of all non-dragged items and do an O(1) comparison during drag.
 function updateCanvasHeight() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
@@ -133,13 +136,16 @@ function updateCanvasHeight() {
   const minH = window.innerHeight - 120; // header + filter bar
   let maxYPx = minH;
 
-  Object.entries(S.cfg.cardPositions || {}).forEach(([id, pos]) => {
-    // Use live drag Y if this card is being dragged right now
-    const y = (_drag && _drag.bmId === id) ? _drag.curY : pos.y;
-    maxYPx = Math.max(maxYPx, (y * vw / 100) + 150);
-  });
-  // Also account for a drag that hasn't been saved yet (new position beyond stored one)
-  if (_drag) maxYPx = Math.max(maxYPx, (_drag.curY * vw / 100) + 150);
+  if (_drag && _drag.maxStaticVw !== undefined) {
+    maxYPx = Math.max(_drag.maxStaticVw, (_drag.curY * vw / 100) + 150);
+  } else {
+    const positions = S.cfg.cardPositions || {};
+    for (const id in positions) {
+      const y = (_drag && _drag.bmId === id) ? _drag.curY : positions[id].y;
+      maxYPx = Math.max(maxYPx, (y * vw / 100) + 150);
+    }
+    if (_drag) maxYPx = Math.max(maxYPx, (_drag.curY * vw / 100) + 150);
+  }
   canvas.style.minHeight = maxYPx + 60 + 'px';
 }
 
@@ -164,9 +170,17 @@ function onDragStart(e) {
   const vw     = window.innerWidth;
   const startX = parseFloat(card.style.left) || 0; // current position in vw
   const startY = parseFloat(card.style.top)  || 0;
+  const bmId   = card.dataset.id;
+
+  // Pre-calculate max static Y of all OTHER cards so updateCanvasHeight is O(1) during 60fps pointermove
+  let maxStaticVw = window.innerHeight - 120;
+  const positions = S.cfg.cardPositions || {};
+  for (const id in positions) {
+    if (id !== bmId) maxStaticVw = Math.max(maxStaticVw, (positions[id].y * vw / 100) + 150);
+  }
 
   _drag = {
-    bmId: card.dataset.id,
+    bmId,
     el:   card,
     startClientX: e.clientX,
     startClientY: e.clientY,
@@ -174,6 +188,7 @@ function onDragStart(e) {
     canvas: document.getElementById('canvas'),
     curX: startX, curY: startY,
     moved: false,
+    maxStaticVw, // ⚡ Bolt: Cached O(1) height calculation value
   };
 
   card.classList.add('card--dragging');
