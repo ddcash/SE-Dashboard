@@ -477,6 +477,16 @@ function renderAllCards() {
       html += renderCard(bm, cat, dimmed);
     }
   }
+
+  if (searching && !html) {
+    return `
+      <div class="empty-state">
+        <i data-lucide="Search" style="width:48px;height:48px"></i>
+        <p>No results found for "<strong>${esc(S.query)}</strong>".</p>
+        <button class="btn btn--ghost" onclick="handleSearch('')">Clear Search</button>
+      </div>`;
+  }
+
   return html;
 }
 
