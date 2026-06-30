@@ -1,3 +1,3 @@
-## 2024-05-24 - [O(n) Array Scans in Render Loops]
-**Learning:** During rendering and filtering, the app iterated over every category and bookmark, calling `isHidden(type, id)` which used `Array.includes()`. This caused $O(N \times M)$ overhead (where N is items, M is hidden items).
-**Action:** When a check is performed inside a tight loop over many items, precompute a `Set` from the array before the loop begins to change the check complexity from $O(M)$ to $O(1)$.
+## 2024-06-28 - O(N) Canvas Height Recalculation on Drag
+**Learning:** The `pointermove` event (firing at ~60fps) was recalculating the canvas height by iterating over every single bookmark's position using `Object.entries(S.cfg.cardPositions).forEach()`. For large sets of bookmarks, this allocates many arrays and iterates hundreds/thousands of times per frame, causing layout thrashing and garbage collection pauses.
+**Action:** Always check the complexity of code running inside rapid event listeners (`pointermove`, `scroll`, etc). Pre-compute and cache static values (like the max height of all *other* cards) when the drag *starts*, so the 60fps loop becomes an O(1) mathematical comparison. Also, prefer `for...in` over `Object.entries().forEach()` in hot paths to avoid array allocation overhead.

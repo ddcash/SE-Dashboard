@@ -26,7 +26,24 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 function esc(s) {
   return String(s ?? '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function sanitizeUrl(url) {
+  if (!url) return '';
+  const u = String(url).trim();
+  try {
+    const parsed = new URL(u, 'http://dummy');
+    if (['javascript:', 'vbscript:', 'data:'].includes(parsed.protocol)) {
+      return 'about:blank';
+    }
+  } catch (e) {
+    if (/^\s*(javascript|vbscript|data):/i.test(u)) {
+      return 'about:blank';
+    }
+  }
+  return u;
 }
 
 function fuzzyMatch(str, q) {
@@ -109,6 +126,9 @@ function autoArrangeCards() {
 }
 
 // Expand canvas so all positioned cards are fully visible.
+// ⚡ Bolt: Optimized canvas height recalculation during drag.
+// Instead of O(N) array allocation via Object.entries() on every 60fps pointermove,
+// we cache the max static Y of all non-dragged items and do an O(1) comparison during drag.
 function updateCanvasHeight() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
@@ -116,13 +136,16 @@ function updateCanvasHeight() {
   const minH = window.innerHeight - 120; // header + filter bar
   let maxYPx = minH;
 
-  Object.entries(S.cfg.cardPositions || {}).forEach(([id, pos]) => {
-    // Use live drag Y if this card is being dragged right now
-    const y = (_drag && _drag.bmId === id) ? _drag.curY : pos.y;
-    maxYPx = Math.max(maxYPx, (y * vw / 100) + 150);
-  });
-  // Also account for a drag that hasn't been saved yet (new position beyond stored one)
-  if (_drag) maxYPx = Math.max(maxYPx, (_drag.curY * vw / 100) + 150);
+  if (_drag && _drag.maxStaticVw !== undefined) {
+    maxYPx = Math.max(_drag.maxStaticVw, (_drag.curY * vw / 100) + 150);
+  } else {
+    const positions = S.cfg.cardPositions || {};
+    for (const id in positions) {
+      const y = (_drag && _drag.bmId === id) ? _drag.curY : positions[id].y;
+      maxYPx = Math.max(maxYPx, (y * vw / 100) + 150);
+    }
+    if (_drag) maxYPx = Math.max(maxYPx, (_drag.curY * vw / 100) + 150);
+  }
   canvas.style.minHeight = maxYPx + 60 + 'px';
 }
 
@@ -147,9 +170,17 @@ function onDragStart(e) {
   const vw     = window.innerWidth;
   const startX = parseFloat(card.style.left) || 0; // current position in vw
   const startY = parseFloat(card.style.top)  || 0;
+  const bmId   = card.dataset.id;
+
+  // Pre-calculate max static Y of all OTHER cards so updateCanvasHeight is O(1) during 60fps pointermove
+  let maxStaticVw = window.innerHeight - 120;
+  const positions = S.cfg.cardPositions || {};
+  for (const id in positions) {
+    if (id !== bmId) maxStaticVw = Math.max(maxStaticVw, (positions[id].y * vw / 100) + 150);
+  }
 
   _drag = {
-    bmId: card.dataset.id,
+    bmId,
     el:   card,
     startClientX: e.clientX,
     startClientY: e.clientY,
@@ -157,6 +188,7 @@ function onDragStart(e) {
     canvas: document.getElementById('canvas'),
     curX: startX, curY: startY,
     moved: false,
+    maxStaticVw, // ⚡ Bolt: Cached O(1) height calculation value
   };
 
   card.classList.add('card--dragging');
@@ -332,23 +364,26 @@ function renderIcon(icon, size = 16) {
   if (!icon || icon.type === 'lucide') {
     return `<i data-lucide="${esc(icon?.value || 'Link')}" style="width:${size}px;height:${size}px"></i>`;
   }
+  // ⚡ Bolt: Added loading="lazy" to all icon <img> tags below.
+  // When rendering the freeform canvas, all cards are added to the DOM to calculate layout.
+  // Lazy loading prevents massive network contention from fetching hundreds of favicons simultaneously.
   if (icon.type === 'favicon') {
     // Direct /favicon.ico — works for internet sites AND internal/intranet hosts; fails gracefully offline
     const origin = (() => { try { const u = new URL(icon.value || ''); return u.origin; } catch { return ''; } })();
     const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Globe\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
     return origin
-      ? `<img src="${esc(origin)}/favicon.ico" class="card-favicon" onerror="${fb}">`
+      ? `<img src="${esc(origin)}/favicon.ico" class="card-favicon" loading="lazy" onerror="${fb}">`
       : `<i data-lucide="Globe" style="width:${size}px;height:${size}px"></i>`;
   }
   if (icon.type === 'url') {
     const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Link\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
-    return `<img src="${esc(icon.value)}" class="card-favicon" onerror="${fb}">`;
+    return `<img src="${esc(icon.value)}" class="card-favicon" loading="lazy" onerror="${fb}">`;
   }
   if (icon.type === 'local') {
     const url = S.assetUrls[icon.value];
     if (url) {
       const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Image\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
-      return `<img src="${url}" class="card-favicon" onerror="${fb}">`;
+      return `<img src="${url}" class="card-favicon" loading="lazy" onerror="${fb}">`;
     }
     return `<i data-lucide="Image" style="width:${size}px;height:${size}px"></i>`;
   }
@@ -364,12 +399,12 @@ function renderCard(bm, catId, dimmed) {
   const inlineStyle = [
     `left:${pos.x}vw`,
     `top:${pos.y}vw`,
-    cs.cardColor   ? `background:${cs.cardColor}`     : '',
-    cs.borderColor ? `border-color:${cs.borderColor}` : '',
+    cs.cardColor   ? `background:${esc(cs.cardColor)}`     : '',
+    cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
   ].filter(Boolean).join(';');
 
   const cat        = S.data.categories.find(c => c.id === catId);
-  const catColor   = cat?.color || '#6366f1';
+  const catColor   = esc(cat?.color || '#6366f1');
   const catBadge   = `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
                       </span>`;
@@ -401,7 +436,7 @@ function renderCard(bm, catId, dimmed) {
       <div class="card-drag-handle">
         <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
       </div>
-      <a href="${esc(bm.url)}" target="_blank" rel="noreferrer" class="card-link"
+      <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
          onclick="trackClick(event,'${bm.id}','${catId}')">
         <div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
         <div class="card-body">
@@ -645,28 +680,28 @@ function openCardModal(catId, bmId) {
     <div class="modal-body">
       <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
         <div class="form-row">
-          <label>Title *</label>
-          <input type="text" name="title" class="form-input" required
+          <label for="bm-title">Title *</label>
+          <input id="bm-title" type="text" name="title" class="form-input" required
             value="${esc(bm?.title||'')}" placeholder="My Bookmark">
         </div>
         <div class="form-row">
-          <label>URL *</label>
-          <input type="text" name="url" class="form-input" required
+          <label for="bm-url">URL *</label>
+          <input id="bm-url" type="text" name="url" class="form-input" required
             value="${esc(bm?.url||'')}" placeholder="https://… or file:/// or vscode://…">
         </div>
         <div class="form-row">
-          <label>Description</label>
-          <textarea name="description" class="form-input form-textarea"
+          <label for="bm-desc">Description</label>
+          <textarea id="bm-desc" name="description" class="form-input form-textarea"
             placeholder="Optional notes…">${esc(bm?.description||'')}</textarea>
         </div>
         <div class="form-row">
-          <label>Tags <span class="hint-inline">(comma-separated)</span></label>
-          <input type="text" name="tags" class="form-input"
+          <label for="bm-tags">Tags <span class="hint-inline">(comma-separated)</span></label>
+          <input id="bm-tags" type="text" name="tags" class="form-input"
             value="${esc((bm?.tags||[]).join(', '))}" placeholder="dev, work, tools">
         </div>
         <div class="form-row">
-          <label>Category</label>
-          <select name="categoryId" class="form-input">${catOptions}</select>
+          <label for="bm-category">Category</label>
+          <select id="bm-category" name="categoryId" class="form-input">${catOptions}</select>
         </div>
 
         <div class="form-section">Icon</div>
@@ -758,8 +793,8 @@ function openCategoryModal(catId) {
     <div class="modal-body">
       <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
         <div class="form-row">
-          <label>Name *</label>
-          <input type="text" name="name" class="form-input" required
+          <label for="cat-name">Name *</label>
+          <input id="cat-name" type="text" name="name" class="form-input" required
             value="${esc(cat?.name||'')}" placeholder="Dev Tools">
         </div>
 
@@ -1191,7 +1226,7 @@ function updatePalette(q) {
     </div>`).join('');
 
   const bmsHtml = matchBms.map(({ bm, cat }) => `
-    <div class="palette-item" onclick="window.open('${esc(bm.url)}','_blank');closePalette()">
+    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.dataset.url,'_blank');closePalette()">
       <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
       <span>${esc(bm.title)}</span>
       <span class="palette-item-type">${esc(cat.name)}</span>
