@@ -1,3 +1,3 @@
-## 2024-03-24 - Modal Autofocus Bug with Dynamic innerHTML
-**Learning:** Browsers sometimes fail to trigger autofocus on inputs when their parent elements are added to the DOM dynamically via innerHTML (e.g., in a modal engine).
-**Action:** Always include a programmatic fallback (like querying for `[autofocus]` and calling `.focus()` after a small timeout) when building or modifying vanilla JS modal engines that rely on innerHTML for rendering.
+## 2026-06-28 - Modal Form Accessibility
+**Learning:** HTML templates injected via JavaScript can often lack basic accessibility features like programmatic association between labels and inputs, making them difficult for screen readers and keyboard users to navigate.
+**Action:** Always ensure that dynamically generated forms use `id` attributes on inputs and matching `for` attributes on `label` elements to guarantee accessibility, even for simple string-based templates.
