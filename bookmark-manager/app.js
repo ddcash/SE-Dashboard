@@ -654,6 +654,13 @@ function openModal(html) {
   el.classList.remove('hidden');
   el.classList.add('visible');
   if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  // Browsers sometimes don't trigger autofocus when elements are added via innerHTML.
+  const autoFocusEl = el.querySelector('[autofocus]');
+  if (autoFocusEl) {
+    // A small timeout ensures the element is rendered and can receive focus.
+    setTimeout(() => autoFocusEl.focus(), 10);
+  }
 }
 
 function closeModal() {
@@ -726,7 +733,7 @@ function openCardModal(catId, bmId) {
           <input type="hidden" name="iconValue" value="${esc(iVal)}">
 
           <div id="icon-panel-lucide" class="icon-panel ${iType!=='lucide'?'hidden':''}">
-            <input type="text" class="form-input" style="margin-bottom:6px" placeholder="Search icons…" oninput="filterIcons(this.value)">
+            <input type="text" aria-label="Search icons" class="form-input" style="margin-bottom:6px" placeholder="Search icons…" oninput="filterIcons(this.value)">
             <div class="icon-grid" id="icon-grid">${iconGrid}</div>
           </div>
           <div id="icon-panel-favicon" class="icon-panel ${iType!=='favicon'?'hidden':''}">
@@ -809,7 +816,7 @@ function openCategoryModal(catId) {
         </div>
 
         <div class="form-section">Icon</div>
-        <input type="text" class="form-input" style="margin-bottom:8px"
+        <input type="text" aria-label="Search icons" class="form-input" style="margin-bottom:8px"
           placeholder="Search icons…" oninput="filterIcons(this.value)">
         <div class="icon-grid" id="icon-grid">${iconGrid}</div>
         <input type="hidden" name="icon" value="${cIcon}">
