@@ -640,28 +640,28 @@ function openCardModal(catId, bmId) {
     <div class="modal-body">
       <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
         <div class="form-row">
-          <label>Title *</label>
-          <input type="text" name="title" class="form-input" required
+          <label for="bm-title">Title *</label>
+          <input id="bm-title" type="text" name="title" class="form-input" required
             value="${esc(bm?.title||'')}" placeholder="My Bookmark">
         </div>
         <div class="form-row">
-          <label>URL *</label>
-          <input type="text" name="url" class="form-input" required
+          <label for="bm-url">URL *</label>
+          <input id="bm-url" type="text" name="url" class="form-input" required
             value="${esc(bm?.url||'')}" placeholder="https://… or file:/// or vscode://…">
         </div>
         <div class="form-row">
-          <label>Description</label>
-          <textarea name="description" class="form-input form-textarea"
+          <label for="bm-desc">Description</label>
+          <textarea id="bm-desc" name="description" class="form-input form-textarea"
             placeholder="Optional notes…">${esc(bm?.description||'')}</textarea>
         </div>
         <div class="form-row">
-          <label>Tags <span class="hint-inline">(comma-separated)</span></label>
-          <input type="text" name="tags" class="form-input"
+          <label for="bm-tags">Tags <span class="hint-inline">(comma-separated)</span></label>
+          <input id="bm-tags" type="text" name="tags" class="form-input"
             value="${esc((bm?.tags||[]).join(', '))}" placeholder="dev, work, tools">
         </div>
         <div class="form-row">
-          <label>Category</label>
-          <select name="categoryId" class="form-input">${catOptions}</select>
+          <label for="bm-category">Category</label>
+          <select id="bm-category" name="categoryId" class="form-input">${catOptions}</select>
         </div>
 
         <div class="form-section">Icon</div>
@@ -753,8 +753,8 @@ function openCategoryModal(catId) {
     <div class="modal-body">
       <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
         <div class="form-row">
-          <label>Name *</label>
-          <input type="text" name="name" class="form-input" required
+          <label for="cat-name">Name *</label>
+          <input id="cat-name" type="text" name="name" class="form-input" required
             value="${esc(cat?.name||'')}" placeholder="Dev Tools">
         </div>
 
