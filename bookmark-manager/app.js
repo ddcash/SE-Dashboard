@@ -412,10 +412,10 @@ function renderCard(bm, cat, dimmed) {
     ? `<span class="hidden-badge"><i data-lucide="EyeOff" style="width:9px;height:9px"></i> hidden</span>`
     : '';
   const hideBtn = hidden
-    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks','${bm.id}')">
+    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" data-bmid="${esc(bm.id)}" onclick="unhideItem('bookmarks', this.dataset.bmid)">
          <i data-lucide="Eye" style="width:12px;height:12px"></i>
        </button>`
-    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks','${bm.id}')">
+    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" data-bmid="${esc(bm.id)}" onclick="hideItem('bookmarks', this.dataset.bmid)">
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
@@ -430,7 +430,7 @@ function renderCard(bm, cat, dimmed) {
         <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
       </div>
       <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
-         onclick="trackClick(event,'${bm.id}','${catId}')">
+         data-bmid="${esc(bm.id)}" data-catid="${esc(catId)}" onclick="trackClick(event, this.dataset.bmid, this.dataset.catid)">
         <div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
         <div class="card-body">
           <div class="card-title">${esc(bm.title)}</div>
@@ -439,7 +439,7 @@ function renderCard(bm, cat, dimmed) {
         </div>
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" data-bmid="${esc(bm.id)}" data-catid="${esc(catId)}" onclick="openCardModal(this.dataset.catid, this.dataset.bmid)">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
         ${hideBtn}
@@ -557,7 +557,7 @@ function renderDashboard() {
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}"
-        onclick="setActiveCat('${cat.id}')" title="${esc(cat.name)}">
+        data-catid="${esc(cat.id)}" onclick="setActiveCat(this.dataset.catid)" title="${esc(cat.name)}">
         ${renderIcon({ type:'lucide', value: cat.icon||'Folder' }, 12)}
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
@@ -681,7 +681,7 @@ function openCardModal(catId, bmId) {
     </button>`).join('');
 
   const catOptions = S.data.categories.map(c =>
-    `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+    `<option value="${esc(c.id)}" ${c.id === catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
   openModal(`
     <div class="modal-header">
@@ -689,7 +689,7 @@ function openCardModal(catId, bmId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
+      <form id="card-form" data-catid="${esc(catId)}" data-bmid="${esc(bmId||'')}" onsubmit="submitCard(event, this.dataset.catid, this.dataset.bmid)">
         <div class="form-row">
           <label for="bm-title">Title *</label>
           <input id="bm-title" type="text" name="title" class="form-input" required
@@ -766,7 +766,7 @@ function openCardModal(catId, bmId) {
 
         <div class="modal-footer">
           ${bm ? `<button type="button" class="btn ${bmHidden ? 'btn--primary' : 'btn--ghost'}"
-            onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks','${bmId}');closeModal()">
+            data-bmid="${esc(bmId)}" onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks', this.dataset.bmid);closeModal()">
             <i data-lucide="${bmHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${bmHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
@@ -802,7 +802,7 @@ function openCategoryModal(catId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
+      <form id="cat-form" data-catid="${esc(catId||'')}" onsubmit="submitCategory(event, this.dataset.catid)">
         <div class="form-row">
           <label for="cat-name">Name *</label>
           <input id="cat-name" type="text" name="name" class="form-input" required
@@ -821,7 +821,7 @@ function openCategoryModal(catId) {
 
         <div class="modal-footer">
           ${cat ? `<button type="button" class="btn ${catHidden ? 'btn--primary' : 'btn--ghost'}"
-            onclick="${catHidden ? 'unhide' : 'hide'}Item('categories','${catId}');closeModal()">
+            data-catid="${esc(catId)}" onclick="${catHidden ? 'unhide' : 'hide'}Item('categories', this.dataset.catid);closeModal()">
             <i data-lucide="${catHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${catHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
