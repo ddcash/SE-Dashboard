@@ -37,10 +37,9 @@ function sanitizeUrl(url) {
   return u;
 }
 
-// ⚡ Bolt: q is expected to be pre-lowercased by the caller to avoid O(N) redundant allocations in search loops
 function fuzzyMatch(str, q) {
   if (!q) return true;
-  str = str.toLowerCase();
+  str = str.toLowerCase(); q = q.toLowerCase();
   let i = 0;
   for (const ch of q) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
   return true;
@@ -146,16 +145,51 @@ function updateCanvasHeight() {
 // ── Pointer-event drag ───────────────────────────────────────
 let _drag = null;
 
+let _resizeTimeout;
+let _cardResizeObserver;
+
 function initFreeDrag() {
+  if (_cardResizeObserver) _cardResizeObserver.disconnect();
+
+  _cardResizeObserver = new ResizeObserver(entries => {
+    let changed = false;
+    for (const entry of entries) {
+      const card = entry.target;
+      const bmId = card.dataset.id;
+      // If the card was resized explicitly by the user, width/height will be explicitly set in pixels in the style string
+      if (!card.style.width && !card.style.height) continue;
+
+      const w = card.offsetWidth;
+      const h = card.offsetHeight;
+
+      if (!S.cfg.cardPositions[bmId]) continue;
+
+      if (S.cfg.cardPositions[bmId].w !== w || S.cfg.cardPositions[bmId].h !== h) {
+        S.cfg.cardPositions[bmId].w = w;
+        S.cfg.cardPositions[bmId].h = h;
+        changed = true;
+      }
+    }
+    if (changed) {
+      clearTimeout(_resizeTimeout);
+      _resizeTimeout = setTimeout(() => { saveData(); updateCanvasHeight(); }, 500);
+    }
+  });
+
   document.querySelectorAll('#canvas .card').forEach(card => {
     // Remove any previous listener to avoid double-binding after re-render
     card.removeEventListener('pointerdown', onDragStart);
     card.addEventListener('pointerdown', onDragStart, { passive: false });
+    _cardResizeObserver.observe(card);
   });
 }
 
 function onDragStart(e) {
   if (e.button !== 0) return;
+  // Only initiate drag if the user specifically clicks the drag handle.
+  // This ensures CSS resize handles (usually bottom-right) aren't swallowed by drag.
+  if (!e.target.closest('.card-drag-handle')) return;
+
   // Don't drag when interacting with links, buttons, or action overlays
   if (e.target.closest('a, button, .card-actions')) return;
   e.preventDefault();
@@ -398,6 +432,8 @@ function renderCard(bm, cat, dimmed) {
   const inlineStyle = [
     `left:${pos.x}vw`,
     `top:${pos.y}vw`,
+    pos.w ? `width:${pos.w}px` : '',
+    pos.h ? `height:${pos.h}px` : '',
     cs.cardColor && !isBgImage ? `background:${esc(cs.cardColor)}`     : '',
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
     cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}` : '',
@@ -419,10 +455,10 @@ function renderCard(bm, cat, dimmed) {
     ? `<span class="hidden-badge"><i data-lucide="EyeOff" style="width:9px;height:9px"></i> hidden</span>`
     : '';
   const hideBtn = hidden
-    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" data-bmid="${esc(bm.id)}" onclick="unhideItem('bookmarks', this.dataset.bmid)">
+    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks','${bm.id}')">
          <i data-lucide="Eye" style="width:12px;height:12px"></i>
        </button>`
-    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" data-bmid="${esc(bm.id)}" onclick="hideItem('bookmarks', this.dataset.bmid)">
+    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks','${bm.id}')">
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
@@ -447,7 +483,7 @@ function renderCard(bm, cat, dimmed) {
         </div>`}
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" data-bmid="${esc(bm.id)}" data-catid="${esc(catId)}" onclick="openCardModal(this.dataset.catid, this.dataset.bmid)">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
         ${hideBtn}
@@ -458,7 +494,6 @@ function renderCard(bm, cat, dimmed) {
 // Flat list of all visible cards for the canvas layout
 function renderAllCards() {
   const searching = !!S.query;
-  const qLower = searching ? S.query.toLowerCase() : '';
   let html = '';
 
   // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
@@ -475,10 +510,10 @@ function renderAllCards() {
 
       if (searching) {
         const match =
-          fuzzyMatch(bm.title,           qLower) ||
-          fuzzyMatch(bm.url,             qLower) ||
-          fuzzyMatch(bm.description||'', qLower) ||
-          (bm.tags||[]).some(t => fuzzyMatch(t, qLower));
+          fuzzyMatch(bm.title,           S.query) ||
+          fuzzyMatch(bm.url,             S.query) ||
+          fuzzyMatch(bm.description||'', S.query) ||
+          (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
         if (!match) continue;
       }
 
@@ -487,16 +522,6 @@ function renderAllCards() {
       html += renderCard(bm, cat, dimmed);
     }
   }
-
-  if (searching && !html) {
-    return `
-      <div class="empty-state">
-        <i data-lucide="Search" style="width:48px;height:48px"></i>
-        <p>No results found for "<strong>${esc(S.query)}</strong>".</p>
-        <button class="btn btn--ghost" onclick="handleSearch('')">Clear Search</button>
-      </div>`;
-  }
-
   return html;
 }
 
@@ -565,7 +590,7 @@ function renderDashboard() {
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}"
-        data-catid="${esc(cat.id)}" onclick="setActiveCat(this.dataset.catid)" title="${esc(cat.name)}">
+        onclick="setActiveCat('${cat.id}')" title="${esc(cat.name)}">
         ${renderIcon({ type:'lucide', value: cat.icon||'Folder' }, 12)}
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
@@ -689,7 +714,7 @@ function openCardModal(catId, bmId) {
     </button>`).join('');
 
   const catOptions = S.data.categories.map(c =>
-    `<option value="${esc(c.id)}" ${c.id === catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+    `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
   openModal(`
     <div class="modal-header">
@@ -697,7 +722,7 @@ function openCardModal(catId, bmId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="card-form" data-catid="${esc(catId)}" data-bmid="${esc(bmId||'')}" onsubmit="submitCard(event, this.dataset.catid, this.dataset.bmid)">
+      <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
         <div class="form-row">
           <label for="bm-title">Title *</label>
           <input id="bm-title" type="text" name="title" class="form-input" required
@@ -792,7 +817,7 @@ function openCardModal(catId, bmId) {
 
         <div class="modal-footer">
           ${bm ? `<button type="button" class="btn ${bmHidden ? 'btn--primary' : 'btn--ghost'}"
-            data-bmid="${esc(bmId)}" onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks', this.dataset.bmid);closeModal()">
+            onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks','${bmId}');closeModal()">
             <i data-lucide="${bmHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${bmHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
@@ -828,7 +853,7 @@ function openCategoryModal(catId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="cat-form" data-catid="${esc(catId||'')}" onsubmit="submitCategory(event, this.dataset.catid)">
+      <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
         <div class="form-row">
           <label for="cat-name">Name *</label>
           <input id="cat-name" type="text" name="name" class="form-input" required
@@ -847,7 +872,7 @@ function openCategoryModal(catId) {
 
         <div class="modal-footer">
           ${cat ? `<button type="button" class="btn ${catHidden ? 'btn--primary' : 'btn--ghost'}"
-            data-catid="${esc(catId)}" onclick="${catHidden ? 'unhide' : 'hide'}Item('categories', this.dataset.catid);closeModal()">
+            onclick="${catHidden ? 'unhide' : 'hide'}Item('categories','${catId}');closeModal()">
             <i data-lucide="${catHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${catHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
@@ -939,9 +964,8 @@ async function handleIconUpload(input) {
 }
 
 function filterIcons(q) {
-  const qLower = (q || '').toLowerCase();
   document.querySelectorAll('.icon-option').forEach(btn => {
-    btn.style.display = fuzzyMatch(btn.dataset.icon, qLower) ? '' : 'none';
+    btn.style.display = fuzzyMatch(btn.dataset.icon, q) ? '' : 'none';
   });
 }
 
@@ -1237,7 +1261,6 @@ function closePalette() {
 }
 
 function updatePalette(q) {
-  const qLower = (q || '').toLowerCase();
   const CMDS = [
     { label: 'New Category',      icon: 'FolderPlus', fn: () => { closePalette(); openCategoryModal(null); } },
     { label: 'Import Bookmarks',  icon: 'Upload',     fn: () => { closePalette(); openImportModal(); } },
@@ -1245,14 +1268,14 @@ function updatePalette(q) {
     { label: 'Reconnect Directory', icon: 'FolderOpen', fn: () => { closePalette(); handleConnect(); } },
   ];
 
-  const matchCmds = CMDS.filter(c => fuzzyMatch(c.label, qLower));
+  const matchCmds = CMDS.filter(c => fuzzyMatch(c.label, q));
   const matchBms  = [];
 
   if (q) {
     outer:
     for (const cat of S.data.categories) {
       for (const bm of cat.bookmarks) {
-        if (fuzzyMatch(bm.title, qLower) || fuzzyMatch(bm.url, qLower) || (bm.tags||[]).some(t => fuzzyMatch(t, qLower))) {
+        if (fuzzyMatch(bm.title, q) || fuzzyMatch(bm.url, q) || (bm.tags||[]).some(t => fuzzyMatch(t, q))) {
           matchBms.push({ bm, cat });
           if (matchBms.length >= 8) break outer;
         }
