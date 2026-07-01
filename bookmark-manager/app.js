@@ -82,7 +82,7 @@ function setActiveCat(id) {
 }
 
 function openNewBookmarkModal() {
-  const cats = S.data.categories;
+  const cats = S.data.categories || [];
   if (!cats.length) { showToast('Create a category first.'); openCategoryModal(null); return; }
   openCardModal(S.activeCat || cats[0].id, null);
 }
@@ -97,6 +97,8 @@ function resetLayout() {
 // Called after loadData and after every render (idempotent — only acts on new cards).
 function autoArrangeCards() {
   if (!S.cfg.cardPositions) S.cfg.cardPositions = {};
+  const cats = S.data.categories || [];
+  if (!cats.length) return;
   const vw       = window.innerWidth || 1200;
   const { cardWidth: CARD_W, cardHeight: CARD_H, gap: GAP, padding: PAD } = APP_CONFIG.canvas;
   const cols     = Math.max(1, Math.floor((vw - PAD * 2) / (CARD_W + GAP)));
@@ -106,7 +108,7 @@ function autoArrangeCards() {
 
   // Flatten and sort bookmarks so hidden items come last
   const allBms = [];
-  for (const cat of S.data.categories) {
+  for (const cat of cats) {
     for (const bm of cat.bookmarks) {
       allBms.push(bm);
     }
@@ -520,7 +522,10 @@ function mergeData() {
   }
 
   // Ensure view has all master and user categories
-  S.data = Array.from(dataMap.values()).map(cat => ({ ...cat, bookmarks: cat.bookmarks.slice() }));
+  S.data = {
+    version: S.masterData.version || 1,
+    categories: Array.from(dataMap.values()).map(cat => ({ ...cat, bookmarks: cat.bookmarks.slice() })),
+  };
 }
 
 async function restoreSavedMasterHandle() {
@@ -618,6 +623,11 @@ async function loadData() {
   } else {
     S.masterData = DEFAULT_DATA;
   }
+
+  if (!Array.isArray(S.masterData.categories)) {
+    S.masterData.categories = [];
+  }
+
   mergeData();
   // Record mtime so pollChanges() can detect external edits
   try {
