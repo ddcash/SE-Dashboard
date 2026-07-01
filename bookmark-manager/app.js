@@ -715,8 +715,8 @@ async function loadData() {
   if (!S.cfg.themeSettings) S.cfg.themeSettings = {
     themeMode: 'dark',
     accentColor: '#89b4fa',
-    bgType: 'gradient',
-    bgSolid: '#090910',
+    bgType: 'solid',
+    bgSolid: '#000000',
     bgColor1: '#0b1021',
     bgColor2: '#111827',
     bgAngle: '140',
@@ -1030,8 +1030,8 @@ function populateSettingsModal() {
   document.getElementById('settings-show-category-badge').checked = s.showCategoryBadge !== false;
   document.getElementById('settings-card-opacity').value = s.cardOpacity || '0.96';
   document.getElementById('settings-card-opacity-value').textContent = `${Math.round((s.cardOpacity || 0.96) * 100)}%`;
-  document.getElementById('settings-bg-type').value = s.bgType || 'gradient';
-  document.getElementById('settings-bg-solid').value = s.bgSolid || '#090910';
+  document.getElementById('settings-bg-type').value = s.bgType || 'solid';
+  document.getElementById('settings-bg-solid').value = s.bgSolid || '#000000';
   document.getElementById('settings-bg-color1').value = s.bgColor1 || '#090910';
   document.getElementById('settings-bg-color2').value = s.bgColor2 || '#0e0e1a';
   document.getElementById('settings-bg-angle').value = s.bgAngle || '135';
@@ -1093,8 +1093,8 @@ function resetThemeSettings() {
   S.cfg.themeSettings = {
     themeMode: 'dark',
     accentColor: '#89b4fa',
-    bgType: 'gradient',
-    bgSolid: '#090910',
+    bgType: 'solid',
+    bgSolid: '#000000',
     bgColor1: '#0b1021',
     bgColor2: '#111827',
     bgAngle: '140',
@@ -1208,13 +1208,13 @@ function openSettingsModal() {
           <h3>Background</h3>
           <label>Background Type</label>
           <select id="settings-bg-type" class="form-input" onchange="toggleBgOptions()">
-            <option value="gradient">Gradient</option>
             <option value="solid">Solid</option>
+            <option value="gradient">Gradient</option>
             <option value="image">Image</option>
           </select>
           <div id="bg-solid-options" class="bg-options">
             <label>Solid Color</label>
-            <input type="color" id="settings-bg-solid" class="form-input" value="#090910">
+            <input type="color" id="settings-bg-solid" class="form-input" value="#000000">
           </div>
           <div id="bg-gradient-options" class="bg-options">
             <label>Gradient Color 1</label>
