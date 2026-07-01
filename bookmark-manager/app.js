@@ -98,17 +98,19 @@ function autoArrangeCards() {
   const { cardWidth: CARD_W, cardHeight: CARD_H, gap: GAP, padding: PAD } = APP_CONFIG.canvas;
   const cols     = Math.max(1, Math.floor((vw - PAD * 2) / (CARD_W + GAP)));
   const toVw     = px => px / vw * 100;
-  let col = 0, row = 0, changed = false;
+  let count = Object.keys(S.cfg.cardPositions).length;
+  let changed = false;
 
   for (const cat of S.data.categories) {
     for (const bm of cat.bookmarks) {
       if (!(bm.id in S.cfg.cardPositions)) {
+        const col = count % cols;
+        const row = Math.floor(count / cols);
         S.cfg.cardPositions[bm.id] = {
           x: toVw(PAD + col * (CARD_W + GAP)),
           y: toVw(PAD + row * (CARD_H + GAP)),
         };
-        col++;
-        if (col >= cols) { col = 0; row++; }
+        count++;
         changed = true;
       }
     }
@@ -389,15 +391,19 @@ function renderCard(bm, cat, dimmed) {
   const cs     = bm.customStyle || {};
   const pos    = S.cfg.cardPositions?.[bm.id] || { x: 0, y: 0 };
 
+  const isBgImage = cs.bgImage && (bm.icon?.type === 'url' || bm.icon?.type === 'local');
+  const bgImgSrc = isBgImage ? (bm.icon.type === 'url' ? esc(bm.icon.value) : S.assetUrls[bm.icon.value]) : null;
+
   const inlineStyle = [
     `left:${pos.x}vw`,
     `top:${pos.y}vw`,
-    cs.cardColor   ? `background:${esc(cs.cardColor)}`     : '',
+    cs.cardColor && !isBgImage ? `background:${esc(cs.cardColor)}`     : '',
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
+    cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}` : '',
+    cs.textSize && !cs.hideText ? `font-size:${esc(cs.textSize)}` : '',
   ].filter(Boolean).join(';');
 
-  const cat        = S.data.categories.find(c => c.id === catId);
-  const catColor   = esc(cat?.color || '#6366f1');
+    const catColor   = esc(cat?.color || '#6366f1');
   const catBadge   = `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
                       </span>`;
@@ -431,12 +437,13 @@ function renderCard(bm, cat, dimmed) {
       </div>
       <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
          onclick="trackClick(event,'${bm.id}','${catId}')">
-        <div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
+        ${bgImgSrc ? `<img src="${bgImgSrc}" class="card-bg-image">` : ''}
+        ${cs.hideText ? '' : `<div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
         <div class="card-body">
           <div class="card-title">${esc(bm.title)}</div>
           ${bm.description ? `<div class="card-desc">${esc(bm.description)}</div>` : ''}
           <div class="card-meta">${catBadge}${protoTag}${tags}${hiddenBadge}${clicks}</div>
-        </div>
+        </div>`}
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
         <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
@@ -752,6 +759,24 @@ function openCardModal(catId, bmId) {
               style="display:${cs.borderColor?'':'none'};margin-top:6px">
           </div>
         </div>
+        <div class="form-row form-row--cols" id="bg-image-options" style="display:${iType==='url' || iType==='local'?'flex':'none'}">
+          <div style="flex:1">
+            <label><input type="checkbox" name="useBgImage" ${cs.bgImage?'checked':''}> Use image as background</label>
+          </div>
+          <div style="flex:1">
+            <label><input type="checkbox" name="hideText" ${cs.hideText?'checked':''}> Hide text overlay</label>
+            <div style="margin-top:6px">
+              <label>Color: <input type="color" name="textColor" value="${cs.textColor||'#ffffff'}" class="color-input"></label>
+              <label style="margin-left:8px">Size:
+                <select name="textSize" class="form-input" style="display:inline-block; width:auto; padding:2px; min-height:auto;">
+                  <option value="" ${!cs.textSize?'selected':''}>Normal</option>
+                  <option value="1.2em" ${cs.textSize==='1.2em'?'selected':''}>Large</option>
+                  <option value="1.5em" ${cs.textSize==='1.5em'?'selected':''}>X-Large</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
 
         <div class="modal-footer">
           ${bm ? `<button type="button" class="btn ${bmHidden ? 'btn--primary' : 'btn--ghost'}"
@@ -938,6 +963,12 @@ async function submitCard(e, catId, bmId) {
   const cs = {};
   if (fd.get('useCardColor'))   cs.cardColor   = fd.get('cardColor');
   if (fd.get('useBorderColor')) cs.borderColor = fd.get('borderColor');
+  if (fd.get('useBgImage')) {
+    cs.bgImage = true;
+    cs.textColor = fd.get('textColor');
+    cs.textSize = fd.get('textSize');
+    cs.hideText = fd.get('hideText') === 'on';
+  }
 
   const srcCat = S.data.categories.find(c => c.id === catId);
   if (!srcCat) return;
@@ -1313,6 +1344,12 @@ document.addEventListener('pointercancel', () => {
   if (!_drag) return;
   _drag.el.classList.remove('card--dragging');
   document.body.style.userSelect = '';
+  // Native drag on links causes pointercancel. Treat as a drop if moved.
+  if (_drag.moved) {
+    S.cfg.cardPositions[_drag.bmId] = { x: _drag.curX, y: _drag.curY };
+    saveData();
+    updateCanvasHeight();
+  }
   _drag = null;
 });
 
