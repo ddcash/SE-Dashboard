@@ -829,7 +829,7 @@ function openCardModal(catId, bmId) {
 
         <div class="modal-footer">
           ${bm ? `<button type="button" class="btn ${bmHidden ? 'btn--primary' : 'btn--ghost'}"
-            onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks','${bmId}');closeModal()">
+            data-bmid="${esc(bmId)}" onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks', this.dataset.bmid);closeModal()">
             <i data-lucide="${bmHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${bmHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
