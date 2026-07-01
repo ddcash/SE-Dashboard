@@ -1630,7 +1630,7 @@ function renderDashboard() {
         </button>
         <button class="btn btn--primary" onclick="openNewBookmarkModal()" title="Add bookmark">
           <i data-lucide="Plus" style="width:13px;height:13px"></i>
-          <span>+ Bookmark</span>
+          <span>Bookmark</span>
         </button>
       </div>
     </header>
