@@ -1,3 +1,6 @@
 ## 2025-06-30 - Inefficient lookups in innerHTML render loops
 **Learning:** Because this vanilla JS app reconstructs the DOM using `innerHTML` string concatenation on every search keystroke, any inefficient array lookups (like `.find()`) inside the tight render loop multiply dramatically. High frequency handlers (like `pointermove` for dragging) must also strictly avoid array-creation methods like `Object.entries`.
 **Action:** Always check the time complexity of functions called inside `render()`, especially list-rendering functions. Pass known reference objects down directly instead of making child functions do lookups by ID. Keep `pointermove` paths lean by using simple `for...in` loops.
+## 2025-07-01 - Redundant string manipulations in inner loops
+**Learning:** Performing string transformations like `.toLowerCase()` inside utility functions (e.g., `fuzzyMatch`) that are called repeatedly inside tight loops (like search rendering or command palette filtering) causes massive redundant object allocations and CPU cycles. For 1,000 items, `fuzzyMatch` could be called 4,000 times, doing `.toLowerCase()` on the exact same search query 4,000 times.
+**Action:** Always pre-calculate invariant data (like lowercasing the search query) outside of loops and pass the processed value into utility functions.
