@@ -1202,10 +1202,6 @@ function renderDashboard() {
           <i data-lucide="FileText" style="width:13px;height:13px"></i>
           <span>Master File</span>
         </button>
-        <button class="btn btn--ghost" onclick="openMasterEditorModal()" title="Edit shared master bookmarks">
-          <i data-lucide="Edit3" style="width:13px;height:13px"></i>
-          <span>Master Editor</span>
-        </button>
         <button class="btn btn--ghost" onclick="resetLayout()" title="Reset card positions">
           <i data-lucide="LayoutGrid" style="width:13px;height:13px"></i>
           <span>Reset Layout</span>
@@ -1284,6 +1280,7 @@ function openCardModal(catId, bmId) {
       <i data-lucide="${n}" style="width:16px;height:16px"></i>
     </button>`).join('');
 
+  const localAssets = Object.keys(S.assetUrls || {});
   const catOptions = S.data.categories.map(c =>
     `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
@@ -1351,7 +1348,26 @@ function openCardModal(catId, bmId) {
               oninput="setIconValue(this.value)">
           </div>
           <div id="icon-panel-local" class="icon-panel ${iType!=='local'?'hidden':''}">
-            <input type="file" class="form-input" accept="image/*" onchange="handleIconUpload(this)">
+            <div class="form-row">
+              <input type="file" class="form-input" accept="image/*" onchange="handleIconUpload(this)">
+            </div>
+            <div class="form-row">
+              <label for="local-asset-purpose">Use uploaded asset as</label>
+              <select id="local-asset-purpose" name="localAssetPurpose" class="form-input" onchange="setIconPurpose(this.value)">
+                <option value="icon" ${iType==='local' && !cs.bgImage ? 'selected' : ''}>Icon</option>
+                <option value="background" ${iType==='local' && cs.bgImage ? 'selected' : ''}>Background Image</option>
+              </select>
+            </div>
+            ${Object.keys(S.assetUrls || {}).length ? `
+            <div class="asset-gallery">
+              ${Object.entries(S.assetUrls).map(([name, url]) => `
+                <button type="button" class="asset-thumb ${iType==='local' && iVal===name ? 'selected' : ''}"
+                  onclick="selectLocalAsset('${name}')">
+                  <img src="${url}" alt="Asset" />
+                </button>
+              `).join('')}
+            </div>
+            ` : '<p class="hint-text">Upload an image to use it here.</p>'}
             ${iType==='local' && S.assetUrls[iVal]
               ? `<img src="${S.assetUrls[iVal]}" class="icon-preview-img">` : ''}
           </div>
@@ -1528,9 +1544,42 @@ function switchIconTab(el, type) {
 }
 
 function setIconValue(val) {
-  document.getElementById('card-form')?.querySelector('[name="iconValue"]')?.setAttribute('value', val);
   const f = document.getElementById('card-form');
-  if (f) f.querySelector('[name="iconValue"]').value = val;
+  if (!f) return;
+  const input = f.querySelector('[name="iconValue"]');
+  if (input) {
+    input.setAttribute('value', val);
+    input.value = val;
+  }
+}
+
+function setIconPurpose(value) {
+  const f = document.getElementById('card-form');
+  if (!f) return;
+  const bgToggle = f.querySelector('[name="useBgImage"]');
+  const purposeSelect = document.getElementById('local-asset-purpose');
+  if (purposeSelect) purposeSelect.value = value;
+  if (bgToggle) {
+    if (value === 'background') {
+      bgToggle.checked = true;
+      const bgOptions = document.getElementById('bg-image-options');
+      if (bgOptions) bgOptions.style.display = 'flex';
+    } else {
+      bgToggle.checked = false;
+      const bgOptions = document.getElementById('bg-image-options');
+      if (bgOptions) bgOptions.style.display = 'none';
+    }
+  }
+}
+
+function selectLocalAsset(name) {
+  setIconValue(name);
+  const panel = document.getElementById('icon-panel-local');
+  panel?.querySelectorAll('.asset-thumb').forEach(btn => btn.classList.remove('selected'));
+  const selected = panel?.querySelector(`.asset-thumb[onclick="selectLocalAsset('${name}')"]`);
+  if (selected) selected.classList.add('selected');
+  const form = document.getElementById('card-form');
+  if (form) form.querySelector('[name="iconType"]').value = 'local';
 }
 
 async function handleIconUpload(input) {
@@ -1538,11 +1587,12 @@ async function handleIconUpload(input) {
   if (!S.dir) { alert('Connect a directory first.'); return; }
   try {
     const name = await saveAsset(input.files[0]);
-    setIconValue(name);
+    selectLocalAsset(name);
     const panel = document.getElementById('icon-panel-local');
     let img = panel?.querySelector('.icon-preview-img');
     if (!img) { img = document.createElement('img'); img.className = 'icon-preview-img'; panel?.appendChild(img); }
     img.src = S.assetUrls[name];
+    setIconPurpose(document.getElementById('local-asset-purpose')?.value || 'icon');
   } catch (e) { showToast('Upload failed: ' + e.message); }
 }
 
