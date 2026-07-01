@@ -345,7 +345,7 @@ async function loadMasterData() {
   if (S.cfg.masterFileUrl) {
     try {
       const res = await fetch(S.cfg.masterFileUrl);
-      if (res.ok) {
+      if (res.ok || res.status === 0) {
         bm = await res.json();
         return bm;
       }
@@ -461,28 +461,45 @@ async function selectDefaultMasterFile() {
   }
 }
 
+async function saveMasterAssetsUrl() {
+  const urlInput = document.getElementById('master-assets-url-input');
+  if (!urlInput || !urlInput.value) return;
+  const url = urlInput.value.trim();
+
+  S.cfg.masterAssetsUrl = url;
+  S.masterAssetsHandle = null;
+  S.pendingMasterAssetsHandle = null;
+  await idbSet('masterAssetsHandle', null);
+  await writeJSON(APP_CONFIG.files.settings, S.cfg);
+
+  await loadAssets();
+  render();
+  showToast('Master assets location updated.');
+}
+
 async function saveMasterUrl() {
   const urlInput = document.getElementById('master-url-input');
   if (!urlInput || !urlInput.value) return;
+  const url = urlInput.value.trim();
+
+  S.cfg.masterFileUrl = url;
+  S.cfg.masterPrompted = true;
+  S.masterHandle = null;
+  S.masterFileName = '';
+  S.pendingMasterHandle = null;
+  await idbSet('masterHandle', null);
+  await writeJSON(APP_CONFIG.files.settings, S.cfg);
+
   try {
-    const url = urlInput.value.trim();
-    new URL(url); // validate url format
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
+    if (!res.ok && res.status !== 0) throw new Error('Network response was not ok');
     const bm = await res.json();
-    S.cfg.masterFileUrl = url;
-    S.masterHandle = null;
-    S.masterFileName = '';
-    S.pendingMasterHandle = null;
-    await idbSet('masterHandle', null);
     S.masterData = bm;
-    S.cfg.masterPrompted = true;
-    await writeJSON(APP_CONFIG.files.settings, S.cfg);
     mergeData();
     render();
-    showToast('Master file loaded from URL (read-only).');
+    showToast('Master file location updated.');
   } catch (err) {
-    showToast('Failed to load master file from URL: ' + err.message);
+    showToast('Location saved, but could not load it yet: ' + err.message);
   }
 }
 
@@ -506,15 +523,19 @@ function openMasterFileModal() {
         </button>
       </div>
       <div style="margin-top:18px; display:flex; gap:10px;">
-        <input type="url" id="master-url-input" class="form-input" placeholder="https://.../master_bookmarks.json" style="flex:1;">
-        <button class="btn btn--primary" onclick="saveMasterUrl(); closeModal();">Load from URL</button>
+        <input type="text" id="master-url-input" class="form-input" placeholder="https://... or C:\... or /mnt/..." style="flex:1;">
+        <button class="btn btn--primary" onclick="saveMasterUrl(); closeModal();">Load from URL/Path</button>
       </div>
       <div style="margin-top:18px;">
         <p class="hint-text">If your shared master file lives alongside a shared <code>assets/</code> folder, select that folder here so the app can load shared icons and images.</p>
-        <button class="btn btn--ghost" onclick="selectMasterAssetsFolder(); closeModal();">
-          <i data-lucide="Image" style="width:13px;height:13px"></i>
-          Select Master Assets Folder
-        </button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn--ghost" onclick="selectMasterAssetsFolder(); closeModal();" style="flex-shrink:0;">
+            <i data-lucide="FolderSearch" style="width:13px;height:13px"></i>
+            Select Folder
+          </button>
+          <input type="text" id="master-assets-url-input" class="form-input" placeholder="https://.../assets or C:\...\assets" style="flex:1;">
+          <button class="btn btn--primary" onclick="saveMasterAssetsUrl(); closeModal();">Set URL/Path</button>
+        </div>
       </div>
     </div>`);
 }
@@ -1410,7 +1431,8 @@ function renderIcon(icon, size = 16) {
     return `<img src="${esc(icon.value)}" class="card-favicon" loading="lazy" onerror="${fb}">`;
   }
   if (icon.type === 'local') {
-    const url = S.assetUrls[icon.value];
+    let url = S.assetUrls[icon.value];
+    if (!url && S.cfg.masterAssetsUrl) url = S.cfg.masterAssetsUrl + '/' + icon.value;
     if (url) {
       const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Image\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
       return `<img src="${url}" class="card-favicon" loading="lazy" onerror="${fb}">`;
@@ -1430,7 +1452,15 @@ function renderCard(bm, cat, dimmed) {
 
   const hideCatBadge = cs.hideCategoryBadge || (S.cfg.themeSettings?.showCategoryBadge === false);
   const isBgImage = cs.bgImage && (bm.icon?.type === 'url' || bm.icon?.type === 'local');
-  const bgImgSrc = isBgImage ? (bm.icon.type === 'url' ? esc(bm.icon.value) : S.assetUrls[bm.icon.value]) : null;
+  let bgImgSrc = null;
+  if (isBgImage) {
+    if (bm.icon.type === 'url') {
+      bgImgSrc = esc(bm.icon.value);
+    } else {
+      bgImgSrc = S.assetUrls[bm.icon.value];
+      if (!bgImgSrc && S.cfg.masterAssetsUrl) bgImgSrc = S.cfg.masterAssetsUrl + '/' + bm.icon.value;
+    }
+  }
 
   const cardOpacity = cs.cardOpacity !== undefined ? cs.cardOpacity : (S.cfg.themeSettings?.cardOpacity || 1);
   const cardTextScale = cs.textSize ? parseFloat(cs.textSize) : 1;
@@ -1658,7 +1688,7 @@ function renderDashboard() {
           <i data-lucide="FolderOpen" style="width:11px;height:11px"></i>
           <span>${esc(S.dir.name)}</span>
         </div>
-        ${S.masterAssetsHandle ? `<div class="dir-badge" title="Master assets folder loaded">
+        ${(S.masterAssetsHandle || S.cfg.masterAssetsUrl) ? `<div class="dir-badge" title="Master assets loaded">
           <i data-lucide="Image" style="width:11px;height:11px"></i>
           <span>Master assets</span>
         </div>` : ''}
@@ -1855,8 +1885,8 @@ function openCardModal(catId, bmId) {
               `).join('')}
             </div>
             ` : '<p class="hint-text">Upload an image to use it here.</p>'}
-            ${iType==='local' && S.assetUrls[iVal]
-              ? `<img src="${S.assetUrls[iVal]}" class="icon-preview-img">` : ''}
+            ${iType==='local' && (S.assetUrls[iVal] || S.cfg.masterAssetsUrl)
+              ? `<img src="${S.assetUrls[iVal] || (S.cfg.masterAssetsUrl + '/' + iVal)}" class="icon-preview-img">` : ''}
           </div>
         </div>
 
