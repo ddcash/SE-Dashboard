@@ -370,8 +370,8 @@ async function selectMasterFile() {
       mergeData();
       showToast(`Master file loaded: ${handle.name}`);
     } else {
-      await writeMasterJSON(S.data);
-      S.masterData = S.data;
+      await writeMasterJSON(DEFAULT_DATA);
+      S.masterData = DEFAULT_DATA;
       mergeData();
       showToast(`Created master file: ${handle.name}`);
     }
@@ -396,8 +396,8 @@ async function selectDefaultMasterFile() {
       mergeData();
       showToast('Using local master_bookmarks.json file.');
     } else {
-      await writeMasterJSON(S.data);
-      S.masterData = S.data;
+      await writeMasterJSON(DEFAULT_DATA);
+      S.masterData = DEFAULT_DATA;
       mergeData();
       showToast('Created master_bookmarks.json in the current directory.');
     }
@@ -613,10 +613,10 @@ async function loadData() {
   if (bm) {
     S.masterData = bm;
   } else if (S.cfg.masterPrompted) {
-    await writeMasterJSON(S.data);
-    S.masterData = S.data;
+    await writeMasterJSON(DEFAULT_DATA);
+    S.masterData = DEFAULT_DATA;
   } else {
-    S.masterData = { version: 1, categories: [] };
+    S.masterData = DEFAULT_DATA;
   }
   mergeData();
   // Record mtime so pollChanges() can detect external edits
@@ -947,7 +947,15 @@ function renderDashboard() {
       </button>`;
   }).join('');
 
+  const masterBanner = (!S.masterHandle && !S.cfg.masterPrompted)
+    ? `<div class="master-banner">
+         <p><strong>Master file not configured.</strong> Select or create a shared master file to get started.</p>
+         <button class="btn btn--ghost" onclick="openMasterFileModal()">Configure Master File</button>
+       </div>`
+    : '';
+
   return `
+    ${masterBanner}
     <header class="app-header">
       <div class="header-left">
         <div class="app-logo">
