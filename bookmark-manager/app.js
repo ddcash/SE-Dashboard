@@ -1586,10 +1586,6 @@ function renderDashboard() {
           <i data-lucide="Download" style="width:13px;height:13px"></i>
           <span>Export</span>
         </button>
-        <button class="btn btn--ghost" onclick="openMasterFileModal()" title="Select or create a master file">
-          <i data-lucide="FileText" style="width:13px;height:13px"></i>
-          <span>Master File</span>
-        </button>
         <button class="btn btn--ghost" onclick="resetLayout()" title="Reset card positions">
           <i data-lucide="LayoutGrid" style="width:13px;height:13px"></i>
           <span>Reset Layout</span>
@@ -2328,6 +2324,7 @@ function updatePalette(q) {
     { label: 'Import Bookmarks',  icon: 'Upload',     fn: () => { closePalette(); openImportModal(); } },
     { label: 'Export Bookmarks',  icon: 'Download',   fn: () => { closePalette(); exportData(); } },
     { label: 'Edit Master Bookmarks', icon: 'Edit3', fn: () => { closePalette(); openMasterEditorModal(); } },
+    { label: 'Configure Master File', icon: 'FileText', fn: () => { closePalette(); openMasterFileModal(); } },
     { label: 'Reconnect Directory', icon: 'FolderOpen', fn: () => { closePalette(); handleConnect(); } },
   ];
 
