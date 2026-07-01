@@ -717,13 +717,14 @@ async function loadData() {
     accentColor: '#89b4fa',
     bgType: 'gradient',
     bgSolid: '#090910',
-    bgColor1: '#090910',
-    bgColor2: '#0e0e1a',
-    bgAngle: '135',
+    bgColor1: '#0b1021',
+    bgColor2: '#111827',
+    bgAngle: '140',
     bgImageUrl: '',
     bgImageLocal: '',
-    bgOverlay: '0.16',
-    cardRadius: '12',
+    bgOverlay: '0.18',
+    cardOpacity: '0.96',
+    cardRadius: '14',
     cardShadow: 'medium',
     showCategoryBadge: true,
     fontScale: '1',
@@ -1027,6 +1028,8 @@ function populateSettingsModal() {
   document.getElementById('settings-font-scale').value = s.fontScale || '1';
   document.getElementById('settings-font-scale-value').textContent = `${Math.round((s.fontScale || 1) * 100)}%`;
   document.getElementById('settings-show-category-badge').checked = s.showCategoryBadge !== false;
+  document.getElementById('settings-card-opacity').value = s.cardOpacity || '0.96';
+  document.getElementById('settings-card-opacity-value').textContent = `${Math.round((s.cardOpacity || 0.96) * 100)}%`;
   document.getElementById('settings-bg-type').value = s.bgType || 'gradient';
   document.getElementById('settings-bg-solid').value = s.bgSolid || '#090910';
   document.getElementById('settings-bg-color1').value = s.bgColor1 || '#090910';
@@ -1064,6 +1067,7 @@ function saveSettings() {
   s.themeMode = document.getElementById('settings-theme-mode')?.value || 'dark';
   s.accentColor = document.getElementById('settings-accent-color')?.value || '#89b4fa';
   s.fontScale = document.getElementById('settings-font-scale')?.value || '1';
+  s.cardOpacity = document.getElementById('settings-card-opacity')?.value || '0.96';
   s.showCategoryBadge = document.getElementById('settings-show-category-badge')?.checked;
   s.bgType = document.getElementById('settings-bg-type')?.value || 'gradient';
   s.bgSolid = document.getElementById('settings-bg-solid')?.value || '#090910';
@@ -1091,13 +1095,14 @@ function resetThemeSettings() {
     accentColor: '#89b4fa',
     bgType: 'gradient',
     bgSolid: '#090910',
-    bgColor1: '#090910',
-    bgColor2: '#0e0e1a',
-    bgAngle: '135',
+    bgColor1: '#0b1021',
+    bgColor2: '#111827',
+    bgAngle: '140',
     bgImageUrl: '',
     bgImageLocal: '',
-    bgOverlay: '0.16',
-    cardRadius: '12',
+    bgOverlay: '0.18',
+    cardOpacity: '0.96',
+    cardRadius: '14',
     cardShadow: 'medium',
     showCategoryBadge: true,
     fontScale: '1',
@@ -1110,6 +1115,7 @@ function applyThemeSettings() {
   const s = S.cfg.themeSettings || {};
   const root = document.documentElement;
   root.style.setProperty('--accent', s.accentColor || '#89b4fa');
+  root.style.setProperty('--card-opacity', s.cardOpacity || '1');
   root.style.setProperty('--card-radius', `${s.cardRadius || 12}px`);
   const shadowMap = {
     none: 'none',
@@ -1194,6 +1200,9 @@ function openSettingsModal() {
           <input type="range" id="settings-font-scale" class="form-input" min="0.8" max="1.4" step="0.05" value="1" oninput="document.getElementById('settings-font-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-font-scale-value">100%</span></div>
           <label><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
+          <label>Card Opacity</label>
+          <input type="range" id="settings-card-opacity" class="form-input" min="0.4" max="1" step="0.02" value="0.96" oninput="document.getElementById('settings-card-opacity-value').textContent = Math.round(this.value*100) + '%'">
+          <div class="settings-helper"><span id="settings-card-opacity-value">96%</span></div>
         </section>
         <section class="settings-section">
           <h3>Background</h3>
@@ -1357,11 +1366,13 @@ function renderCard(bm, cat, dimmed) {
   const isBgImage = cs.bgImage && (bm.icon?.type === 'url' || bm.icon?.type === 'local');
   const bgImgSrc = isBgImage ? (bm.icon.type === 'url' ? esc(bm.icon.value) : S.assetUrls[bm.icon.value]) : null;
 
+  const cardOpacity = cs.cardOpacity !== undefined ? cs.cardOpacity : (S.cfg.themeSettings?.cardOpacity || 1);
   const inlineStyle = [
     `left:${pos.x}vw`,
     `top:${pos.y}vw`,
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
+    `--card-opacity:${cardOpacity}`,
     cs.cardColor && !isBgImage ? `background:${esc(cs.cardColor)}`     : '',
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
     cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
@@ -1550,10 +1561,6 @@ function renderDashboard() {
           <i data-lucide="FolderOpen" style="width:11px;height:11px"></i>
           <span>${esc(S.dir.name)}</span>
         </div>
-        <div class="dir-badge" title="Master bookmark file">
-          <i data-lucide="FileText" style="width:11px;height:11px"></i>
-          <span>${esc(S.masterFileName || APP_CONFIG.files.master)}</span>
-        </div>
         ${S.masterAssetsHandle ? `<div class="dir-badge" title="Master assets folder loaded">
           <i data-lucide="Image" style="width:11px;height:11px"></i>
           <span>Master assets</span>
@@ -1705,6 +1712,12 @@ function openCardModal(catId, bmId) {
         <div class="form-row">
           <label><input type="checkbox" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
           <p class="hint-text">Keep the card cleaner by hiding the category label.</p>
+        </div>
+        <div class="form-row">
+          <label>Card Opacity <span class="hint-inline">(override)</span></label>
+          <input type="range" id="card-opacity" name="cardOpacity" class="form-input" min="0.4" max="1" step="0.02" value="${cs.cardOpacity||''}" oninput="document.getElementById('card-opacity-value').textContent = this.value ? Math.round(this.value*100)+'%' : 'inherit'">
+          <div class="settings-helper"><span id="card-opacity-value">${cs.cardOpacity ? Math.round(cs.cardOpacity*100) + '%' : 'inherit'}</span></div>
+          <p class="hint-text">Override the global card opacity for this bookmark.</p>
         </div>
 
         <div class="form-section">Icon</div>
@@ -2024,6 +2037,8 @@ async function submitCard(e, catId, bmId) {
     cs.hideText = fd.get('hideText') === 'on';
   }
   if (fd.get('hideCategoryBadge') === 'on') cs.hideCategoryBadge = true;
+  const cardOpacity = fd.get('cardOpacity');
+  if (cardOpacity) cs.cardOpacity = parseFloat(cardOpacity);
 
   const srcCat = S.data.categories.find(c => c.id === catId);
   if (!srcCat) return;
