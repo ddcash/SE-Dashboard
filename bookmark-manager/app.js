@@ -1843,10 +1843,6 @@ function openCardModal(catId, bmId) {
             <label><input type="checkbox" name="textItalic" ${cs.textItalic ? 'checked' : ''}> Italic text</label>
           </div>
         </div>
-              </label>
-            </div>
-          </div>
-        </div>
 
         <div class="modal-footer">
           ${bm && !isMaster ? `<button type="button" class="btn btn--danger" onclick="confirmDeleteBookmark('${bm.id}','${catId}')">
