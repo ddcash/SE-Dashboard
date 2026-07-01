@@ -1,5 +1,5 @@
 # SE-Dashboard
-Dashboard for General Server engineering links, and inforamtion
+Completely local and simple Dashboard for bookmarks/links, and inforamtion
 
 The app lives in the bookmark-manager folder.
 - download the repo
