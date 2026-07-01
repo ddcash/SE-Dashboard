@@ -867,6 +867,8 @@ body::before {
   font-family: inherit;
 }
 
+.hidden { display: none !important; }
+
 .form-section {
   font-size: 11px;
   font-weight: 700;
@@ -874,6 +876,69 @@ body::before {
   text-transform: uppercase;
   color: var(--text3);
   margin: 18px 0 10px;
+}
+
+.master-editor-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.master-editor-tab {
+  flex: 1;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.master-editor-list {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.master-category-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 14px;
+  background: var(--bg2);
+}
+
+.master-category-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.master-bookmark-list {
+  display: grid;
+  gap: 12px;
+  padding-left: 6px;
+}
+
+.master-bookmark-row {
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  padding: 10px;
+  background: var(--surface);
+}
+
+.master-bookmark-row-top,
+.master-bookmark-row-bottom {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+}
+
+.master-bookmark-row-bottom {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+}
+
+.master-editor-add-btn {
+  justify-self: start;
 }
 
 select.form-input {

@@ -715,29 +715,218 @@ async function reloadMasterEditor() {
 }
 
 async function saveMasterEditor() {
-  const jsonEl = document.getElementById('master-json-editor');
   const msgEl  = document.getElementById('master-commit-message');
-  if (!jsonEl || !msgEl) return;
-  const jsonText = jsonEl.value.trim();
+  if (!msgEl) return;
   const commitMsg = msgEl.value.trim();
   if (!commitMsg) {
     showToast('Please enter a commit message before saving.');
     return;
   }
-  try {
-    const parsed = JSON.parse(jsonText);
-    S.masterData = parsed;
-    await writeMasterJSON(S.masterData);
-    S.cfg.masterCommits = S.cfg.masterCommits || [];
-    S.cfg.masterCommits.push({ id: `commit-${uid()}`, ts: new Date().toISOString(), message: commitMsg });
-    await writeJSON(APP_CONFIG.files.settings, S.cfg);
-    mergeData();
-    closeModal();
-    render();
-    showToast('Master changes committed: ' + commitMsg);
-  } catch (err) {
-    showToast('Invalid JSON: ' + err.message);
+
+  let masterData = S.masterData;
+  const mode = document.getElementById('master-editor-json-panel')?.classList.contains('hidden') ? 'visual' : 'json';
+  if (mode === 'json') {
+    const jsonEl = document.getElementById('master-json-editor');
+    if (!jsonEl) return;
+    try {
+      masterData = JSON.parse(jsonEl.value.trim());
+    } catch (err) {
+      showToast('Invalid JSON: ' + err.message);
+      return;
+    }
+  } else {
+    const list = document.getElementById('master-editor-list');
+    if (!list) return;
+    masterData = { version: 1, categories: [] };
+    for (const catEl of list.querySelectorAll('.master-category-panel')) {
+      const catId = catEl.dataset.catId;
+      const name = catEl.querySelector('[name="cat-name"]').value.trim() || 'Category';
+      const icon = catEl.querySelector('[name="cat-icon"]').value;
+      const color = catEl.querySelector('[name="cat-color"]').value;
+      const category = { id: catId, name, icon, color, bookmarks: [] };
+      for (const bmEl of catEl.querySelectorAll('.master-bookmark-row')) {
+        const bmId = bmEl.dataset.bmId;
+        const title = bmEl.querySelector('[name="bm-title"]').value.trim() || 'Untitled';
+        const url = bmEl.querySelector('[name="bm-url"]').value.trim();
+        const description = bmEl.querySelector('[name="bm-description"]').value.trim();
+        const tags = bmEl.querySelector('[name="bm-tags"]').value.split(',').map(t => t.trim()).filter(Boolean);
+        const hideCategoryBadge = bmEl.querySelector('[name="bm-hide-category"]')?.checked;
+        category.bookmarks.push({
+          id: bmId,
+          title,
+          url,
+          description,
+          tags,
+          clicks: 0,
+          icon: { type: 'lucide', value: bmEl.querySelector('[name="bm-icon"]').value || 'Link' },
+          customStyle: hideCategoryBadge ? { hideCategoryBadge: true } : {},
+        });
+      }
+      masterData.categories.push(category);
+    }
   }
+
+  S.masterData = masterData;
+  await writeMasterJSON(S.masterData);
+  S.cfg.masterCommits = S.cfg.masterCommits || [];
+  S.cfg.masterCommits.push({ id: `commit-${uid()}`, ts: new Date().toISOString(), message: commitMsg });
+  await writeJSON(APP_CONFIG.files.settings, S.cfg);
+  mergeData();
+  closeModal();
+  render();
+  showToast('Master changes committed: ' + commitMsg);
+}
+
+function openMasterEditorModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>Edit Master Bookmarks</h2>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="master-editor-tabs">
+        <button type="button" class="btn btn--ghost master-editor-tab btn--active" id="master-editor-tab-visual" onclick="setMasterEditorMode('visual')">Visual Editor</button>
+        <button type="button" class="btn btn--ghost master-editor-tab" id="master-editor-tab-json" onclick="setMasterEditorMode('json')">JSON Editor</button>
+      </div>
+      <div id="master-editor-list" class="master-editor-list"></div>
+      <div id="master-editor-json-panel" class="master-editor-json-panel hidden">
+        <div class="form-row">
+          <label for="master-json-editor">Master JSON</label>
+          <textarea id="master-json-editor" class="form-input form-textarea" rows="16">${esc(JSON.stringify(S.masterData, null, 2))}</textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="master-commit-message">Commit Message *</label>
+        <textarea id="master-commit-message" class="form-input form-textarea" rows="3" placeholder="Describe the master update..." required></textarea>
+      </div>
+      <div class="form-section">Recent Master Commits</div>
+      ${renderMasterCommitHistory()}
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn--ghost" onclick="closeModal()">Cancel</button>
+      <button type="button" class="btn btn--ghost" onclick="reloadMasterEditor()">Reload Latest</button>
+      <button type="button" class="btn btn--primary" onclick="saveMasterEditor()">Commit Master Changes</button>
+    </div>`);
+  populateMasterEditorVisual();
+  setMasterEditorMode('visual');
+}
+
+function setMasterEditorMode(mode) {
+  document.querySelectorAll('.master-editor-tab').forEach(btn => btn.classList.remove('btn--active'));
+  document.getElementById(`master-editor-tab-${mode}`)?.classList.add('btn--active');
+  const list = document.getElementById('master-editor-list');
+  const jsonPanel = document.getElementById('master-editor-json-panel');
+  if (!list || !jsonPanel) return;
+  if (mode === 'json') {
+    list.classList.add('hidden');
+    jsonPanel.classList.remove('hidden');
+  } else {
+    list.classList.remove('hidden');
+    jsonPanel.classList.add('hidden');
+  }
+}
+
+function populateMasterEditorVisual() {
+  const container = document.getElementById('master-editor-list');
+  if (!container) return;
+  container.innerHTML = '';
+  const categories = S.masterData.categories || [];
+  const html = categories.map(cat => `
+    <div class="master-category-panel" data-cat-id="${cat.id}">
+      <div class="master-category-header">
+        <div>
+          <label>Name</label>
+          <input type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
+        </div>
+        <div>
+          <label>Icon</label>
+          <input type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
+        </div>
+        <div>
+          <label>Color</label>
+          <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
+        </div>
+        <button type="button" class="btn btn--danger" onclick="deleteMasterCategory('${cat.id}')">Delete Category</button>
+      </div>
+      <div class="master-bookmark-list">
+        ${cat.bookmarks.map(bm => `
+          <div class="master-bookmark-row" data-bm-id="${bm.id}">
+            <div class="master-bookmark-row-top">
+              <div><label>Title</label><input type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
+              <div><label>URL</label><input type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
+              <div><label>Icon</label><input type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
+              <button type="button" class="btn btn--danger" onclick="deleteMasterBookmark('${cat.id}','${bm.id}')">Delete</button>
+            </div>
+            <div class="master-bookmark-row-bottom">
+              <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
+              <div><label>Tags</label><input type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
+              <div class="form-row"><label><input type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
+            </div>
+          </div>
+        `).join('')}
+        <button type="button" class="btn btn--ghost master-editor-add-btn" onclick="addMasterBookmark('${cat.id}')">Add Bookmark</button>
+      </div>
+    </div>
+  `).join('');
+  container.innerHTML = html + '<button type="button" class="btn btn--ghost master-editor-add-btn" onclick="addMasterCategory()">Add Category</button>';
+}
+
+function addMasterCategory() {
+  const newCat = {
+    id: `cat-${uid()}`,
+    name: 'New Category',
+    icon: 'Folder',
+    color: '#6366f1',
+    bookmarks: [],
+  };
+  S.masterData.categories.push(newCat);
+  populateMasterEditorVisual();
+}
+
+function addMasterBookmark(catId) {
+  const cat = S.masterData.categories.find(c => c.id === catId);
+  if (!cat) return;
+  cat.bookmarks.push({
+    id: `bm-${uid()}`,
+    title: 'New Bookmark',
+    url: '',
+    description: '',
+    tags: [],
+    clicks: 0,
+    icon: { type: 'lucide', value: 'Link' },
+    customStyle: {},
+  });
+  populateMasterEditorVisual();
+}
+
+function deleteMasterCategory(catId) {
+  if (!confirm('Delete this master category and all its bookmarks?')) return;
+  S.masterData.categories = S.masterData.categories.filter(c => c.id !== catId);
+  populateMasterEditorVisual();
+}
+
+function deleteMasterBookmark(catId, bmId) {
+  if (!confirm('Delete this master bookmark?')) return;
+  const cat = S.masterData.categories.find(c => c.id === catId);
+  if (!cat) return;
+  cat.bookmarks = cat.bookmarks.filter(b => b.id !== bmId);
+  populateMasterEditorVisual();
+}
+
+function confirmDeleteBookmark(bmId, catId) {
+  if (!confirm('Delete this bookmark? This cannot be undone.')) return;
+  deleteBookmark(bmId, catId);
+}
+
+function deleteBookmark(bmId, catId) {
+  const category = S.data.categories.find(c => c.id === catId);
+  if (!category) return;
+  category.bookmarks = category.bookmarks.filter(b => b.id !== bmId);
+  S.cfg.userBookmarks = (S.cfg.userBookmarks || []).filter(b => b.id !== bmId);
+  closeModal();
+  render();
+  saveData();
+  showToast('Bookmark deleted.');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -781,6 +970,7 @@ function renderCard(bm, cat, dimmed) {
   const cs     = bm.customStyle || {};
   const pos    = S.cfg.cardPositions?.[bm.id] || { x: 0, y: 0 };
 
+  const hideCatBadge = cs.hideCategoryBadge;
   const isBgImage = cs.bgImage && (bm.icon?.type === 'url' || bm.icon?.type === 'local');
   const bgImgSrc = isBgImage ? (bm.icon.type === 'url' ? esc(bm.icon.value) : S.assetUrls[bm.icon.value]) : null;
 
@@ -796,7 +986,7 @@ function renderCard(bm, cat, dimmed) {
   ].filter(Boolean).join(';');
 
     const catColor   = esc(cat?.color || '#6366f1');
-  const catBadge   = `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
+  const catBadge   = hideCatBadge ? '' : `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
                       </span>`;
   const tags       = (bm.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
@@ -1012,6 +1202,10 @@ function renderDashboard() {
           <i data-lucide="FileText" style="width:13px;height:13px"></i>
           <span>Master File</span>
         </button>
+        <button class="btn btn--ghost" onclick="openMasterEditorModal()" title="Edit shared master bookmarks">
+          <i data-lucide="Edit3" style="width:13px;height:13px"></i>
+          <span>Master Editor</span>
+        </button>
         <button class="btn btn--ghost" onclick="resetLayout()" title="Reset card positions">
           <i data-lucide="LayoutGrid" style="width:13px;height:13px"></i>
           <span>Reset Layout</span>
@@ -1127,6 +1321,11 @@ function openCardModal(catId, bmId) {
           ${isMaster ? '<p class="hint-text">Master bookmarks cannot be moved between categories.</p>' : ''}
         </div>
 
+        <div class="form-row">
+          <label><input type="checkbox" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
+          <p class="hint-text">Keep the card cleaner by hiding the category label.</p>
+        </div>
+
         <div class="form-section">Icon</div>
         <div class="form-row">
           <div class="icon-type-tabs">
@@ -1195,6 +1394,10 @@ function openCardModal(catId, bmId) {
         </div>
 
         <div class="modal-footer">
+          ${bm && !isMaster ? `<button type="button" class="btn btn--danger" onclick="confirmDeleteBookmark('${bm.id}','${catId}')">
+            <i data-lucide="Trash2" style="width:13px;height:13px"></i>
+            Delete
+          </button>` : ''}
           ${bm ? `<button type="button" class="btn ${bmHidden ? 'btn--primary' : 'btn--ghost'}"
             data-bmid="${esc(bmId)}" onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks', this.dataset.bmid);closeModal()">
             <i data-lucide="${bmHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
@@ -1386,6 +1589,7 @@ async function submitCard(e, catId, bmId) {
     cs.textSize = fd.get('textSize');
     cs.hideText = fd.get('hideText') === 'on';
   }
+  if (fd.get('hideCategoryBadge') === 'on') cs.hideCategoryBadge = true;
 
   const srcCat = S.data.categories.find(c => c.id === catId);
   if (!srcCat) return;
@@ -1402,6 +1606,12 @@ async function submitCard(e, catId, bmId) {
       };
       if (!S.cfg.overrides.bookmarks[bmId]) S.cfg.overrides.bookmarks[bmId] = {};
       Object.assign(S.cfg.overrides.bookmarks[bmId], override);
+      if (!cs.hideCategoryBadge && S.cfg.overrides.bookmarks[bmId].customStyle) {
+        delete S.cfg.overrides.bookmarks[bmId].customStyle.hideCategoryBadge;
+        if (!Object.keys(S.cfg.overrides.bookmarks[bmId].customStyle).length) {
+          delete S.cfg.overrides.bookmarks[bmId].customStyle;
+        }
+      }
       // Do not move master bookmarks between categories.
     } else {
       Object.assign(bm, { title, url, description: desc, tags, icon: { type: iType, value: iVal }, customStyle: cs });
