@@ -316,6 +316,23 @@ async function writeJSON(nameOrHandle, obj) {
 }
 
 async function writeMasterJSON(obj) {
+  if (S.cfg.masterFileUrl) {
+    try {
+      const res = await fetch(S.cfg.masterFileUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj, null, 2)
+      });
+      if (res.ok) {
+        showToast('Master changes saved to remote URL.');
+      } else {
+        showToast('Failed to save to URL. Read-only?');
+      }
+    } catch (e) {
+      showToast('Failed to save to URL: ' + e.message);
+    }
+    return;
+  }
   if (!S.dir) return;
   let fh = S.masterHandle;
   if (!fh) fh = await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
@@ -324,6 +341,20 @@ async function writeMasterJSON(obj) {
 
 async function loadMasterData() {
   let bm = null;
+
+  if (S.cfg.masterFileUrl) {
+    try {
+      const res = await fetch(S.cfg.masterFileUrl);
+      if (res.ok) {
+        bm = await res.json();
+        return bm;
+      }
+    } catch (e) {
+      console.warn('Could not fetch master URL:', e);
+      showToast('Failed to load master file from URL.');
+    }
+  }
+
   if (S.masterHandle) {
     bm = await readJSON(S.masterHandle);
     if (!bm) {
@@ -334,7 +365,7 @@ async function loadMasterData() {
     }
   }
 
-  if (!bm && S.dir) {
+  if (!bm && S.dir && !S.pendingMasterHandle && !S.cfg.masterFileUrl) {
     const localHandle = await S.dir.getFileHandle(APP_CONFIG.files.master, { create: false }).catch(() => null);
     if (localHandle) {
       const localData = await readJSON(localHandle);
@@ -430,6 +461,31 @@ async function selectDefaultMasterFile() {
   }
 }
 
+async function saveMasterUrl() {
+  const urlInput = document.getElementById('master-url-input');
+  if (!urlInput || !urlInput.value) return;
+  try {
+    const url = urlInput.value.trim();
+    new URL(url); // validate url format
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Network response was not ok');
+    const bm = await res.json();
+    S.cfg.masterFileUrl = url;
+    S.masterHandle = null;
+    S.masterFileName = '';
+    S.pendingMasterHandle = null;
+    await idbSet('masterHandle', null);
+    S.masterData = bm;
+    S.cfg.masterPrompted = true;
+    await writeJSON(APP_CONFIG.files.settings, S.cfg);
+    mergeData();
+    render();
+    showToast('Master file loaded from URL (read-only).');
+  } catch (err) {
+    showToast('Failed to load master file from URL: ' + err.message);
+  }
+}
+
 function openMasterFileModal() {
   openModal(`
     <div class="modal-header">
@@ -448,6 +504,10 @@ function openMasterFileModal() {
           <i data-lucide="FileText" style="width:13px;height:13px"></i>
           Use Local master_bookmarks.json
         </button>
+      </div>
+      <div style="margin-top:18px; display:flex; gap:10px;">
+        <input type="url" id="master-url-input" class="form-input" placeholder="https://.../master_bookmarks.json" style="flex:1;">
+        <button class="btn btn--primary" onclick="saveMasterUrl(); closeModal();">Load from URL</button>
       </div>
       <div style="margin-top:18px;">
         <p class="hint-text">If your shared master file lives alongside a shared <code>assets/</code> folder, select that folder here so the app can load shared icons and images.</p>
@@ -591,9 +651,7 @@ async function restoreSavedMasterHandles() {
         S.masterHandle = saved;
         S.masterFileName = saved.name;
       } else {
-        S.masterHandle = null;
-        S.masterFileName = '';
-        S.cfg.masterPrompted = false;
+        S.pendingMasterHandle = saved;
       }
     }
   } catch (e) {
@@ -610,7 +668,7 @@ async function restoreSavedMasterHandles() {
       if (perm === 'granted') {
         S.masterAssetsHandle = savedAssets;
       } else {
-        S.masterAssetsHandle = null;
+        S.pendingMasterAssetsHandle = savedAssets;
       }
     }
   } catch (e) {
@@ -698,8 +756,6 @@ async function loadAssets() {
 }
 
 async function loadData() {
-  await restoreSavedMasterHandles();
-  const bm  = await loadMasterData();
   const cfg = await readJSON(APP_CONFIG.files.settings);
   if (cfg) S.cfg  = cfg;
   else     await writeJSON(APP_CONFIG.files.settings, S.cfg);
@@ -731,6 +787,10 @@ async function loadData() {
     cardTextScale: '1',
   };
   if (typeof S.cfg.masterPrompted !== 'boolean') S.cfg.masterPrompted = false;
+
+  await restoreSavedMasterHandles();
+  const bm  = await loadMasterData();
+
   await loadAssets();
   if (bm) {
     S.masterData = bm;
@@ -755,8 +815,31 @@ async function loadData() {
 
 // Poll every 4 s for external edits to master_bookmarks.json
 // (e.g. the user edited the file directly in a text editor)
+let _lastEtag = ''; // for tracking URL changes
+
 async function pollChanges() {
-  if (!S.dir || document.hidden || _lastModified === 0) return;
+  if (document.hidden || _lastModified === 0) return;
+
+  if (S.cfg && S.cfg.masterFileUrl) {
+    try {
+      const res = await fetch(S.cfg.masterFileUrl, { method: 'HEAD' });
+      if (!res.ok) return;
+      const etag = res.headers.get('ETag') || res.headers.get('Last-Modified');
+      if (etag && _lastEtag && etag !== _lastEtag) {
+        _lastEtag = etag;
+        const fetchRes = await fetch(S.cfg.masterFileUrl);
+        S.masterData = await fetchRes.json();
+        mergeData();
+        render();
+        showToast('Bookmarks reloaded — external change detected');
+      } else if (etag && !_lastEtag) {
+        _lastEtag = etag;
+      }
+    } catch (e) {}
+    return;
+  }
+
+  if (!S.dir) return;
   try {
     const fh   = S.masterHandle || await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
     const file = await fh.getFile();
@@ -789,32 +872,6 @@ function renderMasterCommitHistory() {
       </div>
     `).join('')}
   </div>`;
-}
-
-function openMasterEditorModal() {
-  openModal(`
-    <div class="modal-header">
-      <h2>Edit Master Bookmarks</h2>
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
-    </div>
-    <div class="modal-body">
-      <p class="hint-text">This editor updates the shared <code>master_bookmarks.json</code> file directly. Use the JSON editor to add, edit, or remove categories and bookmarks, then commit your changes with a descriptive message.</p>
-      <div class="form-row">
-        <label for="master-commit-message">Commit Message *</label>
-        <textarea id="master-commit-message" class="form-input form-textarea" rows="3" placeholder="Describe the master update..." required></textarea>
-      </div>
-      <div class="form-row">
-        <label for="master-json-editor">Master JSON</label>
-        <textarea id="master-json-editor" class="form-input form-textarea" rows="16">${esc(JSON.stringify(S.masterData, null, 2))}</textarea>
-      </div>
-      <div class="form-section">Recent Master Commits</div>
-      ${renderMasterCommitHistory()}
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn--ghost" onclick="closeModal()">Cancel</button>
-      <button type="button" class="btn btn--ghost" onclick="reloadMasterEditor()">Reload Latest</button>
-      <button type="button" class="btn btn--primary" onclick="saveMasterEditor()">Commit Master Changes</button>
-    </div>`);
 }
 
 async function reloadMasterEditor() {
@@ -1577,12 +1634,17 @@ function renderDashboard() {
       </button>`;
   }).join('');
 
-  const masterBanner = (!S.masterHandle && !S.cfg.masterPrompted)
+  const masterBanner = S.pendingMasterHandle
     ? `<div class="master-banner">
-         <p><strong>Master file not configured.</strong> Select or create a shared master file to get started.</p>
-         <button class="btn btn--ghost" onclick="openMasterFileModal()">Configure Master File</button>
+         <p><strong>Master file access expired.</strong> Grant access to resume using the shared master file.</p>
+         <button class="btn btn--primary" onclick="handleResumeMaster()">Resume Shared Master File</button>
        </div>`
-    : '';
+    : (!S.masterHandle && !S.cfg.masterFileUrl && !S.cfg.masterPrompted)
+      ? `<div class="master-banner">
+           <p><strong>Master file not configured.</strong> Select or create a shared master file to get started.</p>
+           <button class="btn btn--ghost" onclick="openMasterFileModal()">Configure Master File</button>
+         </div>`
+      : '';
 
   return `
     ${masterBanner}
@@ -2524,6 +2586,37 @@ async function handleConnect() {
   }
 }
 
+async function handleResumeMaster() {
+  if (S.pendingMasterHandle) {
+    try {
+      const perm = await S.pendingMasterHandle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        S.masterHandle = S.pendingMasterHandle;
+        S.masterFileName = S.pendingMasterHandle.name;
+        S.pendingMasterHandle = null;
+        await idbSet('masterHandle', S.masterHandle);
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+    }
+  }
+  if (S.pendingMasterAssetsHandle) {
+    try {
+      const perm = await S.pendingMasterAssetsHandle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        S.masterAssetsHandle = S.pendingMasterAssetsHandle;
+        S.pendingMasterAssetsHandle = null;
+        await idbSet('masterAssetsHandle', S.masterAssetsHandle);
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+    }
+  }
+  await loadData();
+  render();
+  showToast('Master file resumed.');
+}
+
 async function handleResume() {
   if (!S.pendingHandle) return;
   try {
@@ -2535,6 +2628,7 @@ async function handleResume() {
       render();
       promptMasterFileIfNeeded();
       showToast(`Resumed — ${S.dir.name}`);
+      await handleResumeMaster();
     }
   } catch (e) {
     if (e.name !== 'AbortError') console.error(e);
