@@ -7,8 +7,11 @@
 const S = {
   dir:           null,
   pendingHandle: null,
-  data:          JSON.parse(JSON.stringify(DEFAULT_DATA)),
-  cfg:           { theme: 'dark', layout: {}, hidden: { bookmarks: [], categories: [] }, cardPositions: {} },
+  masterHandle:  null,
+  masterFileName: '',
+  masterData:    { version: 1, categories: [] },
+  data:          { version: 1, categories: [] },
+  cfg:           { theme: 'dark', layout: {}, hidden: { bookmarks: [], categories: [] }, cardPositions: {}, masterPrompted: false, overrides: { bookmarks: {}, categories: {} }, userCategories: [], userBookmarks: [] },
   assetUrls:     {},
   query:         '',
   paletteOpen:   false,
@@ -290,18 +293,257 @@ async function openDirectory() {
   }
 }
 
-async function readJSON(name) {
+async function readJSON(nameOrHandle) {
   try {
-    const fh = await S.dir.getFileHandle(name);
+    const fh = typeof nameOrHandle === 'string'
+      ? await S.dir.getFileHandle(nameOrHandle)
+      : nameOrHandle;
     return JSON.parse(await (await fh.getFile()).text());
   } catch { return null; }
 }
 
-async function writeJSON(name, obj) {
-  const fh = await S.dir.getFileHandle(name, { create: true });
+async function writeJSON(nameOrHandle, obj) {
+  const fh = typeof nameOrHandle === 'string'
+    ? await S.dir.getFileHandle(nameOrHandle, { create: true })
+    : nameOrHandle;
   const w = await fh.createWritable();
   await w.write(JSON.stringify(obj, null, 2));
   await w.close();
+}
+
+async function writeMasterJSON(obj) {
+  if (!S.dir) return;
+  let fh = S.masterHandle;
+  if (!fh) fh = await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
+  await writeJSON(fh, obj);
+}
+
+async function loadMasterData() {
+  let bm = null;
+  if (S.masterHandle) {
+    bm = await readJSON(S.masterHandle);
+    if (!bm) {
+      showToast('Unable to read selected master file. Please reselect the master file.');
+      S.masterHandle = null;
+      S.masterFileName = '';
+      idbSet('masterHandle', null).catch(() => {});
+    }
+  }
+
+  if (!bm && S.dir) {
+    const localHandle = await S.dir.getFileHandle(APP_CONFIG.files.master, { create: false }).catch(() => null);
+    if (localHandle) {
+      const localData = await readJSON(localHandle);
+      if (localData) {
+        bm = localData;
+        if (!S.masterHandle) {
+          S.masterHandle = localHandle;
+          S.masterFileName = APP_CONFIG.files.master;
+          idbSet('masterHandle', localHandle).catch(() => {});
+        }
+      }
+    }
+  }
+
+  return bm;
+}
+
+async function selectMasterFile() {
+  if (!('showOpenFilePicker' in window)) {
+    alert('The File System Access API is required to select a master file. Please use Chrome or Edge.');
+    return;
+  }
+
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON files', accept: { 'application/json': ['.json'] } }],
+      multiple: false,
+    });
+    if (!handle) return;
+
+    S.masterHandle = handle;
+    S.masterFileName = handle.name;
+    await idbSet('masterHandle', handle);
+    const bm = await readJSON(handle);
+    if (bm) {
+      S.masterData = bm;
+      mergeData();
+      showToast(`Master file loaded: ${handle.name}`);
+    } else {
+      await writeMasterJSON(S.data);
+      S.masterData = S.data;
+      mergeData();
+      showToast(`Created master file: ${handle.name}`);
+    }
+    S.cfg.masterPrompted = true;
+    await writeJSON(APP_CONFIG.files.settings, S.cfg);
+    render();
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error('selectMasterFile:', e);
+  }
+}
+
+async function selectDefaultMasterFile() {
+  if (!S.dir) return;
+  try {
+    const handle = await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
+    S.masterHandle = handle;
+    S.masterFileName = APP_CONFIG.files.master;
+    await idbSet('masterHandle', handle);
+    const bm = await readJSON(handle);
+    if (bm) {
+      S.masterData = bm;
+      mergeData();
+      showToast('Using local master_bookmarks.json file.');
+    } else {
+      await writeMasterJSON(S.data);
+      S.masterData = S.data;
+      mergeData();
+      showToast('Created master_bookmarks.json in the current directory.');
+    }
+    S.cfg.masterPrompted = true;
+    await writeJSON(APP_CONFIG.files.settings, S.cfg);
+    render();
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error('selectDefaultMasterFile:', e);
+  }
+}
+
+function openMasterFileModal() {
+  S.cfg.masterPrompted = true;
+  writeJSON(APP_CONFIG.files.settings, S.cfg).catch(() => {});
+  openModal(`
+    <div class="modal-header">
+      <h2>Select Shared Master File</h2>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text">Choose a shared master_bookmarks.json file that can be accessed by other users or services.</p>
+      <p>Select a central file outside the local app folder, or use the local default file inside this directory.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn--primary" onclick="selectMasterFile(); closeModal();">
+          <i data-lucide="FolderSearch" style="width:13px;height:13px"></i>
+          Choose Shared Master File
+        </button>
+        <button class="btn btn--ghost" onclick="selectDefaultMasterFile(); closeModal();">
+          <i data-lucide="FileText" style="width:13px;height:13px"></i>
+          Use Local master_bookmarks.json
+        </button>
+      </div>
+    </div>`);
+}
+
+function isMasterCategory(catId) {
+  return S.masterData.categories.some(c => c.id === catId);
+}
+
+function isMasterBookmark(bmId) {
+  return S.masterData.categories.some(c => c.bookmarks.some(b => b.id === bmId));
+}
+
+function getCategoryOverride(catId) {
+  return (S.cfg.overrides?.categories?.[catId]) || {};
+}
+
+function getBookmarkOverride(bmId) {
+  return (S.cfg.overrides?.bookmarks?.[bmId]) || {};
+}
+
+function mergeCategory(masterCat) {
+  const override = getCategoryOverride(masterCat.id);
+  return {
+    ...masterCat,
+    __master: true,
+    name: override.name ?? masterCat.name,
+    icon: override.icon ?? masterCat.icon,
+    color: override.color ?? masterCat.color,
+    bookmarks: [],
+  };
+}
+
+function mergeBookmark(masterBm) {
+  const override = getBookmarkOverride(masterBm.id);
+  return {
+    ...masterBm,
+    __master: true,
+    description: override.description ?? masterBm.description,
+    tags: override.tags ?? masterBm.tags,
+    icon: override.icon ?? masterBm.icon,
+    customStyle: { ...masterBm.customStyle, ...(override.customStyle || {}) },
+    clicks: override.clicks !== undefined ? override.clicks : (masterBm.clicks || 0),
+  };
+}
+
+function findUserBookmark(bmId) {
+  return S.cfg.userBookmarks.find(b => b.id === bmId);
+}
+
+function findUserCategory(catId) {
+  return S.cfg.userCategories.find(c => c.id === catId);
+}
+
+function mergeData() {
+  const dataMap = new Map();
+
+  // Add master categories first
+  for (const cat of S.masterData.categories) {
+    dataMap.set(cat.id, mergeCategory(cat));
+  }
+
+  // Add master bookmarks with overrides
+  for (const cat of S.masterData.categories) {
+    const target = dataMap.get(cat.id);
+    for (const bm of cat.bookmarks) {
+      target.bookmarks.push(mergeBookmark(bm));
+    }
+  }
+
+  // Add user categories
+  for (const cat of S.cfg.userCategories || []) {
+    if (!dataMap.has(cat.id)) {
+      dataMap.set(cat.id, { ...cat, __user: true, bookmarks: [] });
+    }
+  }
+
+  // Add user bookmarks into their categories
+  const existingUsers = new Set();
+  for (const bm of S.cfg.userBookmarks || []) {
+    const catId = bm.categoryId || (S.masterData.categories[0]?.id || 'default');
+    let category = dataMap.get(catId);
+    if (!category) {
+      category = { id: catId, name: 'Imported', icon: 'Folder', color: '#6366f1', __user: true, bookmarks: [] };
+      dataMap.set(catId, category);
+      if (!S.cfg.userCategories.some(c => c.id === catId)) {
+        S.cfg.userCategories.push({ id: catId, name: category.name, icon: category.icon, color: category.color });
+      }
+    }
+    category.bookmarks.push({ ...bm, __user: true });
+    existingUsers.add(bm.id);
+  }
+
+  // Ensure view has all master and user categories
+  S.data = Array.from(dataMap.values()).map(cat => ({ ...cat, bookmarks: cat.bookmarks.slice() }));
+}
+
+async function restoreSavedMasterHandle() {
+  try {
+    const saved = await idbGet('masterHandle');
+    if (!saved) return;
+    const perm = await saved.queryPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      S.masterHandle = saved;
+      S.masterFileName = saved.name;
+    } else {
+      S.masterHandle = null;
+      S.masterFileName = '';
+      S.cfg.masterPrompted = false;
+    }
+  } catch (e) {
+    console.warn('Could not restore master handle:', e.message);
+    S.masterHandle = null;
+    S.masterFileName = '';
+    S.cfg.masterPrompted = false;
+  }
 }
 
 async function createBackup() {
@@ -354,21 +596,34 @@ async function loadAssets() {
 }
 
 async function loadData() {
-  const bm  = await readJSON('master_bookmarks.json');
-  const cfg = await readJSON('local_settings.json');
-  if (bm)  S.data = bm;
-  else     await writeJSON('master_bookmarks.json', S.data);
+  await restoreSavedMasterHandle();
+  const bm  = await loadMasterData();
+  const cfg = await readJSON(APP_CONFIG.files.settings);
   if (cfg) S.cfg  = cfg;
-  else     await writeJSON('local_settings.json', S.cfg);
+  else     await writeJSON(APP_CONFIG.files.settings, S.cfg);
   // Ensure structures exist for older local_settings files
   if (!S.cfg.hidden)             S.cfg.hidden = { bookmarks: [], categories: [] };
   if (!S.cfg.hidden.bookmarks)   S.cfg.hidden.bookmarks  = [];
   if (!S.cfg.hidden.categories)  S.cfg.hidden.categories = [];
   if (!S.cfg.cardPositions)      S.cfg.cardPositions = {};
+  if (!S.cfg.overrides)          S.cfg.overrides = { bookmarks: {}, categories: {} };
+  if (!Array.isArray(S.cfg.userCategories)) S.cfg.userCategories = [];
+  if (!Array.isArray(S.cfg.userBookmarks))  S.cfg.userBookmarks = [];
+  if (!Array.isArray(S.cfg.masterCommits))  S.cfg.masterCommits = [];
+  if (typeof S.cfg.masterPrompted !== 'boolean') S.cfg.masterPrompted = false;
   await loadAssets();
+  if (bm) {
+    S.masterData = bm;
+  } else if (S.cfg.masterPrompted) {
+    await writeMasterJSON(S.data);
+    S.masterData = S.data;
+  } else {
+    S.masterData = { version: 1, categories: [] };
+  }
+  mergeData();
   // Record mtime so pollChanges() can detect external edits
   try {
-    const fh = await S.dir.getFileHandle('master_bookmarks.json');
+    const fh = S.masterHandle || await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
     _lastModified = (await fh.getFile()).lastModified;
   } catch {}
 }
@@ -378,11 +633,12 @@ async function loadData() {
 async function pollChanges() {
   if (!S.dir || document.hidden || _lastModified === 0) return;
   try {
-    const fh   = await S.dir.getFileHandle('master_bookmarks.json');
+    const fh   = S.masterHandle || await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
     const file = await fh.getFile();
     if (file.lastModified > _lastModified) {
       _lastModified = file.lastModified;
-      S.data = JSON.parse(await file.text());
+      S.masterData = JSON.parse(await file.text());
+      mergeData();
       render();
       showToast('Bookmarks reloaded — external change detected');
     }
@@ -393,8 +649,87 @@ setInterval(pollChanges, APP_CONFIG.poll.intervalMs);
 async function saveData() {
   if (!S.dir) return;
   await createBackup();
-  await writeJSON('master_bookmarks.json', S.data);
-  await writeJSON('local_settings.json',   S.cfg);
+  await writeJSON(APP_CONFIG.files.settings, S.cfg);
+}
+
+function renderMasterCommitHistory() {
+  if (!Array.isArray(S.cfg.masterCommits) || !S.cfg.masterCommits.length) {
+    return '<div class="hint-text">No previous master commits recorded.</div>';
+  }
+  return `<div class="commit-history">
+    ${S.cfg.masterCommits.slice(-5).reverse().map(c => `
+      <div class="commit-entry">
+        <div class="commit-meta"><strong>${esc(c.message)}</strong></div>
+        <div class="commit-meta"><small>${esc(new Date(c.ts).toLocaleString())}</small></div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function openMasterEditorModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>Edit Master Bookmarks</h2>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text">This editor updates the shared <code>master_bookmarks.json</code> file directly. Use the JSON editor to add, edit, or remove categories and bookmarks, then commit your changes with a descriptive message.</p>
+      <div class="form-row">
+        <label for="master-commit-message">Commit Message *</label>
+        <textarea id="master-commit-message" class="form-input form-textarea" rows="3" placeholder="Describe the master update..." required></textarea>
+      </div>
+      <div class="form-row">
+        <label for="master-json-editor">Master JSON</label>
+        <textarea id="master-json-editor" class="form-input form-textarea" rows="16">${esc(JSON.stringify(S.masterData, null, 2))}</textarea>
+      </div>
+      <div class="form-section">Recent Master Commits</div>
+      ${renderMasterCommitHistory()}
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn--ghost" onclick="closeModal()">Cancel</button>
+      <button type="button" class="btn btn--ghost" onclick="reloadMasterEditor()">Reload Latest</button>
+      <button type="button" class="btn btn--primary" onclick="saveMasterEditor()">Commit Master Changes</button>
+    </div>`);
+}
+
+async function reloadMasterEditor() {
+  if (!S.masterHandle && S.dir) {
+    const handle = await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
+    S.masterHandle = handle;
+    S.masterFileName = handle.name;
+  }
+  const latest = await loadMasterData();
+  if (latest) {
+    S.masterData = latest;
+    render();
+  }
+  openMasterEditorModal();
+}
+
+async function saveMasterEditor() {
+  const jsonEl = document.getElementById('master-json-editor');
+  const msgEl  = document.getElementById('master-commit-message');
+  if (!jsonEl || !msgEl) return;
+  const jsonText = jsonEl.value.trim();
+  const commitMsg = msgEl.value.trim();
+  if (!commitMsg) {
+    showToast('Please enter a commit message before saving.');
+    return;
+  }
+  try {
+    const parsed = JSON.parse(jsonText);
+    S.masterData = parsed;
+    await writeMasterJSON(S.masterData);
+    S.cfg.masterCommits = S.cfg.masterCommits || [];
+    S.cfg.masterCommits.push({ id: `commit-${uid()}`, ts: new Date().toISOString(), message: commitMsg });
+    await writeJSON(APP_CONFIG.files.settings, S.cfg);
+    mergeData();
+    closeModal();
+    render();
+    showToast('Master changes committed: ' + commitMsg);
+  } catch (err) {
+    showToast('Invalid JSON: ' + err.message);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -545,6 +880,11 @@ function render() {
   if (S.dir) { initFreeDrag(); updateCanvasHeight(); }
 }
 
+function promptMasterFileIfNeeded() {
+  if (!S.dir || S.masterHandle || S.cfg.masterPrompted) return;
+  openMasterFileModal();
+}
+
 function renderConnect() {
   const ok = 'showDirectoryPicker' in window;
   const logo = `<div class="connect-logo"><i data-lucide="Bookmark" style="width:36px;height:36px"></i></div>`;
@@ -620,6 +960,10 @@ function renderDashboard() {
           <i data-lucide="FolderOpen" style="width:11px;height:11px"></i>
           <span>${esc(S.dir.name)}</span>
         </div>
+        <div class="dir-badge" title="Master bookmark file">
+          <i data-lucide="FileText" style="width:11px;height:11px"></i>
+          <span>${esc(S.masterFileName || APP_CONFIG.files.master)}</span>
+        </div>
       </div>
       <div class="header-center">
         <div class="search-wrap">
@@ -647,6 +991,10 @@ function renderDashboard() {
         <button class="btn btn--ghost" onclick="exportData()" title="Export bookmarks">
           <i data-lucide="Download" style="width:13px;height:13px"></i>
           <span>Export</span>
+        </button>
+        <button class="btn btn--ghost" onclick="selectMasterFile()" title="Select shared master file">
+          <i data-lucide="FileText" style="width:13px;height:13px"></i>
+          <span>Master File</span>
         </button>
         <button class="btn btn--ghost" onclick="resetLayout()" title="Reset card positions">
           <i data-lucide="LayoutGrid" style="width:13px;height:13px"></i>
@@ -718,6 +1066,7 @@ function openCardModal(catId, bmId) {
   const iType  = bm?.icon?.type || 'lucide';
   const iVal   = bm?.icon?.value || 'Link';
   const cs     = bm?.customStyle || {};
+  const isMaster = bm?.__master;
 
   const iconGrid = LUCIDE_ICONS.map(n => `
     <button type="button" aria-label="${n} icon" class="icon-option ${iType === 'lucide' && iVal === n ? 'selected' : ''}"
@@ -738,13 +1087,14 @@ function openCardModal(catId, bmId) {
         <div class="form-row">
           <label for="bm-title">Title *</label>
           <input id="bm-title" type="text" name="title" class="form-input" required
-            value="${esc(bm?.title||'')}" placeholder="My Bookmark">
+            value="${esc(bm?.title||'')}" placeholder="My Bookmark" ${isMaster ? 'readonly' : ''}>
         </div>
         <div class="form-row">
           <label for="bm-url">URL *</label>
           <input id="bm-url" type="text" name="url" class="form-input" required
-            value="${esc(bm?.url||'')}" placeholder="https://… or file:/// or vscode://…">
+            value="${esc(bm?.url||'')}" placeholder="https://… or file:/// or vscode://…" ${isMaster ? 'readonly' : ''}>
         </div>
+        ${isMaster ? '<p class="hint-text">Title and URL are managed by the shared master file and cannot be changed here.</p>' : ''}
         <div class="form-row">
           <label for="bm-desc">Description</label>
           <textarea id="bm-desc" name="description" class="form-input form-textarea"
@@ -757,7 +1107,8 @@ function openCardModal(catId, bmId) {
         </div>
         <div class="form-row">
           <label for="bm-category">Category</label>
-          <select id="bm-category" name="categoryId" class="form-input">${catOptions}</select>
+          <select id="bm-category" name="categoryId" class="form-input" ${isMaster ? 'disabled' : ''}>${catOptions}</select>
+          ${isMaster ? '<p class="hint-text">Master bookmarks cannot be moved between categories.</p>' : ''}
         </div>
 
         <div class="form-section">Icon</div>
@@ -846,8 +1197,9 @@ function openCardModal(catId, bmId) {
 function openCategoryModal(catId) {
   const cat      = catId ? S.data.categories.find(c => c.id === catId) : null;
   const catHidden = cat ? isHidden('categories', catId) : false;
-  const cIcon    = cat?.icon  || 'Folder';
-  const cColor   = cat?.color || CAT_COLORS[0];
+  const catOverride = cat && cat.__master ? getCategoryOverride(catId) : {};
+  const cIcon    = cat ? (catOverride.icon ?? cat.icon) : 'Folder';
+  const cColor   = cat ? (catOverride.color ?? cat.color) : CAT_COLORS[0];
 
   const iconGrid = LUCIDE_ICONS.map(n => `
     <button type="button" aria-label="${n} icon" class="icon-option ${cIcon===n?'selected':''}"
@@ -1025,15 +1377,34 @@ async function submitCard(e, catId, bmId) {
   if (bmId) {
     const bm = srcCat.bookmarks.find(b => b.id === bmId);
     if (!bm) return;
-    Object.assign(bm, { title, url, description: desc, tags, icon: { type: iType, value: iVal }, customStyle: cs });
-    if (newCat !== catId) {
-      srcCat.bookmarks = srcCat.bookmarks.filter(b => b.id !== bmId);
-      S.data.categories.find(c => c.id === newCat)?.bookmarks.push(bm);
+    if (bm.__master) {
+      const override = {
+        description: desc,
+        tags,
+        icon: { type: iType, value: iVal },
+        customStyle: cs,
+      };
+      if (!S.cfg.overrides.bookmarks[bmId]) S.cfg.overrides.bookmarks[bmId] = {};
+      Object.assign(S.cfg.overrides.bookmarks[bmId], override);
+      // Do not move master bookmarks between categories.
+    } else {
+      Object.assign(bm, { title, url, description: desc, tags, icon: { type: iType, value: iVal }, customStyle: cs });
+      const userBm = findUserBookmark(bmId);
+      if (userBm) {
+        Object.assign(userBm, { title, url, description: desc, tags, icon: { type: iType, value: iVal }, customStyle: cs });
+        if (newCat !== catId) userBm.categoryId = newCat;
+      }
+      if (newCat !== catId) {
+        srcCat.bookmarks = srcCat.bookmarks.filter(b => b.id !== bmId);
+        S.data.categories.find(c => c.id === newCat)?.bookmarks.push(bm);
+      }
     }
   } else {
     const bm = { id: `bm-${uid()}`, title, url, description: desc, tags, clicks: 0,
                  icon: { type: iType, value: iVal }, customStyle: cs };
-    (S.data.categories.find(c => c.id === newCat) || srcCat).bookmarks.push(bm);
+    const destCat = S.data.categories.find(c => c.id === newCat) || srcCat;
+    destCat.bookmarks.push(bm);
+    S.cfg.userBookmarks.push({ ...bm, categoryId: destCat.id });
   }
 
   closeModal();
@@ -1050,9 +1421,19 @@ async function submitCategory(e, catId) {
 
   if (catId) {
     const cat = S.data.categories.find(c => c.id === catId);
-    if (cat) Object.assign(cat, { name, icon, color });
+    if (!cat) return;
+    if (cat.__master) {
+      if (!S.cfg.overrides.categories[catId]) S.cfg.overrides.categories[catId] = {};
+      Object.assign(S.cfg.overrides.categories[catId], { name, icon, color });
+    } else {
+      Object.assign(cat, { name, icon, color });
+      const localCat = S.cfg.userCategories.find(c => c.id === catId);
+      if (localCat) Object.assign(localCat, { name, icon, color });
+    }
   } else {
-    S.data.categories.push({ id: `cat-${uid()}`, name, icon, color, bookmarks: [] });
+    const newCat = { id: `cat-${uid()}`, name, icon, color, bookmarks: [] };
+    S.data.categories.push(newCat);
+    S.cfg.userCategories.push({ id: newCat.id, name, icon, color });
   }
 
   closeModal();
@@ -1277,6 +1658,7 @@ function updatePalette(q) {
     { label: 'New Category',      icon: 'FolderPlus', fn: () => { closePalette(); openCategoryModal(null); } },
     { label: 'Import Bookmarks',  icon: 'Upload',     fn: () => { closePalette(); openImportModal(); } },
     { label: 'Export Bookmarks',  icon: 'Download',   fn: () => { closePalette(); exportData(); } },
+    { label: 'Edit Master Bookmarks', icon: 'Edit3', fn: () => { closePalette(); openMasterEditorModal(); } },
     { label: 'Reconnect Directory', icon: 'FolderOpen', fn: () => { closePalette(); handleConnect(); } },
   ];
 
@@ -1411,7 +1793,11 @@ window.addEventListener('resize', () => {
 // ═══════════════════════════════════════════════════════════════
 async function handleConnect() {
   const ok = await openDirectory();
-  if (ok) { render(); showToast(`Connected to "${S.dir.name}"`); }
+  if (ok) {
+    render();
+    promptMasterFileIfNeeded();
+    showToast(`Connected to "${S.dir.name}"`);
+  }
 }
 
 async function handleResume() {
@@ -1423,6 +1809,7 @@ async function handleResume() {
       S.pendingHandle = null;
       await loadData();
       render();
+      promptMasterFileIfNeeded();
       showToast(`Resumed — ${S.dir.name}`);
     }
   } catch (e) {
@@ -1449,6 +1836,7 @@ async function init() {
     console.warn('Could not restore directory handle:', e.message);
   }
   render();
+  promptMasterFileIfNeeded();
 }
 
 init();

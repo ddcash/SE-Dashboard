@@ -23,7 +23,7 @@ Key capabilities:
 1. Open `bookmark-manager/index.html` in a supported browser.
 2. Choose a directory to use as the app data folder.
 3. The app creates and loads these files inside the folder:
-   - `master_bookmarks.json` — main bookmark data
+   - `master_bookmarks.json` — main bookmark data, edited through the command palette
    - `local_settings.json` — UI layout and hidden item settings
    - `backups/` — timestamped snapshots of your bookmark data
    - `assets/` — uploaded image/icon assets
@@ -88,6 +88,12 @@ It is not guaranteed to work in browsers that do not implement this API.
 - No login or account required
 - All bookmark data remains in the directory you choose
 
+### Master File Editing
+- The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
+- The editor is intentionally not exposed as a dashboard button to avoid accidental master data changes.
+- Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
+- Enter a detailed commit message and update the JSON directly.
+
 ## File Structure
 
 ```
@@ -136,7 +142,8 @@ If you want to modify the app:
 3. Create categories and add bookmarks
 4. Use **Import** to migrate bookmarks from another system
 5. Use **Export** to save the current database
-6. Drag cards to arrange your dashboard visually
+6. To update the shared `master_bookmarks.json` safely, open the command palette with `Ctrl+K` / `Cmd+K` and select "Edit Master Bookmarks"
+7. Drag cards to arrange your dashboard visually
 
 ## Troubleshooting
 
