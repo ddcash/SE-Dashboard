@@ -1367,13 +1367,16 @@ function renderCard(bm, cat, dimmed) {
   const bgImgSrc = isBgImage ? (bm.icon.type === 'url' ? esc(bm.icon.value) : S.assetUrls[bm.icon.value]) : null;
 
   const cardOpacity = cs.cardOpacity !== undefined ? cs.cardOpacity : (S.cfg.themeSettings?.cardOpacity || 1);
+  const cardColorStyle = cs.cardColor ? (isBgImage ? `background-color:${esc(cs.cardColor)}` : `background:${esc(cs.cardColor)}`) : '';
+  const bgImageStyle = isBgImage && bgImgSrc ? `background-image:url("${bgImgSrc}");background-size:cover;background-position:center center;background-repeat:no-repeat` : '';
   const inlineStyle = [
     `left:${pos.x}vw`,
     `top:${pos.y}vw`,
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
     `--card-opacity:${cardOpacity}`,
-    cs.cardColor && !isBgImage ? `background:${esc(cs.cardColor)}`     : '',
+    cardColorStyle,
+    bgImageStyle,
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
     cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
     cs.textSize && !cs.hideText ? `font-size:${esc(cs.textSize)}` : '',
