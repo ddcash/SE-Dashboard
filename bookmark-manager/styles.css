@@ -533,16 +533,22 @@ body::before {
 /* Drag handle area at the top of the card */
 .card-drag-handle {
   position: absolute;
-  top: 4px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0px;
+  left: 0;
+  right: 0;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: var(--border2);
   opacity: 0;
   transition: opacity var(--t);
-  pointer-events: none;
-  line-height: 0;
+  pointer-events: auto;
+  cursor: grab;
+  z-index: 10;
 }
 .card:hover .card-drag-handle { opacity: 1; }
+.card-drag-handle:active { cursor: grabbing; }
 
 /* Category badge inside card meta */
 .card-cat-badge {
@@ -1172,4 +1178,14 @@ select.form-input {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.card-bg-image {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.6;
+  pointer-events: none;
+  border-radius: inherit;
 }
