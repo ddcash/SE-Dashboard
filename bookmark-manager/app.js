@@ -1597,18 +1597,15 @@ function renderDashboard() {
           <i data-lucide="LayoutGrid" style="width:13px;height:13px"></i>
           <span>Reset Layout</span>
         </button>
-        <button class="btn btn--primary" onclick="openCategoryModal(null)">
-          <i data-lucide="FolderPlus" style="width:13px;height:13px"></i>
-          <span>New Category</span>
+        <button class="btn btn--primary" onclick="openNewBookmarkModal()" title="Add bookmark">
+          <i data-lucide="Plus" style="width:13px;height:13px"></i>
+          <span>+ Bookmark</span>
         </button>
       </div>
     </header>
 
     <div class="cat-filter-bar">
       ${catPills}
-      <button class="cat-pill-action" onclick="openNewBookmarkModal()" title="Add bookmark">
-        <i data-lucide="Plus" style="width:13px;height:13px"></i> Add Bookmark
-      </button>
       <button class="cat-pill-action cat-pill-action--cat" onclick="openCategoryModal(null)" title="New category">
         <i data-lucide="FolderPlus" style="width:13px;height:13px"></i> New Category
       </button>
