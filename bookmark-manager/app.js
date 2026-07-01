@@ -37,9 +37,10 @@ function sanitizeUrl(url) {
   return u;
 }
 
+// ⚡ Bolt: q is expected to be pre-lowercased by the caller to avoid O(N) redundant allocations in search loops
 function fuzzyMatch(str, q) {
   if (!q) return true;
-  str = str.toLowerCase(); q = q.toLowerCase();
+  str = str.toLowerCase();
   let i = 0;
   for (const ch of q) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
   return true;
@@ -449,6 +450,7 @@ function renderCard(bm, cat, dimmed) {
 // Flat list of all visible cards for the canvas layout
 function renderAllCards() {
   const searching = !!S.query;
+  const qLower = searching ? S.query.toLowerCase() : '';
   let html = '';
 
   // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
@@ -465,10 +467,10 @@ function renderAllCards() {
 
       if (searching) {
         const match =
-          fuzzyMatch(bm.title,           S.query) ||
-          fuzzyMatch(bm.url,             S.query) ||
-          fuzzyMatch(bm.description||'', S.query) ||
-          (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
+          fuzzyMatch(bm.title,           qLower) ||
+          fuzzyMatch(bm.url,             qLower) ||
+          fuzzyMatch(bm.description||'', qLower) ||
+          (bm.tags||[]).some(t => fuzzyMatch(t, qLower));
         if (!match) continue;
       }
 
@@ -911,8 +913,9 @@ async function handleIconUpload(input) {
 }
 
 function filterIcons(q) {
+  const qLower = (q || '').toLowerCase();
   document.querySelectorAll('.icon-option').forEach(btn => {
-    btn.style.display = fuzzyMatch(btn.dataset.icon, q) ? '' : 'none';
+    btn.style.display = fuzzyMatch(btn.dataset.icon, qLower) ? '' : 'none';
   });
 }
 
@@ -1202,6 +1205,7 @@ function closePalette() {
 }
 
 function updatePalette(q) {
+  const qLower = (q || '').toLowerCase();
   const CMDS = [
     { label: 'New Category',      icon: 'FolderPlus', fn: () => { closePalette(); openCategoryModal(null); } },
     { label: 'Import Bookmarks',  icon: 'Upload',     fn: () => { closePalette(); openImportModal(); } },
@@ -1209,14 +1213,14 @@ function updatePalette(q) {
     { label: 'Reconnect Directory', icon: 'FolderOpen', fn: () => { closePalette(); handleConnect(); } },
   ];
 
-  const matchCmds = CMDS.filter(c => fuzzyMatch(c.label, q));
+  const matchCmds = CMDS.filter(c => fuzzyMatch(c.label, qLower));
   const matchBms  = [];
 
   if (q) {
     outer:
     for (const cat of S.data.categories) {
       for (const bm of cat.bookmarks) {
-        if (fuzzyMatch(bm.title, q) || fuzzyMatch(bm.url, q) || (bm.tags||[]).some(t => fuzzyMatch(t, q))) {
+        if (fuzzyMatch(bm.title, qLower) || fuzzyMatch(bm.url, qLower) || (bm.tags||[]).some(t => fuzzyMatch(t, qLower))) {
           matchBms.push({ bm, cat });
           if (matchBms.length >= 8) break outer;
         }
