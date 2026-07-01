@@ -1061,12 +1061,38 @@ select.form-input {
 
 .color-input {
   width: 36px;
-  height: 32px;
+  height: 36px;
   border: 1px solid var(--border2);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--bg2);
-  padding: 2px;
+  padding: 0;
   cursor: pointer;
+}
+
+input[type="color"].form-input,
+.color-input {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+input[type="color"].form-input::-webkit-color-swatch-wrapper,
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"].form-input::-webkit-color-swatch,
+.color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 8px;
+}
+
+input[type="color"].form-input::-moz-color-swatch,
+.color-input::-moz-color-swatch {
+  border: none;
+  border-radius: 8px;
 }
 
 /* ═══════════════════════════════════════════════
