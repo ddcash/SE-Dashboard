@@ -1435,7 +1435,6 @@ function renderCard(bm, cat, dimmed) {
 
 // Flat list of all visible cards for the canvas layout
 function renderAllCards() {
-  const searching = !!S.query;
   let html = '';
 
   // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
@@ -1444,32 +1443,66 @@ function renderAllCards() {
 
   for (const cat of S.data.categories) {
     const catHidden  = hiddenCats.has(cat.id);
-    if (!searching && !S.showHidden && catHidden) continue;
+    if (!S.showHidden && catHidden) continue;
 
     for (const bm of cat.bookmarks) {
       const bmHidden = hiddenBms.has(bm.id);
-      if (!searching && !S.showHidden && bmHidden) continue;
-
-      if (searching) {
-        const match =
-          fuzzyMatch(bm.title,           S.query) ||
-          fuzzyMatch(bm.url,             S.query) ||
-          fuzzyMatch(bm.description||'', S.query) ||
-          (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
-        if (!match) continue;
-      }
+      if (!S.showHidden && bmHidden) continue;
 
       // Dim card when category filter is active and this card isn't in that category
-      const dimmed = !searching && !!S.activeCat && S.activeCat !== cat.id;
+      const dimmed = !!S.activeCat && S.activeCat !== cat.id;
       html += renderCard(bm, cat, dimmed);
     }
   }
   return html;
 }
 
+function renderSearchResults() {
+  const rows = [];
+  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
+  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+
+  for (const cat of S.data.categories) {
+    if (!S.showHidden && hiddenCats.has(cat.id)) continue;
+    for (const bm of cat.bookmarks) {
+      if (!S.showHidden && hiddenBms.has(bm.id)) continue;
+      const match =
+        fuzzyMatch(bm.title,           S.query) ||
+        fuzzyMatch(bm.url,             S.query) ||
+        fuzzyMatch(bm.description||'', S.query) ||
+        (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
+      if (!match) continue;
+      rows.push({ bm, cat });
+    }
+  }
+
+  if (!rows.length) {
+    return `<div class="search-empty">No results for "${esc(S.query)}"</div>`;
+  }
+
+  return `
+    <div class="search-results">
+      ${rows.map(({ bm, cat }) => {
+        const catColor  = esc(cat.color || '#6366f1');
+        const linkUrl   = sanitizeUrl(bm.url);
+        return `
+          <div class="search-result">
+            <div class="search-result-main">
+              <a href="${esc(linkUrl)}" target="_blank" rel="noreferrer">${esc(bm.title || bm.url)}</a>
+              <div class="search-result-url">${esc(bm.url)}</div>
+              ${bm.description ? `<div class="search-result-desc">${esc(bm.description)}</div>` : ''}
+            </div>
+            <div class="search-result-meta">
+              <span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">${esc(cat.name)}</span>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
 function render() {
   applyThemeSettings();
-  if (S.dir) autoArrangeCards(); // fill in positions for any new cards before DOM build
+  if (S.dir && !S.query) autoArrangeCards(); // fill in positions for any new cards before DOM build
   const app = document.getElementById('app');
   app.innerHTML = S.dir ? renderDashboard() : renderConnect();
   if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -1620,7 +1653,7 @@ function renderDashboard() {
           </button>
         </div>` : ''}
       <div class="canvas" id="canvas">
-        ${renderAllCards()}
+        ${S.query ? renderSearchResults() : renderAllCards()}
       </div>
     </main>`;
 }
