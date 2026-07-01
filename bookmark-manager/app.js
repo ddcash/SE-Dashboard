@@ -101,18 +101,30 @@ function autoArrangeCards() {
   let count = Object.keys(S.cfg.cardPositions).length;
   let changed = false;
 
+  // Flatten and sort bookmarks so hidden items come last
+  const allBms = [];
   for (const cat of S.data.categories) {
     for (const bm of cat.bookmarks) {
-      if (!(bm.id in S.cfg.cardPositions)) {
-        const col = count % cols;
-        const row = Math.floor(count / cols);
-        S.cfg.cardPositions[bm.id] = {
-          x: toVw(PAD + col * (CARD_W + GAP)),
-          y: toVw(PAD + row * (CARD_H + GAP)),
-        };
-        count++;
-        changed = true;
-      }
+      allBms.push(bm);
+    }
+  }
+
+  allBms.sort((a, b) => {
+    const aHidden = isHidden('bookmarks', a.id) ? 1 : 0;
+    const bHidden = isHidden('bookmarks', b.id) ? 1 : 0;
+    return aHidden - bHidden;
+  });
+
+  for (const bm of allBms) {
+    if (!(bm.id in S.cfg.cardPositions)) {
+      const col = count % cols;
+      const row = Math.floor(count / cols);
+      S.cfg.cardPositions[bm.id] = {
+        x: toVw(PAD + col * (CARD_W + GAP)),
+        y: toVw(PAD + row * (CARD_H + GAP)),
+      };
+      count++;
+      changed = true;
     }
   }
   if (changed) saveData();
@@ -436,7 +448,7 @@ function renderCard(bm, cat, dimmed) {
     pos.h ? `height:${pos.h}px` : '',
     cs.cardColor && !isBgImage ? `background:${esc(cs.cardColor)}`     : '',
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
-    cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}` : '',
+    cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
     cs.textSize && !cs.hideText ? `font-size:${esc(cs.textSize)}` : '',
   ].filter(Boolean).join(';');
 
