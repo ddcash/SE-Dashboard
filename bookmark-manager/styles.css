@@ -15,6 +15,7 @@
   --accent:     #89b4fa;
   --accent-dim: rgba(137,180,250,0.15);
   --card-opacity: 1;
+  --card-text-scale: 1;
   --green:      #a6e3a1;
   --red:        #f38ba8;
   --red-dim:    rgba(243,139,168,0.12);
@@ -656,7 +657,7 @@ body::after {
 .card-body { flex: 1; min-width: 0; }
 
 .card-title {
-  font-size: 13px;
+  font-size: calc(13px * var(--card-text-scale, 1) * var(--card-local-text-scale, 1));
   font-weight: 600;
   color: var(--text);
   overflow: hidden;
@@ -666,7 +667,7 @@ body::after {
 }
 
 .card-desc {
-  font-size: 11px;
+  font-size: calc(11px * var(--card-text-scale, 1) * var(--card-local-text-scale, 1));
   color: var(--text3);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -675,6 +676,13 @@ body::after {
 }
 
 .card-meta {
+  font-size: calc(10px * var(--card-text-scale, 1) * var(--card-local-text-scale, 1));
+  color: var(--text3);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
   display: flex;
   flex-wrap: wrap;
   align-items: center;

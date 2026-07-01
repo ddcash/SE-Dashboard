@@ -11,7 +11,10 @@ Key capabilities:
 - Custom icons, tags, and descriptions
 - Drag cards freely across a canvas
 - Search and filter bookmarks with fuzzy matching
+- Preserve card positions after searching and clearing results
 - Hide / unhide bookmarks and categories
+- Global theme settings with dark/solid black defaults
+- Adjustable card opacity globally and per card
 - Import from HTML, JSON, and CSV
 - Export the bookmark database to JSON
 - Automatic backup snapshots
@@ -52,14 +55,22 @@ It is not guaranteed to work in browsers that do not implement this API.
 ### Freeform Canvas Layout
 - Cards are placed in a scrollable canvas layout
 - Drag bookmark cards to reposition them freely
-- Reset layout to restore the default arrangement
+- Reset layout from the command palette to restore the default arrangement
 - Positions are saved in `local_settings.json`
 
 ### Search & Filtering
 - Search titles, URLs, descriptions, and tags with fuzzy match
 - Filter categories with clickable pills
+- Preserve your current card layout when search is cleared
 - Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette
 - Toggle hidden items on or off
+
+### Appearance & Theme
+- Dark theme defaults to a solid black background
+- Choose between solid color, gradient, or image backgrounds
+- Adjust global card opacity for the dashboard
+- Override opacity for individual cards when editing a bookmark
+- Customize accent colors, font scale, and category badge visibility
 
 ### Hidden Items & Visibility
 - Hide individual bookmarks or categories without deleting data
@@ -92,7 +103,8 @@ It is not guaranteed to work in browsers that do not implement this API.
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - The editor is intentionally not exposed as a dashboard button to avoid accidental master data changes.
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
-- Enter a detailed commit message and update the JSON directly.
+- The master editor supports both a visual category/bookmark editor and a raw JSON editor.
+- Enter a detailed commit message and save changes to keep a local commit history.
 
 ## File Structure
 

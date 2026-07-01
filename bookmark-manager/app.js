@@ -728,6 +728,7 @@ async function loadData() {
     cardShadow: 'medium',
     showCategoryBadge: true,
     fontScale: '1',
+    cardTextScale: '1',
   };
   if (typeof S.cfg.masterPrompted !== 'boolean') S.cfg.masterPrompted = false;
   await loadAssets();
@@ -1027,6 +1028,8 @@ function populateSettingsModal() {
   document.getElementById('settings-accent-color').value = s.accentColor || '#89b4fa';
   document.getElementById('settings-font-scale').value = s.fontScale || '1';
   document.getElementById('settings-font-scale-value').textContent = `${Math.round((s.fontScale || 1) * 100)}%`;
+  document.getElementById('settings-card-text-scale').value = s.cardTextScale || '1';
+  document.getElementById('settings-card-text-scale-value').textContent = `${Math.round((s.cardTextScale || 1) * 100)}%`;
   document.getElementById('settings-show-category-badge').checked = s.showCategoryBadge !== false;
   document.getElementById('settings-card-opacity').value = s.cardOpacity || '0.96';
   document.getElementById('settings-card-opacity-value').textContent = `${Math.round((s.cardOpacity || 0.96) * 100)}%`;
@@ -1067,6 +1070,7 @@ function saveSettings() {
   s.themeMode = document.getElementById('settings-theme-mode')?.value || 'dark';
   s.accentColor = document.getElementById('settings-accent-color')?.value || '#89b4fa';
   s.fontScale = document.getElementById('settings-font-scale')?.value || '1';
+  s.cardTextScale = document.getElementById('settings-card-text-scale')?.value || '1';
   s.cardOpacity = document.getElementById('settings-card-opacity')?.value || '0.96';
   s.showCategoryBadge = document.getElementById('settings-show-category-badge')?.checked;
   s.bgType = document.getElementById('settings-bg-type')?.value || 'gradient';
@@ -1106,6 +1110,7 @@ function resetThemeSettings() {
     cardShadow: 'medium',
     showCategoryBadge: true,
     fontScale: '1',
+    cardTextScale: '1',
   };
   applyThemeSettings();
   populateSettingsModal();
@@ -1116,6 +1121,7 @@ function applyThemeSettings() {
   const root = document.documentElement;
   root.style.setProperty('--accent', s.accentColor || '#89b4fa');
   root.style.setProperty('--card-opacity', s.cardOpacity || '1');
+  root.style.setProperty('--card-text-scale', s.cardTextScale || '1');
   root.style.setProperty('--card-radius', `${s.cardRadius || 12}px`);
   const shadowMap = {
     none: 'none',
@@ -1199,6 +1205,9 @@ function openSettingsModal() {
           <label>Font Scale</label>
           <input type="range" id="settings-font-scale" class="form-input" min="0.8" max="1.4" step="0.05" value="1" oninput="document.getElementById('settings-font-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-font-scale-value">100%</span></div>
+          <label>Card Text Scale</label>
+          <input type="range" id="settings-card-text-scale" class="form-input" min="0.8" max="1.6" step="0.05" value="1" oninput="document.getElementById('settings-card-text-scale-value').textContent = Math.round(this.value * 100) + '%'">
+          <div class="settings-helper"><span id="settings-card-text-scale-value">100%</span></div>
           <label><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
           <label>Card Opacity</label>
           <input type="range" id="settings-card-opacity" class="form-input" min="0.4" max="1" step="0.02" value="0.96" oninput="document.getElementById('settings-card-opacity-value').textContent = Math.round(this.value*100) + '%'">
@@ -1367,6 +1376,7 @@ function renderCard(bm, cat, dimmed) {
   const bgImgSrc = isBgImage ? (bm.icon.type === 'url' ? esc(bm.icon.value) : S.assetUrls[bm.icon.value]) : null;
 
   const cardOpacity = cs.cardOpacity !== undefined ? cs.cardOpacity : (S.cfg.themeSettings?.cardOpacity || 1);
+  const cardTextScale = cs.textSize ? parseFloat(cs.textSize) : 1;
   const cardColorStyle = cs.cardColor ? (isBgImage ? `background-color:${esc(cs.cardColor)}` : `background:${esc(cs.cardColor)}`) : '';
   const bgImageStyle = isBgImage && bgImgSrc ? `background-image:url("${bgImgSrc}");background-size:cover;background-position:center center;background-repeat:no-repeat` : '';
   const inlineStyle = [
@@ -1375,14 +1385,16 @@ function renderCard(bm, cat, dimmed) {
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
     `--card-opacity:${cardOpacity}`,
+    `--card-local-text-scale:${cardTextScale}`,
     cardColorStyle,
     bgImageStyle,
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
     cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
-    cs.textSize && !cs.hideText ? `font-size:${esc(cs.textSize)}` : '',
+    cs.textWeight === 'bold' && !cs.hideText ? 'font-weight:bold' : '',
+    cs.textItalic && !cs.hideText ? 'font-style:italic' : '',
   ].filter(Boolean).join(';');
 
-    const catColor   = esc(cat?.color || '#6366f1');
+  const catColor   = esc(cat?.color || '#6366f1');
   const catBadge   = hideCatBadge ? '' : `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
                       </span>`;
@@ -1809,14 +1821,28 @@ function openCardModal(catId, bmId) {
           </div>
           <div style="flex:1">
             <label><input type="checkbox" name="hideText" ${cs.hideText?'checked':''}> Hide text overlay</label>
-            <div style="margin-top:6px">
-              <label>Color: <input type="color" name="textColor" value="${cs.textColor||'#ffffff'}" class="color-input"></label>
-              <label style="margin-left:8px">Size:
-                <select name="textSize" class="form-input" style="display:inline-block; width:auto; padding:2px; min-height:auto;">
-                  <option value="" ${!cs.textSize?'selected':''}>Normal</option>
-                  <option value="1.2em" ${cs.textSize==='1.2em'?'selected':''}>Large</option>
-                  <option value="1.5em" ${cs.textSize==='1.5em'?'selected':''}>X-Large</option>
-                </select>
+          </div>
+        </div>
+        <div class="form-section">Text Formatting <span class="hint-inline">(optional)</span></div>
+        <div class="form-row form-row--cols">
+          <div>
+            <label>Text Color</label>
+            <input type="color" name="textColor" value="${cs.textColor||'#ffffff'}" class="color-input">
+          </div>
+          <div>
+            <label>Text Size</label>
+            <input type="range" id="card-text-size" name="textSize" class="form-input" min="0.8" max="1.8" step="0.05" value="${cs.textSize ? parseFloat(cs.textSize) : 1}" oninput="document.getElementById('card-text-size-value').textContent = Math.round(this.value * 100) + '%'">
+            <div class="settings-helper"><span id="card-text-size-value">${cs.textSize ? Math.round(parseFloat(cs.textSize) * 100) + '%' : '100%'}</span></div>
+          </div>
+        </div>
+        <div class="form-row form-row--cols">
+          <div>
+            <label><input type="checkbox" name="textBold" ${cs.textWeight==='bold'?'checked':''}> Bold text</label>
+          </div>
+          <div>
+            <label><input type="checkbox" name="textItalic" ${cs.textItalic ? 'checked' : ''}> Italic text</label>
+          </div>
+        </div>
               </label>
             </div>
           </div>
@@ -2048,10 +2074,14 @@ async function submitCard(e, catId, bmId) {
   if (fd.get('useBorderColor')) cs.borderColor = fd.get('borderColor');
   if (fd.get('useBgImage')) {
     cs.bgImage = true;
-    cs.textColor = fd.get('textColor');
-    cs.textSize = fd.get('textSize');
     cs.hideText = fd.get('hideText') === 'on';
   }
+  const textColor = fd.get('textColor');
+  if (textColor) cs.textColor = textColor;
+  const textSize = fd.get('textSize');
+  if (textSize) cs.textSize = textSize;
+  if (fd.get('textBold') === 'on') cs.textWeight = 'bold';
+  if (fd.get('textItalic') === 'on') cs.textItalic = true;
   if (fd.get('hideCategoryBadge') === 'on') cs.hideCategoryBadge = true;
   const cardOpacity = fd.get('cardOpacity');
   if (cardOpacity) cs.cardOpacity = parseFloat(cardOpacity);
