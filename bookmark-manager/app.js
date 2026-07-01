@@ -104,7 +104,6 @@ function autoArrangeCards() {
   const vw       = window.innerWidth || 1200;
   const { cardWidth: CARD_W, cardHeight: CARD_H, gap: GAP, padding: PAD } = APP_CONFIG.canvas;
   const cols     = Math.max(1, Math.floor((vw - PAD * 2) / (CARD_W + GAP)));
-  const toVw     = px => px / vw * 100;
   let count = Object.keys(S.cfg.cardPositions).length;
   let changed = false;
 
@@ -127,8 +126,9 @@ function autoArrangeCards() {
       const col = count % cols;
       const row = Math.floor(count / cols);
       S.cfg.cardPositions[bm.id] = {
-        x: toVw(PAD + col * (CARD_W + GAP)),
-        y: toVw(PAD + row * (CARD_H + GAP)),
+        x: PAD + col * (CARD_W + GAP),
+        y: PAD + row * (CARD_H + GAP),
+        _px: true
       };
       count++;
       changed = true;
@@ -144,19 +144,18 @@ function autoArrangeCards() {
 function updateCanvasHeight() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
-  const vw  = window.innerWidth;
   const minH = window.innerHeight - 120; // header + filter bar
   let maxYPx = minH;
 
-  if (_drag && _drag.maxStaticVw !== undefined) {
-    maxYPx = Math.max(_drag.maxStaticVw, (_drag.curY * vw / 100) + 150);
+  if (_drag && _drag.maxStaticPx !== undefined) {
+    maxYPx = Math.max(_drag.maxStaticPx, _drag.curY + 150);
   } else {
     const positions = S.cfg.cardPositions || {};
     for (const id in positions) {
       const y = (_drag && _drag.bmId === id) ? _drag.curY : positions[id].y;
-      maxYPx = Math.max(maxYPx, (y * vw / 100) + 150);
+      maxYPx = Math.max(maxYPx, y + 150);
     }
-    if (_drag) maxYPx = Math.max(maxYPx, (_drag.curY * vw / 100) + 150);
+    if (_drag) maxYPx = Math.max(maxYPx, _drag.curY + 150);
   }
   canvas.style.minHeight = maxYPx + 60 + 'px';
 }
@@ -214,16 +213,15 @@ function onDragStart(e) {
   e.preventDefault();
 
   const card   = e.currentTarget;
-  const vw     = window.innerWidth;
-  const startX = parseFloat(card.style.left) || 0; // current position in vw
+  const startX = parseFloat(card.style.left) || 0; // current position in px
   const startY = parseFloat(card.style.top)  || 0;
   const bmId   = card.dataset.id;
 
   // Pre-calculate max static Y of all OTHER cards so updateCanvasHeight is O(1) during 60fps pointermove
-  let maxStaticVw = window.innerHeight - 120;
+  let maxStaticPx = window.innerHeight - 120;
   const positions = S.cfg.cardPositions || {};
   for (const id in positions) {
-    if (id !== bmId) maxStaticVw = Math.max(maxStaticVw, (positions[id].y * vw / 100) + 150);
+    if (id !== bmId) maxStaticPx = Math.max(maxStaticPx, positions[id].y + 150);
   }
 
   _drag = {
@@ -231,11 +229,11 @@ function onDragStart(e) {
     el:   card,
     startClientX: e.clientX,
     startClientY: e.clientY,
-    startX, startY, vw,
+    startX, startY,
     canvas: document.getElementById('canvas'),
     curX: startX, curY: startY,
     moved: false,
-    maxStaticVw, // ⚡ Bolt: Cached O(1) height calculation value
+    maxStaticPx, // ⚡ Bolt: Cached O(1) height calculation value
   };
 
   card.classList.add('card--dragging');
@@ -824,6 +822,19 @@ async function loadData() {
 
   if (!Array.isArray(S.masterData.categories)) {
     S.masterData.categories = [];
+  }
+
+  if (S.cfg.cardPositions) {
+    let migrated = false;
+    for (const id in S.cfg.cardPositions) {
+      if (!S.cfg.cardPositions[id]._px) {
+        S.cfg.cardPositions[id].x = S.cfg.cardPositions[id].x * 1200 / 100;
+        S.cfg.cardPositions[id].y = S.cfg.cardPositions[id].y * 1200 / 100;
+        S.cfg.cardPositions[id]._px = true;
+        migrated = true;
+      }
+    }
+    if (migrated) await writeJSON(APP_CONFIG.files.settings, S.cfg);
   }
 
   mergeData();
@@ -1467,8 +1478,8 @@ function renderCard(bm, cat, dimmed) {
   const cardColorStyle = cs.cardColor ? (isBgImage ? `background-color:${esc(cs.cardColor)}` : `background:${esc(cs.cardColor)}`) : '';
   const bgImageStyle = isBgImage && bgImgSrc ? `background-image:url("${bgImgSrc}");background-size:cover;background-position:center center;background-repeat:no-repeat` : '';
   const inlineStyle = [
-    `left:${pos.x}vw`,
-    `top:${pos.y}vw`,
+    `left:${pos.x}px`,
+    `top:${pos.y}px`,
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
     `--card-opacity:${cardOpacity}`,
@@ -2558,19 +2569,17 @@ document.getElementById('palette-overlay').addEventListener('click', e => {
   if (e.target.id === 'palette-overlay') closePalette();
 });
 
-document.getElementById('modal-overlay').addEventListener('click', e => {
-  if (e.target.id === 'modal-overlay') closeModal();
-});
+
 
 document.addEventListener('pointermove', e => {
   if (!_drag) return;
   e.preventDefault();
-  const dx = (e.clientX - _drag.startClientX) / _drag.vw * 100;
-  const dy = (e.clientY - _drag.startClientY) / _drag.vw * 100;
+  const dx = e.clientX - _drag.startClientX;
+  const dy = e.clientY - _drag.startClientY;
   _drag.curX = Math.max(0, _drag.startX + dx);
   _drag.curY = Math.max(0, _drag.startY + dy);
-  _drag.el.style.left = _drag.curX + 'vw';
-  _drag.el.style.top  = _drag.curY + 'vw';
+  _drag.el.style.left = _drag.curX + 'px';
+  _drag.el.style.top  = _drag.curY + 'px';
   _drag.moved = true;
   updateCanvasHeight();
 }, { passive: false });
