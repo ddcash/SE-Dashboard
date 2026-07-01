@@ -406,6 +406,36 @@ body::after {
   min-height: calc(100vh - 120px);
 }
 
+.search-results--cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.search-results--cards .card {
+  position: relative;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  resize: none;
+  height: auto;
+}
+
+.search-results--cards .card-link {
+  padding-right: 16px;
+}
+
+.search-results--cards .card-drag-handle,
+.search-results--cards .card-actions {
+  display: none !important;
+}
+
+.search-results--cards .card:hover .card-drag-handle,
+.search-results--cards .card:hover .card-actions {
+  display: none;
+}
+
 .categories-grid {
   display: flex;
   flex-wrap: wrap;

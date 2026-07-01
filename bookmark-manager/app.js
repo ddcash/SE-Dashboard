@@ -1467,9 +1467,10 @@ function renderSearchResults() {
     for (const bm of cat.bookmarks) {
       if (!S.showHidden && hiddenBms.has(bm.id)) continue;
       const match =
-        fuzzyMatch(bm.title,           S.query) ||
-        fuzzyMatch(bm.url,             S.query) ||
-        fuzzyMatch(bm.description||'', S.query) ||
+        fuzzyMatch(bm.title,            S.query) ||
+        fuzzyMatch(bm.url,              S.query) ||
+        fuzzyMatch(bm.description||'',  S.query) ||
+        fuzzyMatch(cat.name || '',      S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
       rows.push({ bm, cat });
@@ -1481,22 +1482,8 @@ function renderSearchResults() {
   }
 
   return `
-    <div class="search-results">
-      ${rows.map(({ bm, cat }) => {
-        const catColor  = esc(cat.color || '#6366f1');
-        const linkUrl   = sanitizeUrl(bm.url);
-        return `
-          <div class="search-result">
-            <div class="search-result-main">
-              <a href="${esc(linkUrl)}" target="_blank" rel="noreferrer">${esc(bm.title || bm.url)}</a>
-              <div class="search-result-url">${esc(bm.url)}</div>
-              ${bm.description ? `<div class="search-result-desc">${esc(bm.description)}</div>` : ''}
-            </div>
-            <div class="search-result-meta">
-              <span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">${esc(cat.name)}</span>
-            </div>
-          </div>`;
-      }).join('')}
+    <div class="search-results search-results--cards">
+      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
     </div>`;
 }
 
