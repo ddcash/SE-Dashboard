@@ -410,8 +410,6 @@ async function selectDefaultMasterFile() {
 }
 
 function openMasterFileModal() {
-  S.cfg.masterPrompted = true;
-  writeJSON(APP_CONFIG.files.settings, S.cfg).catch(() => {});
   openModal(`
     <div class="modal-header">
       <h2>Select Shared Master File</h2>
@@ -992,7 +990,7 @@ function renderDashboard() {
           <i data-lucide="Download" style="width:13px;height:13px"></i>
           <span>Export</span>
         </button>
-        <button class="btn btn--ghost" onclick="selectMasterFile()" title="Select shared master file">
+        <button class="btn btn--ghost" onclick="openMasterFileModal()" title="Select or create a master file">
           <i data-lucide="FileText" style="width:13px;height:13px"></i>
           <span>Master File</span>
         </button>
