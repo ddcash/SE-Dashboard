@@ -1593,10 +1593,6 @@ function renderDashboard() {
           <i data-lucide="Download" style="width:13px;height:13px"></i>
           <span>Export</span>
         </button>
-        <button class="btn btn--ghost" onclick="resetLayout()" title="Reset card positions">
-          <i data-lucide="LayoutGrid" style="width:13px;height:13px"></i>
-          <span>Reset Layout</span>
-        </button>
         <button class="btn btn--primary" onclick="openNewBookmarkModal()" title="Add bookmark">
           <i data-lucide="Plus" style="width:13px;height:13px"></i>
           <span>+ Bookmark</span>
@@ -2335,6 +2331,7 @@ function updatePalette(q) {
     { label: 'Settings',          icon: 'SlidersHorizontal', fn: () => { closePalette(); openSettingsModal(); } },
     { label: 'Import Bookmarks',  icon: 'Upload',     fn: () => { closePalette(); openImportModal(); } },
     { label: 'Export Bookmarks',  icon: 'Download',   fn: () => { closePalette(); exportData(); } },
+    { label: 'Reset Layout',      icon: 'LayoutGrid', fn: () => { closePalette(); resetLayout(); } },
     { label: 'Edit Master Bookmarks', icon: 'Edit3', fn: () => { closePalette(); openMasterEditorModal(); } },
     { label: 'Configure Master File', icon: 'FileText', fn: () => { closePalette(); openMasterFileModal(); } },
     { label: 'Reconnect Directory', icon: 'FolderOpen', fn: () => { closePalette(); handleConnect(); } },
