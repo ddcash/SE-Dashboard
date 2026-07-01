@@ -712,6 +712,22 @@ async function loadData() {
   if (!Array.isArray(S.cfg.userCategories)) S.cfg.userCategories = [];
   if (!Array.isArray(S.cfg.userBookmarks))  S.cfg.userBookmarks = [];
   if (!Array.isArray(S.cfg.masterCommits))  S.cfg.masterCommits = [];
+  if (!S.cfg.themeSettings) S.cfg.themeSettings = {
+    themeMode: 'dark',
+    accentColor: '#89b4fa',
+    bgType: 'gradient',
+    bgSolid: '#090910',
+    bgColor1: '#090910',
+    bgColor2: '#0e0e1a',
+    bgAngle: '135',
+    bgImageUrl: '',
+    bgImageLocal: '',
+    bgOverlay: '0.16',
+    cardRadius: '12',
+    cardShadow: 'medium',
+    showCategoryBadge: true,
+    fontScale: '1',
+  };
   if (typeof S.cfg.masterPrompted !== 'boolean') S.cfg.masterPrompted = false;
   await loadAssets();
   if (bm) {
@@ -1004,6 +1020,226 @@ function deleteMasterCategory(catId) {
   populateMasterEditorVisual();
 }
 
+function populateSettingsModal() {
+  const s = S.cfg.themeSettings || {};
+  document.getElementById('settings-theme-mode').value = s.themeMode || 'dark';
+  document.getElementById('settings-accent-color').value = s.accentColor || '#89b4fa';
+  document.getElementById('settings-font-scale').value = s.fontScale || '1';
+  document.getElementById('settings-font-scale-value').textContent = `${Math.round((s.fontScale || 1) * 100)}%`;
+  document.getElementById('settings-show-category-badge').checked = s.showCategoryBadge !== false;
+  document.getElementById('settings-bg-type').value = s.bgType || 'gradient';
+  document.getElementById('settings-bg-solid').value = s.bgSolid || '#090910';
+  document.getElementById('settings-bg-color1').value = s.bgColor1 || '#090910';
+  document.getElementById('settings-bg-color2').value = s.bgColor2 || '#0e0e1a';
+  document.getElementById('settings-bg-angle').value = s.bgAngle || '135';
+  document.getElementById('settings-bg-image-url').value = s.bgImageUrl || '';
+  document.getElementById('settings-bg-overlay').value = s.bgOverlay || '0.16';
+  document.getElementById('settings-bg-overlay-value').textContent = `${Math.round((s.bgOverlay || 0.16) * 100)}%`;
+  toggleBgOptions();
+}
+
+function toggleBgOptions() {
+  const type = document.getElementById('settings-bg-type')?.value;
+  document.querySelectorAll('.bg-options').forEach(el => el.classList.add('hidden'));
+  if (type === 'solid') document.getElementById('bg-solid-options')?.classList.remove('hidden');
+  if (type === 'gradient') document.getElementById('bg-gradient-options')?.classList.remove('hidden');
+  if (type === 'image') document.getElementById('bg-image-options')?.classList.remove('hidden');
+}
+
+async function handleBackgroundUpload(input) {
+  if (!input.files?.[0]) return;
+  try {
+    const name = await saveAsset(input.files[0]);
+    S.cfg.themeSettings.bgImageLocal = name;
+    S.cfg.themeSettings.bgImageUrl = '';
+    document.getElementById('settings-bg-image-url').value = '';
+    showToast('Background image uploaded. Save settings to apply.');
+  } catch (e) {
+    showToast('Background upload failed: ' + e.message);
+  }
+}
+
+function saveSettings() {
+  const s = S.cfg.themeSettings || {};
+  s.themeMode = document.getElementById('settings-theme-mode')?.value || 'dark';
+  s.accentColor = document.getElementById('settings-accent-color')?.value || '#89b4fa';
+  s.fontScale = document.getElementById('settings-font-scale')?.value || '1';
+  s.showCategoryBadge = document.getElementById('settings-show-category-badge')?.checked;
+  s.bgType = document.getElementById('settings-bg-type')?.value || 'gradient';
+  s.bgSolid = document.getElementById('settings-bg-solid')?.value || '#090910';
+  s.bgColor1 = document.getElementById('settings-bg-color1')?.value || '#090910';
+  s.bgColor2 = document.getElementById('settings-bg-color2')?.value || '#0e0e1a';
+  s.bgAngle = document.getElementById('settings-bg-angle')?.value || '135';
+  s.bgImageUrl = document.getElementById('settings-bg-image-url')?.value.trim() || '';
+  s.bgOverlay = document.getElementById('settings-bg-overlay')?.value || '0.16';
+  if (s.bgType !== 'image') {
+    s.bgImageLocal = '';
+  } else if (s.bgImageUrl) {
+    s.bgImageLocal = '';
+  }
+  S.cfg.themeSettings = s;
+  applyThemeSettings();
+  saveData();
+  closeModal();
+  render();
+  showToast('Settings saved.');
+}
+
+function resetThemeSettings() {
+  S.cfg.themeSettings = {
+    themeMode: 'dark',
+    accentColor: '#89b4fa',
+    bgType: 'gradient',
+    bgSolid: '#090910',
+    bgColor1: '#090910',
+    bgColor2: '#0e0e1a',
+    bgAngle: '135',
+    bgImageUrl: '',
+    bgImageLocal: '',
+    bgOverlay: '0.16',
+    cardRadius: '12',
+    cardShadow: 'medium',
+    showCategoryBadge: true,
+    fontScale: '1',
+  };
+  applyThemeSettings();
+  populateSettingsModal();
+}
+
+function applyThemeSettings() {
+  const s = S.cfg.themeSettings || {};
+  const root = document.documentElement;
+  root.style.setProperty('--accent', s.accentColor || '#89b4fa');
+  root.style.setProperty('--card-radius', `${s.cardRadius || 12}px`);
+  const shadowMap = {
+    none: 'none',
+    medium: '0 4px 16px rgba(0,0,0,0.15)',
+    strong: '0 12px 40px rgba(0,0,0,0.25)',
+  };
+  root.style.setProperty('--card-shadow', shadowMap[s.cardShadow] || shadowMap.medium);
+  root.style.setProperty('--card-hover-shadow', shadowMap.strong);
+  root.style.setProperty('--font-scale', s.fontScale || '1');
+  if (s.bgType === 'solid') {
+    root.style.setProperty('--bg', s.bgSolid || '#090910');
+    root.style.setProperty('--bg-image', 'none');
+  } else if (s.bgType === 'gradient') {
+    const c1 = s.bgColor1 || '#090910';
+    const c2 = s.bgColor2 || '#0e0e1a';
+    root.style.setProperty('--bg', `linear-gradient(${s.bgAngle || 135}deg, ${c1} 0%, ${c2} 100%)`);
+    root.style.setProperty('--bg-image', 'none');
+    root.style.setProperty('--bg-image-size', 'cover');
+    root.style.setProperty('--bg-image-position', 'center center');
+    root.style.setProperty('--bg-image-repeat', 'no-repeat');
+  } else {
+    const imageUrl = (s.bgImageLocal && S.assetUrls[s.bgImageLocal]) ? S.assetUrls[s.bgImageLocal] : s.bgImageUrl;
+    root.style.setProperty('--bg', '#090910');
+    root.style.setProperty('--bg-image', imageUrl ? `url("${imageUrl}")` : 'none');
+    root.style.setProperty('--bg-image-size', 'cover');
+    root.style.setProperty('--bg-image-position', 'center center');
+    root.style.setProperty('--bg-image-repeat', 'no-repeat');
+  }
+  root.style.setProperty('--bg-overlay', s.bgOverlay || '0.16');
+  if (s.themeMode === 'light') {
+    root.style.setProperty('--bg2', '#f5f5f8');
+    root.style.setProperty('--surface', 'rgba(255,255,255,0.85)');
+    root.style.setProperty('--surface2', 'rgba(255,255,255,0.92)');
+    root.style.setProperty('--surface3', 'rgba(255,255,255,0.96)');
+    root.style.setProperty('--border', 'rgba(15,15,20,0.12)');
+    root.style.setProperty('--border2', 'rgba(15,15,20,0.18)');
+    root.style.setProperty('--text', '#111827');
+    root.style.setProperty('--text2', '#374151');
+    root.style.setProperty('--text3', '#6b7280');
+  } else if (s.themeMode === 'system') {
+    root.style.removeProperty('--bg2');
+    root.style.removeProperty('--surface');
+    root.style.removeProperty('--surface2');
+    root.style.removeProperty('--surface3');
+    root.style.removeProperty('--border');
+    root.style.removeProperty('--border2');
+    root.style.removeProperty('--text');
+    root.style.removeProperty('--text2');
+    root.style.removeProperty('--text3');
+  } else {
+    root.style.setProperty('--bg2', '#0e0e1a');
+    root.style.setProperty('--surface', 'rgba(255,255,255,0.04)');
+    root.style.setProperty('--surface2', 'rgba(255,255,255,0.07)');
+    root.style.setProperty('--surface3', 'rgba(255,255,255,0.10)');
+    root.style.setProperty('--border', 'rgba(255,255,255,0.07)');
+    root.style.setProperty('--border2', 'rgba(255,255,255,0.13)');
+    root.style.setProperty('--text', '#cdd6f4');
+    root.style.setProperty('--text2', '#a6adc8');
+    root.style.setProperty('--text3', '#585b70');
+  }
+}
+
+function openSettingsModal() {
+  openModal(`
+    <div class="modal-header">
+      <h2>Settings</h2>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+    </div>
+    <div class="modal-body settings-modal-body">
+      <div class="settings-grid">
+        <section class="settings-section">
+          <h3>General</h3>
+          <label>Theme Mode</label>
+          <select id="settings-theme-mode" class="form-input">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="system">System</option>
+          </select>
+          <label>Accent Color</label>
+          <input type="color" id="settings-accent-color" class="form-input" value="#89b4fa">
+          <label>Font Scale</label>
+          <input type="range" id="settings-font-scale" class="form-input" min="0.8" max="1.4" step="0.05" value="1" oninput="document.getElementById('settings-font-scale-value').textContent = Math.round(this.value * 100) + '%'">
+          <div class="settings-helper"><span id="settings-font-scale-value">100%</span></div>
+          <label><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
+        </section>
+        <section class="settings-section">
+          <h3>Background</h3>
+          <label>Background Type</label>
+          <select id="settings-bg-type" class="form-input" onchange="toggleBgOptions()">
+            <option value="gradient">Gradient</option>
+            <option value="solid">Solid</option>
+            <option value="image">Image</option>
+          </select>
+          <div id="bg-solid-options" class="bg-options">
+            <label>Solid Color</label>
+            <input type="color" id="settings-bg-solid" class="form-input" value="#090910">
+          </div>
+          <div id="bg-gradient-options" class="bg-options">
+            <label>Gradient Color 1</label>
+            <input type="color" id="settings-bg-color1" class="form-input" value="#090910">
+            <label>Gradient Color 2</label>
+            <input type="color" id="settings-bg-color2" class="form-input" value="#0e0e1a">
+            <label>Angle</label>
+            <input type="number" id="settings-bg-angle" class="form-input" min="0" max="360" value="135">
+          </div>
+          <div id="bg-image-options" class="bg-options hidden">
+            <label>Image URL</label>
+            <input type="text" id="settings-bg-image-url" class="form-input" placeholder="https://example.com/bg.jpg">
+            <label>Upload Background</label>
+            <input type="file" id="settings-bg-image-upload" class="form-input" accept="image/*" onchange="handleBackgroundUpload(this)">
+            <label>Overlay Opacity</label>
+            <input type="range" id="settings-bg-overlay" class="form-input" min="0" max="0.6" step="0.05" value="0.16" oninput="document.getElementById('settings-bg-overlay-value').textContent = Math.round(this.value * 100) + '%'">
+            <div class="settings-helper"><span id="settings-bg-overlay-value">16%</span></div>
+          </div>
+        </section>
+      </div>
+      <section class="settings-section settings-preview-panel">
+        <h3>Preview</h3>
+        <div class="settings-preview" id="settings-preview">Main page appearance will update after saving.</div>
+      </section>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn--ghost" onclick="resetThemeSettings()">Reset Defaults</button>
+      <div class="spacer"></div>
+      <button type="button" class="btn btn--ghost" onclick="closeModal()">Cancel</button>
+      <button type="button" class="btn btn--primary" onclick="saveSettings()">Save Settings</button>
+    </div>`);
+  populateSettingsModal();
+}
+
 function openCategoryDeleteModal() {
   const categories = S.data.categories || [];
   const rows = categories.map(cat => {
@@ -1117,7 +1353,7 @@ function renderCard(bm, cat, dimmed) {
   const cs     = bm.customStyle || {};
   const pos    = S.cfg.cardPositions?.[bm.id] || { x: 0, y: 0 };
 
-  const hideCatBadge = cs.hideCategoryBadge;
+  const hideCatBadge = cs.hideCategoryBadge || (S.cfg.themeSettings?.showCategoryBadge === false);
   const isBgImage = cs.bgImage && (bm.icon?.type === 'url' || bm.icon?.type === 'local');
   const bgImgSrc = isBgImage ? (bm.icon.type === 'url' ? esc(bm.icon.value) : S.assetUrls[bm.icon.value]) : null;
 
@@ -1218,6 +1454,7 @@ function renderAllCards() {
 }
 
 function render() {
+  applyThemeSettings();
   if (S.dir) autoArrangeCards(); // fill in positions for any new cards before DOM build
   const app = document.getElementById('app');
   app.innerHTML = S.dir ? renderDashboard() : renderConnect();
@@ -2086,6 +2323,8 @@ function updatePalette(q) {
   const CMDS = [
     { label: 'New Category',      icon: 'FolderPlus', fn: () => { closePalette(); openCategoryModal(null); } },
     { label: 'Delete Category',   icon: 'Trash2',    fn: () => { closePalette(); openCategoryDeleteModal(); } },
+    { label: 'Change Background', icon: 'Image',     fn: () => { closePalette(); openSettingsModal(); } },
+    { label: 'Settings',          icon: 'SlidersHorizontal', fn: () => { closePalette(); openSettingsModal(); } },
     { label: 'Import Bookmarks',  icon: 'Upload',     fn: () => { closePalette(); openImportModal(); } },
     { label: 'Export Bookmarks',  icon: 'Download',   fn: () => { closePalette(); exportData(); } },
     { label: 'Edit Master Bookmarks', icon: 'Edit3', fn: () => { closePalette(); openMasterEditorModal(); } },
