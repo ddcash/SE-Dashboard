@@ -5,15 +5,17 @@
 //  STATE
 // ═══════════════════════════════════════════════════════════════
 const S = {
-  dir:           null,
-  pendingHandle: null,
-  masterHandle:  null,
-  masterFileName: '',
-  masterData:    { version: 1, categories: [] },
-  data:          { version: 1, categories: [] },
-  cfg:           { theme: 'dark', layout: {}, hidden: { bookmarks: [], categories: [] }, cardPositions: {}, masterPrompted: false, overrides: { bookmarks: {}, categories: {} }, userCategories: [], userBookmarks: [] },
-  assetUrls:     {},
-  query:         '',
+  dir:              null,
+  pendingHandle:    null,
+  masterHandle:     null,
+  masterAssetsHandle: null,
+  masterFileName:   '',
+  masterData:       { version: 1, categories: [] },
+  data:             { version: 1, categories: [] },
+  cfg:              { theme: 'dark', layout: {}, hidden: { bookmarks: [], categories: [] }, cardPositions: {}, masterPrompted: false, overrides: { bookmarks: {}, categories: {} }, userCategories: [], userBookmarks: [] },
+  assetUrls:        {},
+  masterAssetUrls:  {},
+  query:            '',
   paletteOpen:   false,
   showHidden:    false,
   activeCat:     null, // active category filter pill
@@ -343,6 +345,13 @@ async function loadMasterData() {
           S.masterFileName = APP_CONFIG.files.master;
           idbSet('masterHandle', localHandle).catch(() => {});
         }
+        if (!S.masterAssetsHandle) {
+          const localAssetsDir = await S.dir.getDirectoryHandle(APP_CONFIG.assets.subdir, { create: false }).catch(() => null);
+          if (localAssetsDir) {
+            S.masterAssetsHandle = localAssetsDir;
+            idbSet('masterAssetsHandle', localAssetsDir).catch(() => {});
+          }
+        }
       }
     }
   }
@@ -366,6 +375,7 @@ async function selectMasterFile() {
     S.masterHandle = handle;
     S.masterFileName = handle.name;
     await idbSet('masterHandle', handle);
+
     const bm = await readJSON(handle);
     if (bm) {
       S.masterData = bm;
@@ -379,6 +389,7 @@ async function selectMasterFile() {
     }
     S.cfg.masterPrompted = true;
     await writeJSON(APP_CONFIG.files.settings, S.cfg);
+    await loadAssets();
     render();
   } catch (e) {
     if (e.name !== 'AbortError') console.error('selectMasterFile:', e);
@@ -403,8 +414,16 @@ async function selectDefaultMasterFile() {
       mergeData();
       showToast('Created master_bookmarks.json in the current directory.');
     }
+    if (!S.masterAssetsHandle) {
+      const localAssetsDir = await S.dir.getDirectoryHandle(APP_CONFIG.assets.subdir, { create: false }).catch(() => null);
+      if (localAssetsDir) {
+        S.masterAssetsHandle = localAssetsDir;
+        await idbSet('masterAssetsHandle', localAssetsDir).catch(() => {});
+      }
+    }
     S.cfg.masterPrompted = true;
     await writeJSON(APP_CONFIG.files.settings, S.cfg);
+    await loadAssets();
     render();
   } catch (e) {
     if (e.name !== 'AbortError') console.error('selectDefaultMasterFile:', e);
@@ -430,11 +449,46 @@ function openMasterFileModal() {
           Use Local master_bookmarks.json
         </button>
       </div>
+      <div style="margin-top:18px;">
+        <p class="hint-text">If your shared master file lives alongside a shared <code>assets/</code> folder, select that folder here so the app can load shared icons and images.</p>
+        <button class="btn btn--ghost" onclick="selectMasterAssetsFolder(); closeModal();">
+          <i data-lucide="Image" style="width:13px;height:13px"></i>
+          Select Master Assets Folder
+        </button>
+      </div>
     </div>`);
 }
 
 function isMasterCategory(catId) {
   return S.masterData.categories.some(c => c.id === catId);
+}
+
+async function selectMasterAssetsFolder() {
+  if (!('showDirectoryPicker' in window)) {
+    alert('The File System Access API is required to select a master assets folder. Please use Chrome or Edge.');
+    return;
+  }
+  try {
+    const folder = await window.showDirectoryPicker();
+    if (!folder) return;
+
+    let assetsHandle = folder;
+    const hasMaster = await folder.getFileHandle(APP_CONFIG.files.master, { create: false }).catch(() => null);
+    if (hasMaster) {
+      const dir = await folder.getDirectoryHandle('assets', { create: false }).catch(() => null);
+      if (dir) assetsHandle = dir;
+    } else {
+      const nested = await folder.getDirectoryHandle('assets', { create: false }).catch(() => null);
+      if (nested) assetsHandle = nested;
+    }
+
+    S.masterAssetsHandle = assetsHandle;
+    await idbSet('masterAssetsHandle', assetsHandle);
+    await loadAssets();
+    showToast('Master assets folder loaded.');
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error('selectMasterAssetsFolder:', e);
+  }
 }
 
 function isMasterBookmark(bmId) {
@@ -528,24 +582,40 @@ function mergeData() {
   };
 }
 
-async function restoreSavedMasterHandle() {
+async function restoreSavedMasterHandles() {
   try {
     const saved = await idbGet('masterHandle');
-    if (!saved) return;
-    const perm = await saved.queryPermission({ mode: 'readwrite' });
-    if (perm === 'granted') {
-      S.masterHandle = saved;
-      S.masterFileName = saved.name;
-    } else {
-      S.masterHandle = null;
-      S.masterFileName = '';
-      S.cfg.masterPrompted = false;
+    if (saved) {
+      const perm = await saved.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        S.masterHandle = saved;
+        S.masterFileName = saved.name;
+      } else {
+        S.masterHandle = null;
+        S.masterFileName = '';
+        S.cfg.masterPrompted = false;
+      }
     }
   } catch (e) {
     console.warn('Could not restore master handle:', e.message);
     S.masterHandle = null;
     S.masterFileName = '';
     S.cfg.masterPrompted = false;
+  }
+
+  try {
+    const savedAssets = await idbGet('masterAssetsHandle');
+    if (savedAssets) {
+      const perm = await savedAssets.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        S.masterAssetsHandle = savedAssets;
+      } else {
+        S.masterAssetsHandle = null;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not restore master assets handle:', e.message);
+    S.masterAssetsHandle = null;
   }
 }
 
@@ -587,19 +657,48 @@ async function saveAsset(file) {
   return name;
 }
 
-async function loadAssets() {
+async function loadAssetsFromDir(dirHandle) {
+  const urls = {};
+  const allowed = /\.(png|jpe?g|gif|webp|svg|avif|ico)$/i;
   try {
-    const assets = await S.dir.getDirectoryHandle('assets', { create: true });
-    for await (const [name, handle] of assets.entries()) {
-      if (handle.kind === 'file') {
-        S.assetUrls[name] = URL.createObjectURL(await handle.getFile());
-      }
+    for await (const [name, handle] of dirHandle.entries()) {
+      if (handle.kind !== 'file') continue;
+      if (!allowed.test(name)) continue;
+      const file = await handle.getFile();
+      if (!file.type.startsWith('image/') && !allowed.test(name)) continue;
+      urls[name] = URL.createObjectURL(file);
     }
-  } catch (e) { console.warn('Assets load failed:', e.message); }
+  } catch (e) {
+    console.warn('Asset folder load failed:', e.message);
+  }
+  return urls;
+}
+
+async function loadAssets() {
+  S.assetUrls = {};
+  S.masterAssetUrls = {};
+  if (S.dir) {
+    try {
+      const assets = await S.dir.getDirectoryHandle('assets', { create: true });
+      S.assetUrls = await loadAssetsFromDir(assets);
+    } catch (e) {
+      console.warn('Assets load failed:', e.message);
+      S.assetUrls = {};
+    }
+  }
+  if (S.masterAssetsHandle) {
+    try {
+      S.masterAssetUrls = await loadAssetsFromDir(S.masterAssetsHandle);
+    } catch (e) {
+      console.warn('Master assets load failed:', e.message);
+      S.masterAssetUrls = {};
+    }
+  }
+  S.assetUrls = { ...S.masterAssetUrls, ...S.assetUrls };
 }
 
 async function loadData() {
-  await restoreSavedMasterHandle();
+  await restoreSavedMasterHandles();
   const bm  = await loadMasterData();
   const cfg = await readJSON(APP_CONFIG.files.settings);
   if (cfg) S.cfg  = cfg;
@@ -905,6 +1004,54 @@ function deleteMasterCategory(catId) {
   populateMasterEditorVisual();
 }
 
+function openCategoryDeleteModal() {
+  const categories = S.data.categories || [];
+  const rows = categories.map(cat => {
+    const isMaster = isMasterCategory(cat.id);
+    return `
+      <div class="delete-category-row">
+        <div>
+          <strong>${esc(cat.name)}</strong>
+          <div class="hint-text">${isMaster ? 'Provided by master file — will be hidden.' : 'User-created category — will be deleted.'}</div>
+        </div>
+        <button type="button" class="btn ${isMaster ? 'btn--ghost' : 'btn--danger'}" onclick="deleteCategory('${cat.id}')">
+          <i data-lucide="${isMaster ? 'EyeOff' : 'Trash2'}" style="width:13px;height:13px"></i>
+          ${isMaster ? 'Hide' : 'Delete'}
+        </button>
+      </div>`;
+  }).join('');
+
+  openModal(`
+    <div class="modal-header">
+      <h2>Delete or Hide Category</h2>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text">Select a category to remove. Master-provided categories can only be hidden.</p>
+      ${rows || '<div class="hint-text">No categories available.</div>'}
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn--ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+
+function deleteCategory(catId) {
+  const isMaster = isMasterCategory(catId);
+  if (isMaster) {
+    hideItem('categories', catId);
+    showToast('Master category hidden.');
+  } else {
+    if (!confirm('Delete this category and all user-created bookmarks inside it?')) return;
+    S.data.categories = S.data.categories.filter(c => c.id !== catId);
+    S.cfg.userCategories = (S.cfg.userCategories || []).filter(c => c.id !== catId);
+    S.cfg.userBookmarks = (S.cfg.userBookmarks || []).filter(b => b.categoryId !== catId);
+    showToast('Category deleted.');
+  }
+  closeModal();
+  render();
+  saveData();
+}
+
 function deleteMasterBookmark(catId, bmId) {
   if (!confirm('Delete this master bookmark?')) return;
   const cat = S.masterData.categories.find(c => c.id === catId);
@@ -1170,6 +1317,10 @@ function renderDashboard() {
           <i data-lucide="FileText" style="width:11px;height:11px"></i>
           <span>${esc(S.masterFileName || APP_CONFIG.files.master)}</span>
         </div>
+        ${S.masterAssetsHandle ? `<div class="dir-badge" title="Master assets folder loaded">
+          <i data-lucide="Image" style="width:11px;height:11px"></i>
+          <span>Master assets</span>
+        </div>` : ''}
       </div>
       <div class="header-center">
         <div class="search-wrap">
@@ -1662,6 +1813,7 @@ async function submitCard(e, catId, bmId) {
           delete S.cfg.overrides.bookmarks[bmId].customStyle;
         }
       }
+      mergeData();
       // Do not move master bookmarks between categories.
     } else {
       Object.assign(bm, { title, url, description: desc, tags, icon: { type: iType, value: iVal }, customStyle: cs });
@@ -1701,6 +1853,7 @@ async function submitCategory(e, catId) {
     if (cat.__master) {
       if (!S.cfg.overrides.categories[catId]) S.cfg.overrides.categories[catId] = {};
       Object.assign(S.cfg.overrides.categories[catId], { name, icon, color });
+      mergeData();
     } else {
       Object.assign(cat, { name, icon, color });
       const localCat = S.cfg.userCategories.find(c => c.id === catId);
@@ -1932,6 +2085,7 @@ function closePalette() {
 function updatePalette(q) {
   const CMDS = [
     { label: 'New Category',      icon: 'FolderPlus', fn: () => { closePalette(); openCategoryModal(null); } },
+    { label: 'Delete Category',   icon: 'Trash2',    fn: () => { closePalette(); openCategoryDeleteModal(); } },
     { label: 'Import Bookmarks',  icon: 'Upload',     fn: () => { closePalette(); openImportModal(); } },
     { label: 'Export Bookmarks',  icon: 'Download',   fn: () => { closePalette(); exportData(); } },
     { label: 'Edit Master Bookmarks', icon: 'Edit3', fn: () => { closePalette(); openMasterEditorModal(); } },
