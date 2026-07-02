@@ -141,12 +141,62 @@ function autoArrangeCards() {
 // ⚡ Bolt: Optimized canvas height recalculation during drag.
 // Instead of O(N) array allocation via Object.entries() on every 60fps pointermove,
 // we cache the max static Y of all non-dragged items and do an O(1) comparison during drag.
+function applyLayout() {
+  const canvas = document.getElementById('canvas');
+  if (!canvas) return;
+
+  const vw = window.innerWidth;
+  const positions = S.cfg.cardPositions || {};
+  let maxRight = 0;
+
+  const cards = Array.from(canvas.querySelectorAll('.card'));
+  cards.forEach(card => {
+    const id = card.dataset.id;
+    if (positions[id] && positions[id].x !== undefined) {
+      const w = positions[id].w || APP_CONFIG.canvas.cardWidth;
+      maxRight = Math.max(maxRight, positions[id].x + w);
+    }
+  });
+
+  const isWrapped = maxRight > (vw - APP_CONFIG.canvas.padding);
+
+  if (isWrapped) {
+    canvas.dataset.wrapped = "true";
+    canvas.style.display = 'grid';
+    canvas.style.gridTemplateColumns = `repeat(auto-fill, minmax(${APP_CONFIG.canvas.cardWidth}px, 1fr))`;
+    canvas.style.gap = `${APP_CONFIG.canvas.gap}px`;
+    cards.forEach(card => {
+      card.style.position = 'relative';
+      card.style.left = '';
+      card.style.top = '';
+    });
+  } else {
+    canvas.dataset.wrapped = "false";
+    canvas.style.display = 'block';
+    cards.forEach(card => {
+      const id = card.dataset.id;
+      if (positions[id] && positions[id].x !== undefined) {
+        card.style.position = 'absolute';
+        card.style.left = positions[id].x + 'px';
+        card.style.top = positions[id].y + 'px';
+      }
+    });
+  }
+
+  updateCanvasHeight();
+}
+
 function updateCanvasHeight() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
   const minH = window.innerHeight - 120; // header + filter bar
-  let maxYPx = minH;
 
+  if (canvas.dataset.wrapped === "true") {
+    canvas.style.minHeight = minH + 'px';
+    return;
+  }
+
+  let maxYPx = minH;
   if (_drag && _drag.maxStaticPx !== undefined) {
     maxYPx = Math.max(_drag.maxStaticPx, _drag.curY + 150);
   } else {
@@ -210,6 +260,13 @@ function onDragStart(e) {
 
   // Don't drag when interacting with links, buttons, or action overlays
   if (e.target.closest('a, button, .card-actions')) return;
+
+  const canvas = document.getElementById('canvas');
+  if (canvas && canvas.dataset.wrapped === "true") {
+    showToast('Cannot drag cards while window is small. Resize window to enable dragging.');
+    return;
+  }
+
   e.preventDefault();
 
   const card   = e.currentTarget;
@@ -1478,8 +1535,6 @@ function renderCard(bm, cat, dimmed) {
   const cardColorStyle = cs.cardColor ? (isBgImage ? `background-color:${esc(cs.cardColor)}` : `background:${esc(cs.cardColor)}`) : '';
   const bgImageStyle = isBgImage && bgImgSrc ? `background-image:url("${bgImgSrc}");background-size:cover;background-position:center center;background-repeat:no-repeat` : '';
   const inlineStyle = [
-    `left:${pos.x}px`,
-    `top:${pos.y}px`,
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
     `--card-opacity:${cardOpacity}`,
@@ -1603,7 +1658,7 @@ function render() {
   const app = document.getElementById('app');
   app.innerHTML = S.dir ? renderDashboard() : renderConnect();
   if (typeof lucide !== 'undefined') lucide.createIcons();
-  if (S.dir) { initFreeDrag(); updateCanvasHeight(); }
+  if (S.dir) { initFreeDrag(); applyLayout(); }
 }
 
 function promptMasterFileIfNeeded() {
@@ -1887,11 +1942,11 @@ function openCardModal(catId, bmId) {
               </select>
             </div>
             ${Object.keys(S.assetUrls || {}).length ? `
-            <div class="asset-gallery">
+            <div class="asset-gallery" style="max-height: 200px; overflow-y: auto; resize: vertical;">
               ${Object.entries(S.assetUrls).map(([name, url]) => `
                 <button type="button" class="asset-thumb ${iType==='local' && iVal===name ? 'selected' : ''}"
                   onclick="selectLocalAsset('${name}')">
-                  <img src="${url}" alt="Asset" />
+                  <img src="${url}" alt="Asset" loading="lazy" onmouseenter="showAssetPreview(this.src)" onmouseleave="hideAssetPreview()"/>
                 </button>
               `).join('')}
             </div>
@@ -1924,6 +1979,9 @@ function openCardModal(catId, bmId) {
           </div>
           <div style="flex:1">
             <label><input type="checkbox" name="hideText" ${cs.hideText?'checked':''}> Hide text overlay</label>
+          </div>
+          <div style="flex:1">
+            <label><input type="checkbox" name="hideIcon" ${cs.hideIcon?'checked':''}> Hide icon on card</label>
           </div>
         </div>
         <div class="form-section">Text Formatting <span class="hint-inline">(optional)</span></div>
@@ -2156,6 +2214,10 @@ function pickCatColor(el, color) {
 //  SAVE / DELETE
 // ═══════════════════════════════════════════════════════════════
 async function submitCard(e, catId, bmId) {
+  // ensure card stays in place
+  if (bmId && S.cfg.cardPositions[bmId] && !S.cfg.cardPositions[bmId]._px) {
+     S.cfg.cardPositions[bmId]._px = true;
+  }
   e.preventDefault();
   const fd    = new FormData(e.target);
   const title = fd.get('title').trim();
@@ -2589,9 +2651,10 @@ document.addEventListener('pointerup', e => {
   _drag.el.classList.remove('card--dragging');
   document.body.style.userSelect = '';
   if (_drag.moved) {
-    S.cfg.cardPositions[_drag.bmId] = { x: _drag.curX, y: _drag.curY };
+    const existing = S.cfg.cardPositions[_drag.bmId] || {};
+    S.cfg.cardPositions[_drag.bmId] = { ...existing, x: _drag.curX, y: _drag.curY, _px: true };
     saveData();
-    updateCanvasHeight();
+    applyLayout();
   }
   _drag = null;
 });
@@ -2602,15 +2665,16 @@ document.addEventListener('pointercancel', () => {
   document.body.style.userSelect = '';
   // Native drag on links causes pointercancel. Treat as a drop if moved.
   if (_drag.moved) {
-    S.cfg.cardPositions[_drag.bmId] = { x: _drag.curX, y: _drag.curY };
+    const existing = S.cfg.cardPositions[_drag.bmId] || {};
+    S.cfg.cardPositions[_drag.bmId] = { ...existing, x: _drag.curX, y: _drag.curY, _px: true };
     saveData();
-    updateCanvasHeight();
+    applyLayout();
   }
   _drag = null;
 });
 
 window.addEventListener('resize', () => {
-  updateCanvasHeight();
+  applyLayout();
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -2697,3 +2761,47 @@ async function init() {
 }
 
 init();
+
+
+// ═══════════════════════════════════════════════════════════════
+//  ASSET PREVIEW POPUP
+// ═══════════════════════════════════════════════════════════════
+function showAssetPreview(src) {
+  let popup = document.getElementById('asset-preview-popup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'asset-preview-popup';
+    popup.style.position = 'fixed';
+    popup.style.bottom = '20px';
+    popup.style.right = '20px';
+    popup.style.zIndex = '99999';
+    popup.style.backgroundColor = 'var(--bg2)';
+    popup.style.border = '1px solid var(--border)';
+    popup.style.borderRadius = '8px';
+    popup.style.padding = '8px';
+    popup.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+    popup.style.pointerEvents = 'none';
+    popup.style.transition = 'opacity 0.2s ease-in-out';
+
+    const img = document.createElement('img');
+    img.id = 'asset-preview-img';
+    img.style.maxWidth = '300px';
+    img.style.maxHeight = '300px';
+    img.style.objectFit = 'contain';
+    img.style.display = 'block';
+
+    popup.appendChild(img);
+    document.body.appendChild(popup);
+  }
+
+  const img = document.getElementById('asset-preview-img');
+  img.src = src;
+  popup.style.opacity = '1';
+}
+
+function hideAssetPreview() {
+  const popup = document.getElementById('asset-preview-popup');
+  if (popup) {
+    popup.style.opacity = '0';
+  }
+}
