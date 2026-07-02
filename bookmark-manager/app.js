@@ -217,8 +217,8 @@ function applyLayout() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
 
-  // If a category is selected, we want an auto-arranged wrapped view regardless of custom positions
-  if (S.activeCat) {
+  // If a category or query is selected, we want an auto-arranged wrapped view regardless of custom positions
+  if (S.activeCat || S.query) {
       canvas.dataset.wrapped = "true";
       // Using flex layout with wrap enables variable-sized cards to flow naturally.
       canvas.style.display = 'flex';
@@ -665,13 +665,16 @@ async function selectDefaultMasterFile() {
 
 async function saveMasterAssetsUrl() {
   const urlInput = document.getElementById('master-assets-url-input');
-  if (!urlInput || !urlInput.value) return;
+  if (!urlInput) return;
   const url = urlInput.value.trim();
 
   S.cfg.masterAssetsUrl = url;
-  S.masterAssetsHandle = null;
-  S.pendingMasterAssetsHandle = null;
-  await idbSet('masterAssetsHandle', null);
+  if (url) {
+      S.masterAssetsHandle = null;
+      S.pendingMasterAssetsHandle = null;
+      await idbSet('masterAssetsHandle', null);
+  }
+
   await writeJSON(APP_CONFIG.files.settings, S.cfg);
 
   await loadAssets();
@@ -1822,13 +1825,13 @@ function renderCard(bm, cat, dimmed) {
   const inlineStyle = [
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
-    !S.activeCat && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
+    !(S.activeCat || S.query) && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
     `--card-opacity:${cardOpacity}`,
     `--card-local-text-scale:${cardTextScale}`,
     cardColorStyle,
     bgImageStyle,
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
-    cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
+    cs.textColor ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
     cs.textWeight === 'bold' && !cs.hideText ? 'font-weight:bold' : '',
     cs.textItalic && !cs.hideText ? 'font-style:italic' : '',
   ].filter(Boolean).join(';');
@@ -2068,6 +2071,8 @@ function renderDashboard() {
   const cats        = S.data.categories || [];
   const isEmpty     = cats.length === 0 && !S.query;
   const hiddenBmCount  = (S.cfg.hidden?.bookmarks  || []).length;
+  // Let the wrapper know if it's search or filtered
+  const isSearchOrFilter = S.query || S.activeCat;
   const hiddenCatCount = (S.cfg.hidden?.categories || []).length;
   const hiddenTotal    = hiddenBmCount + hiddenCatCount;
 
@@ -2357,7 +2362,14 @@ function openCardModal(catId, bmId) {
         </div>
         <div class="form-row">
           <label for="bm-category">Category</label>
-          <select id="bm-category" name="categoryId" class="form-input" ${isMaster ? 'disabled' : ''}>${catOptions}</select>
+          <div style="display:flex; gap:8px;">
+            <select id="bm-category" name="categoryId" class="form-input" style="flex:1;" ${isMaster ? 'disabled' : ''}>
+              ${catOptions}
+            </select>
+            <button type="button" class="btn btn--ghost" onclick="openNewCategoryFromEditor()" title="New Category">
+               <i data-lucide="Plus" style="width:14px;height:14px"></i>
+            </button>
+          </div>
           ${isMaster ? '<p class="hint-text">Master bookmarks cannot be moved between categories.</p>' : ''}
         </div>
 
