@@ -118,7 +118,6 @@ function autoArrangeCards() {
   const vw       = window.innerWidth || 1200;
   const { cardWidth: CARD_W, cardHeight: CARD_H, gap: GAP, padding: PAD } = APP_CONFIG.canvas;
   const cols     = Math.max(1, Math.floor((vw - PAD * 2) / (CARD_W + GAP)));
-  const toVw     = px => px / vw * 100;
   let count = Object.keys(S.cfg.cardPositions).length;
   let changed = false;
 
@@ -144,8 +143,9 @@ function autoArrangeCards() {
       const col = count % cols;
       const row = Math.floor(count / cols);
       S.cfg.cardPositions[bm.id] = {
-        x: toVw(PAD + col * (CARD_W + GAP)),
-        y: toVw(PAD + row * (CARD_H + GAP)),
+        x: PAD + col * (CARD_W + GAP),
+        y: PAD + row * (CARD_H + GAP),
+        _px: true
       };
       count++;
       changed = true;
@@ -158,22 +158,71 @@ function autoArrangeCards() {
 // ⚡ Bolt: Optimized canvas height recalculation during drag.
 // Instead of O(N) array allocation via Object.entries() on every 60fps pointermove,
 // we cache the max static Y of all non-dragged items and do an O(1) comparison during drag.
+function applyLayout() {
+  const canvas = document.getElementById('canvas');
+  if (!canvas) return;
+
+  const vw = window.innerWidth;
+  const positions = S.cfg.cardPositions || {};
+  let maxRight = 0;
+
+  const cards = Array.from(canvas.querySelectorAll('.card'));
+  cards.forEach(card => {
+    const id = card.dataset.id;
+    if (positions[id] && positions[id].x !== undefined) {
+      const w = positions[id].w || APP_CONFIG.canvas.cardWidth;
+      maxRight = Math.max(maxRight, positions[id].x + w);
+    }
+  });
+
+  const isWrapped = maxRight > (vw - APP_CONFIG.canvas.padding);
+
+  if (isWrapped) {
+    canvas.dataset.wrapped = "true";
+    canvas.style.display = 'grid';
+    canvas.style.gridTemplateColumns = `repeat(auto-fill, minmax(${APP_CONFIG.canvas.cardWidth}px, 1fr))`;
+    canvas.style.gap = `${APP_CONFIG.canvas.gap}px`;
+    cards.forEach(card => {
+      card.style.position = 'relative';
+      card.style.left = '';
+      card.style.top = '';
+    });
+  } else {
+    canvas.dataset.wrapped = "false";
+    canvas.style.display = 'block';
+    cards.forEach(card => {
+      const id = card.dataset.id;
+      if (positions[id] && positions[id].x !== undefined) {
+        card.style.position = 'absolute';
+        card.style.left = positions[id].x + 'px';
+        card.style.top = positions[id].y + 'px';
+      }
+    });
+  }
+
+  updateCanvasHeight();
+}
+
 function updateCanvasHeight() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
-  const vw  = window.innerWidth;
   const minH = window.innerHeight - 120; // header + filter bar
-  let maxYPx = minH;
 
-  if (_drag && _drag.maxStaticVw !== undefined) {
-    maxYPx = Math.max(_drag.maxStaticVw, (_drag.curY * vw / 100) + 150);
+  if (canvas.dataset.wrapped === "true") {
+    canvas.style.minHeight = minH + 'px';
+    return;
+  }
+
+  let maxYPx = minH;
+  if (_drag && _drag.maxStaticPx !== undefined) {
+    maxYPx = Math.max(_drag.maxStaticPx, _drag.curY + 150);
   } else {
     const positions = S.cfg.cardPositions || {};
     for (const id in positions) {
       const y = (_drag && _drag.bmId === id) ? _drag.curY : positions[id].y;
-      maxYPx = Math.max(maxYPx, (y * vw / 100) + 150);
+      maxYPx = Math.max(maxYPx, y + 150);
     }
-    if (_drag) maxYPx = Math.max(maxYPx, (_drag.curY * vw / 100) + 150);
+    if (_drag) maxYPx = Math.max(maxYPx, _drag.curY + 150);
   }
   canvas.style.minHeight = maxYPx + 60 + 'px';
 }
@@ -228,19 +277,25 @@ function onDragStart(e) {
 
   // Don't drag when interacting with links, buttons, or action overlays
   if (e.target.closest('a, button, .card-actions')) return;
+
+  const canvas = document.getElementById('canvas');
+  if (canvas && canvas.dataset.wrapped === "true") {
+    showToast('Cannot drag cards while window is small. Resize window to enable dragging.');
+    return;
+  }
+
   e.preventDefault();
 
   const card   = e.currentTarget;
-  const vw     = window.innerWidth;
-  const startX = parseFloat(card.style.left) || 0; // current position in vw
+  const startX = parseFloat(card.style.left) || 0; // current position in px
   const startY = parseFloat(card.style.top)  || 0;
   const bmId   = card.dataset.id;
 
   // Pre-calculate max static Y of all OTHER cards so updateCanvasHeight is O(1) during 60fps pointermove
-  let maxStaticVw = window.innerHeight - 120;
+  let maxStaticPx = window.innerHeight - 120;
   const positions = S.cfg.cardPositions || {};
   for (const id in positions) {
-    if (id !== bmId) maxStaticVw = Math.max(maxStaticVw, (positions[id].y * vw / 100) + 150);
+    if (id !== bmId) maxStaticPx = Math.max(maxStaticPx, positions[id].y + 150);
   }
 
   _drag = {
@@ -248,11 +303,11 @@ function onDragStart(e) {
     el:   card,
     startClientX: e.clientX,
     startClientY: e.clientY,
-    startX, startY, vw,
+    startX, startY,
     canvas: document.getElementById('canvas'),
     curX: startX, curY: startY,
     moved: false,
-    maxStaticVw, // ⚡ Bolt: Cached O(1) height calculation value
+    maxStaticPx, // ⚡ Bolt: Cached O(1) height calculation value
   };
 
   card.classList.add('card--dragging');
@@ -333,6 +388,23 @@ async function writeJSON(nameOrHandle, obj) {
 }
 
 async function writeMasterJSON(obj) {
+  if (S.cfg.masterFileUrl) {
+    try {
+      const res = await fetch(S.cfg.masterFileUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj, null, 2)
+      });
+      if (res.ok) {
+        showToast('Master changes saved to remote URL.');
+      } else {
+        showToast('Failed to save to URL. Read-only?');
+      }
+    } catch (e) {
+      showToast('Failed to save to URL: ' + e.message);
+    }
+    return;
+  }
   if (!S.dir) return;
   let fh = S.masterHandle;
   if (!fh) fh = await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
@@ -341,6 +413,20 @@ async function writeMasterJSON(obj) {
 
 async function loadMasterData() {
   let bm = null;
+
+  if (S.cfg.masterFileUrl) {
+    try {
+      const res = await fetch(S.cfg.masterFileUrl);
+      if (res.ok || res.status === 0) {
+        bm = await res.json();
+        return bm;
+      }
+    } catch (e) {
+      console.warn('Could not fetch master URL:', e);
+      showToast('Failed to load master file from URL.');
+    }
+  }
+
   if (S.masterHandle) {
     bm = await readJSON(S.masterHandle);
     if (!bm) {
@@ -351,7 +437,7 @@ async function loadMasterData() {
     }
   }
 
-  if (!bm && S.dir) {
+  if (!bm && S.dir && !S.pendingMasterHandle && !S.cfg.masterFileUrl) {
     const localHandle = await S.dir.getFileHandle(APP_CONFIG.files.master, { create: false }).catch(() => null);
     if (localHandle) {
       const localData = await readJSON(localHandle);
@@ -447,6 +533,48 @@ async function selectDefaultMasterFile() {
   }
 }
 
+async function saveMasterAssetsUrl() {
+  const urlInput = document.getElementById('master-assets-url-input');
+  if (!urlInput || !urlInput.value) return;
+  const url = urlInput.value.trim();
+
+  S.cfg.masterAssetsUrl = url;
+  S.masterAssetsHandle = null;
+  S.pendingMasterAssetsHandle = null;
+  await idbSet('masterAssetsHandle', null);
+  await writeJSON(APP_CONFIG.files.settings, S.cfg);
+
+  await loadAssets();
+  render();
+  showToast('Master assets location updated.');
+}
+
+async function saveMasterUrl() {
+  const urlInput = document.getElementById('master-url-input');
+  if (!urlInput || !urlInput.value) return;
+  const url = urlInput.value.trim();
+
+  S.cfg.masterFileUrl = url;
+  S.cfg.masterPrompted = true;
+  S.masterHandle = null;
+  S.masterFileName = '';
+  S.pendingMasterHandle = null;
+  await idbSet('masterHandle', null);
+  await writeJSON(APP_CONFIG.files.settings, S.cfg);
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok && res.status !== 0) throw new Error('Network response was not ok');
+    const bm = await res.json();
+    S.masterData = bm;
+    mergeData();
+    render();
+    showToast('Master file location updated.');
+  } catch (err) {
+    showToast('Location saved, but could not load it yet: ' + err.message);
+  }
+}
+
 function openMasterFileModal() {
   openModal(`
     <div class="modal-header">
@@ -466,12 +594,20 @@ function openMasterFileModal() {
           Use Local master_bookmarks.json
         </button>
       </div>
+      <div style="margin-top:18px; display:flex; gap:10px;">
+        <input type="text" id="master-url-input" class="form-input" placeholder="https://... or C:\... or /mnt/..." style="flex:1;">
+        <button class="btn btn--primary" onclick="saveMasterUrl(); closeModal();">Load from URL/Path</button>
+      </div>
       <div style="margin-top:18px;">
         <p class="hint-text">If your shared master file lives alongside a shared <code>assets/</code> folder, select that folder here so the app can load shared icons and images.</p>
-        <button class="btn btn--ghost" onclick="selectMasterAssetsFolder(); closeModal();">
-          <i data-lucide="Image" style="width:13px;height:13px"></i>
-          Select Master Assets Folder
-        </button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn--ghost" onclick="selectMasterAssetsFolder(); closeModal();" style="flex-shrink:0;">
+            <i data-lucide="FolderSearch" style="width:13px;height:13px"></i>
+            Select Folder
+          </button>
+          <input type="text" id="master-assets-url-input" class="form-input" placeholder="https://.../assets or C:\...\assets" style="flex:1;">
+          <button class="btn btn--primary" onclick="saveMasterAssetsUrl(); closeModal();">Set URL/Path</button>
+        </div>
       </div>
     </div>`);
 }
@@ -608,9 +744,7 @@ async function restoreSavedMasterHandles() {
         S.masterHandle = saved;
         S.masterFileName = saved.name;
       } else {
-        S.masterHandle = null;
-        S.masterFileName = '';
-        S.cfg.masterPrompted = false;
+        S.pendingMasterHandle = saved;
       }
     }
   } catch (e) {
@@ -627,7 +761,7 @@ async function restoreSavedMasterHandles() {
       if (perm === 'granted') {
         S.masterAssetsHandle = savedAssets;
       } else {
-        S.masterAssetsHandle = null;
+        S.pendingMasterAssetsHandle = savedAssets;
       }
     }
   } catch (e) {
@@ -715,8 +849,6 @@ async function loadAssets() {
 }
 
 async function loadData() {
-  await restoreSavedMasterHandles();
-  const bm  = await loadMasterData();
   const cfg = await readJSON(APP_CONFIG.files.settings);
   if (cfg) S.cfg  = cfg;
   else     await writeJSON(APP_CONFIG.files.settings, S.cfg);
@@ -748,6 +880,10 @@ async function loadData() {
     cardTextScale: '1',
   };
   if (typeof S.cfg.masterPrompted !== 'boolean') S.cfg.masterPrompted = false;
+
+  await restoreSavedMasterHandles();
+  const bm  = await loadMasterData();
+
   await loadAssets();
   if (bm) {
     S.masterData = bm;
@@ -762,6 +898,19 @@ async function loadData() {
     S.masterData.categories = [];
   }
 
+  if (S.cfg.cardPositions) {
+    let migrated = false;
+    for (const id in S.cfg.cardPositions) {
+      if (!S.cfg.cardPositions[id]._px) {
+        S.cfg.cardPositions[id].x = S.cfg.cardPositions[id].x * 1200 / 100;
+        S.cfg.cardPositions[id].y = S.cfg.cardPositions[id].y * 1200 / 100;
+        S.cfg.cardPositions[id]._px = true;
+        migrated = true;
+      }
+    }
+    if (migrated) await writeJSON(APP_CONFIG.files.settings, S.cfg);
+  }
+
   mergeData();
   // Record mtime so pollChanges() can detect external edits
   try {
@@ -772,8 +921,31 @@ async function loadData() {
 
 // Poll every 4 s for external edits to master_bookmarks.json
 // (e.g. the user edited the file directly in a text editor)
+let _lastEtag = ''; // for tracking URL changes
+
 async function pollChanges() {
-  if (!S.dir || document.hidden || _lastModified === 0) return;
+  if (document.hidden || _lastModified === 0) return;
+
+  if (S.cfg && S.cfg.masterFileUrl) {
+    try {
+      const res = await fetch(S.cfg.masterFileUrl, { method: 'HEAD' });
+      if (!res.ok) return;
+      const etag = res.headers.get('ETag') || res.headers.get('Last-Modified');
+      if (etag && _lastEtag && etag !== _lastEtag) {
+        _lastEtag = etag;
+        const fetchRes = await fetch(S.cfg.masterFileUrl);
+        S.masterData = await fetchRes.json();
+        mergeData();
+        render();
+        showToast('Bookmarks reloaded — external change detected');
+      } else if (etag && !_lastEtag) {
+        _lastEtag = etag;
+      }
+    } catch (e) {}
+    return;
+  }
+
+  if (!S.dir) return;
   try {
     const fh   = S.masterHandle || await S.dir.getFileHandle(APP_CONFIG.files.master, { create: true });
     const file = await fh.getFile();
@@ -806,32 +978,6 @@ function renderMasterCommitHistory() {
       </div>
     `).join('')}
   </div>`;
-}
-
-function openMasterEditorModal() {
-  openModal(`
-    <div class="modal-header">
-      <h2>Edit Master Bookmarks</h2>
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
-    </div>
-    <div class="modal-body">
-      <p class="hint-text">This editor updates the shared <code>master_bookmarks.json</code> file directly. Use the JSON editor to add, edit, or remove categories and bookmarks, then commit your changes with a descriptive message.</p>
-      <div class="form-row">
-        <label for="master-commit-message">Commit Message *</label>
-        <textarea id="master-commit-message" class="form-input form-textarea" rows="3" placeholder="Describe the master update..." required></textarea>
-      </div>
-      <div class="form-row">
-        <label for="master-json-editor">Master JSON</label>
-        <textarea id="master-json-editor" class="form-input form-textarea" rows="16">${esc(JSON.stringify(S.masterData, null, 2))}</textarea>
-      </div>
-      <div class="form-section">Recent Master Commits</div>
-      ${renderMasterCommitHistory()}
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn--ghost" onclick="closeModal()">Cancel</button>
-      <button type="button" class="btn btn--ghost" onclick="reloadMasterEditor()">Reload Latest</button>
-      <button type="button" class="btn btn--primary" onclick="saveMasterEditor()">Commit Master Changes</button>
-    </div>`);
 }
 
 async function reloadMasterEditor() {
@@ -1370,7 +1516,8 @@ function renderIcon(icon, size = 16) {
     return `<img src="${esc(icon.value)}" class="card-favicon" loading="lazy" onerror="${fb}">`;
   }
   if (icon.type === 'local') {
-    const url = S.assetUrls[icon.value];
+    let url = S.assetUrls[icon.value];
+    if (!url && S.cfg.masterAssetsUrl) url = S.cfg.masterAssetsUrl + '/' + icon.value;
     if (url) {
       const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Image\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
       return `<img src="${url}" class="card-favicon" loading="lazy" onerror="${fb}">`;
@@ -1390,15 +1537,21 @@ function renderCard(bm, cat, dimmed) {
 
   const hideCatBadge = cs.hideCategoryBadge || (S.cfg.themeSettings?.showCategoryBadge === false);
   const isBgImage = cs.bgImage && (bm.icon?.type === 'url' || bm.icon?.type === 'local');
-  const bgImgSrc = isBgImage ? (bm.icon.type === 'url' ? esc(bm.icon.value) : S.assetUrls[bm.icon.value]) : null;
+  let bgImgSrc = null;
+  if (isBgImage) {
+    if (bm.icon.type === 'url') {
+      bgImgSrc = esc(bm.icon.value);
+    } else {
+      bgImgSrc = S.assetUrls[bm.icon.value];
+      if (!bgImgSrc && S.cfg.masterAssetsUrl) bgImgSrc = S.cfg.masterAssetsUrl + '/' + bm.icon.value;
+    }
+  }
 
   const cardOpacity = cs.cardOpacity !== undefined ? cs.cardOpacity : (S.cfg.themeSettings?.cardOpacity || 1);
   const cardTextScale = cs.textSize ? parseFloat(cs.textSize) : 1;
   const cardColorStyle = cs.cardColor ? (isBgImage ? `background-color:${esc(cs.cardColor)}` : `background:${esc(cs.cardColor)}`) : '';
   const bgImageStyle = isBgImage && bgImgSrc ? `background-image:url("${bgImgSrc}");background-size:cover;background-position:center center;background-repeat:no-repeat` : '';
   const inlineStyle = [
-    `left:${pos.x}vw`,
-    `top:${pos.y}vw`,
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
     `--card-opacity:${cardOpacity}`,
@@ -1522,7 +1675,7 @@ function render() {
   const app = document.getElementById('app');
   app.innerHTML = S.dir ? renderDashboard() : renderConnect();
   if (typeof lucide !== 'undefined') lucide.createIcons();
-  if (S.dir) { initFreeDrag(); updateCanvasHeight(); }
+  if (S.dir) { initFreeDrag(); applyLayout(); }
 }
 
 function promptMasterFileIfNeeded() {
@@ -1594,12 +1747,17 @@ function renderDashboard() {
       </button>`;
   }).join('');
 
-  const masterBanner = (!S.masterHandle && !S.cfg.masterPrompted)
+  const masterBanner = S.pendingMasterHandle
     ? `<div class="master-banner">
-         <p><strong>Master file not configured.</strong> Select or create a shared master file to get started.</p>
-         <button class="btn btn--ghost" onclick="openMasterFileModal()">Configure Master File</button>
+         <p><strong>Master file access expired.</strong> Grant access to resume using the shared master file.</p>
+         <button class="btn btn--primary" onclick="handleResumeMaster()">Resume Shared Master File</button>
        </div>`
-    : '';
+    : (!S.masterHandle && !S.cfg.masterFileUrl && !S.cfg.masterPrompted)
+      ? `<div class="master-banner">
+           <p><strong>Master file not configured.</strong> Select or create a shared master file to get started.</p>
+           <button class="btn btn--ghost" onclick="openMasterFileModal()">Configure Master File</button>
+         </div>`
+      : '';
 
   return `
     ${masterBanner}
@@ -1613,7 +1771,7 @@ function renderDashboard() {
           <i data-lucide="FolderOpen" style="width:11px;height:11px"></i>
           <span>${esc(S.dir.name)}</span>
         </div>
-        ${S.masterAssetsHandle ? `<div class="dir-badge" title="Master assets folder loaded">
+        ${(S.masterAssetsHandle || S.cfg.masterAssetsUrl) ? `<div class="dir-badge" title="Master assets loaded">
           <i data-lucide="Image" style="width:11px;height:11px"></i>
           <span>Master assets</span>
         </div>` : ''}
@@ -1801,17 +1959,17 @@ function openCardModal(catId, bmId) {
               </select>
             </div>
             ${Object.keys(S.assetUrls || {}).length ? `
-            <div class="asset-gallery">
+            <div class="asset-gallery" style="max-height: 200px; overflow-y: auto; resize: vertical;">
               ${Object.entries(S.assetUrls).map(([name, url]) => `
                 <button type="button" class="asset-thumb ${iType==='local' && iVal===name ? 'selected' : ''}"
                   onclick="selectLocalAsset('${name}')">
-                  <img src="${url}" alt="Asset" />
+                  <img src="${url}" alt="Asset" loading="lazy" onmouseenter="showAssetPreview(this.src)" onmouseleave="hideAssetPreview()"/>
                 </button>
               `).join('')}
             </div>
             ` : '<p class="hint-text">Upload an image to use it here.</p>'}
-            ${iType==='local' && S.assetUrls[iVal]
-              ? `<img src="${S.assetUrls[iVal]}" class="icon-preview-img">` : ''}
+            ${iType==='local' && (S.assetUrls[iVal] || S.cfg.masterAssetsUrl)
+              ? `<img src="${S.assetUrls[iVal] || (S.cfg.masterAssetsUrl + '/' + iVal)}" class="icon-preview-img">` : ''}
           </div>
         </div>
 
@@ -1838,6 +1996,9 @@ function openCardModal(catId, bmId) {
           </div>
           <div style="flex:1">
             <label><input type="checkbox" name="hideText" ${cs.hideText?'checked':''}> Hide text overlay</label>
+          </div>
+          <div style="flex:1">
+            <label><input type="checkbox" name="hideIcon" ${cs.hideIcon?'checked':''}> Hide icon on card</label>
           </div>
         </div>
         <div class="form-section">Text Formatting <span class="hint-inline">(optional)</span></div>
@@ -2070,6 +2231,10 @@ function pickCatColor(el, color) {
 //  SAVE / DELETE
 // ═══════════════════════════════════════════════════════════════
 async function submitCard(e, catId, bmId) {
+  // ensure card stays in place
+  if (bmId && S.cfg.cardPositions[bmId] && !S.cfg.cardPositions[bmId]._px) {
+     S.cfg.cardPositions[bmId]._px = true;
+  }
   e.preventDefault();
   const fd    = new FormData(e.target);
   const title = fd.get('title').trim();
@@ -2483,19 +2648,17 @@ document.getElementById('palette-overlay').addEventListener('click', e => {
   if (e.target.id === 'palette-overlay') closePalette();
 });
 
-document.getElementById('modal-overlay').addEventListener('click', e => {
-  if (e.target.id === 'modal-overlay') closeModal();
-});
+
 
 document.addEventListener('pointermove', e => {
   if (!_drag) return;
   e.preventDefault();
-  const dx = (e.clientX - _drag.startClientX) / _drag.vw * 100;
-  const dy = (e.clientY - _drag.startClientY) / _drag.vw * 100;
+  const dx = e.clientX - _drag.startClientX;
+  const dy = e.clientY - _drag.startClientY;
   _drag.curX = Math.max(0, _drag.startX + dx);
   _drag.curY = Math.max(0, _drag.startY + dy);
-  _drag.el.style.left = _drag.curX + 'vw';
-  _drag.el.style.top  = _drag.curY + 'vw';
+  _drag.el.style.left = _drag.curX + 'px';
+  _drag.el.style.top  = _drag.curY + 'px';
   _drag.moved = true;
   updateCanvasHeight();
 }, { passive: false });
@@ -2505,9 +2668,10 @@ document.addEventListener('pointerup', e => {
   _drag.el.classList.remove('card--dragging');
   document.body.style.userSelect = '';
   if (_drag.moved) {
-    S.cfg.cardPositions[_drag.bmId] = { x: _drag.curX, y: _drag.curY };
+    const existing = S.cfg.cardPositions[_drag.bmId] || {};
+    S.cfg.cardPositions[_drag.bmId] = { ...existing, x: _drag.curX, y: _drag.curY, _px: true };
     saveData();
-    updateCanvasHeight();
+    applyLayout();
   }
   _drag = null;
 });
@@ -2518,15 +2682,16 @@ document.addEventListener('pointercancel', () => {
   document.body.style.userSelect = '';
   // Native drag on links causes pointercancel. Treat as a drop if moved.
   if (_drag.moved) {
-    S.cfg.cardPositions[_drag.bmId] = { x: _drag.curX, y: _drag.curY };
+    const existing = S.cfg.cardPositions[_drag.bmId] || {};
+    S.cfg.cardPositions[_drag.bmId] = { ...existing, x: _drag.curX, y: _drag.curY, _px: true };
     saveData();
-    updateCanvasHeight();
+    applyLayout();
   }
   _drag = null;
 });
 
 window.addEventListener('resize', () => {
-  updateCanvasHeight();
+  applyLayout();
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -2541,6 +2706,37 @@ async function handleConnect() {
   }
 }
 
+async function handleResumeMaster() {
+  if (S.pendingMasterHandle) {
+    try {
+      const perm = await S.pendingMasterHandle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        S.masterHandle = S.pendingMasterHandle;
+        S.masterFileName = S.pendingMasterHandle.name;
+        S.pendingMasterHandle = null;
+        await idbSet('masterHandle', S.masterHandle);
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+    }
+  }
+  if (S.pendingMasterAssetsHandle) {
+    try {
+      const perm = await S.pendingMasterAssetsHandle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        S.masterAssetsHandle = S.pendingMasterAssetsHandle;
+        S.pendingMasterAssetsHandle = null;
+        await idbSet('masterAssetsHandle', S.masterAssetsHandle);
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+    }
+  }
+  await loadData();
+  render();
+  showToast('Master file resumed.');
+}
+
 async function handleResume() {
   if (!S.pendingHandle) return;
   try {
@@ -2552,6 +2748,7 @@ async function handleResume() {
       render();
       promptMasterFileIfNeeded();
       showToast(`Resumed — ${S.dir.name}`);
+      await handleResumeMaster();
     }
   } catch (e) {
     if (e.name !== 'AbortError') console.error(e);
@@ -2581,3 +2778,47 @@ async function init() {
 }
 
 init();
+
+
+// ═══════════════════════════════════════════════════════════════
+//  ASSET PREVIEW POPUP
+// ═══════════════════════════════════════════════════════════════
+function showAssetPreview(src) {
+  let popup = document.getElementById('asset-preview-popup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'asset-preview-popup';
+    popup.style.position = 'fixed';
+    popup.style.bottom = '20px';
+    popup.style.right = '20px';
+    popup.style.zIndex = '99999';
+    popup.style.backgroundColor = 'var(--bg2)';
+    popup.style.border = '1px solid var(--border)';
+    popup.style.borderRadius = '8px';
+    popup.style.padding = '8px';
+    popup.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+    popup.style.pointerEvents = 'none';
+    popup.style.transition = 'opacity 0.2s ease-in-out';
+
+    const img = document.createElement('img');
+    img.id = 'asset-preview-img';
+    img.style.maxWidth = '300px';
+    img.style.maxHeight = '300px';
+    img.style.objectFit = 'contain';
+    img.style.display = 'block';
+
+    popup.appendChild(img);
+    document.body.appendChild(popup);
+  }
+
+  const img = document.getElementById('asset-preview-img');
+  img.src = src;
+  popup.style.opacity = '1';
+}
+
+function hideAssetPreview() {
+  const popup = document.getElementById('asset-preview-popup');
+  if (popup) {
+    popup.style.opacity = '0';
+  }
+}
