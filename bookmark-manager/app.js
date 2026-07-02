@@ -91,10 +91,28 @@ function openNewBookmarkModal() {
 }
 
 function resetLayout() {
-  S.cfg.cardPositions = {};
+  // Only remove positions of cards that are NOT in a group
+  if (S.cfg.cardPositions) {
+     for (const id in S.cfg.cardPositions) {
+         if (!S.cfg.cardPositions[id].groupId && !id.startsWith('grp-')) {
+             delete S.cfg.cardPositions[id];
+         }
+     }
+  }
+
+  // Also space out groups automatically if they have no position (or reset them too)
+  // Let's reset groups as well, so they get auto-arranged, but items INSIDE groups keep their relative x/y.
+  if (S.cfg.cardPositions) {
+     for (const id in S.cfg.cardPositions) {
+         if (id.startsWith('grp-')) {
+             delete S.cfg.cardPositions[id];
+         }
+     }
+  }
+
   S.cfg.forceAbsoluteLayout = false;
   render();
-  showToast('Layout reset — cards re-arranged.');
+  showToast('Layout reset — top-level items re-arranged.');
 }
 
 // Assign a grid position (in vw units) to every card that has no saved position.
@@ -123,12 +141,22 @@ function autoArrangeCards() {
   let count = Object.keys(S.cfg.cardPositions).length;
   let changed = false;
 
-  // Flatten and sort bookmarks so hidden items come last
+  // Flatten and sort items (bookmarks and groups) so hidden items come last
+  // We only arrange bookmarks that are NOT in a group.
   const allBms = [];
   for (const cat of cats) {
     for (const bm of cat.bookmarks) {
-      allBms.push(bm);
+      if (!S.cfg.cardPositions[bm.id] || !S.cfg.cardPositions[bm.id].groupId) {
+         allBms.push(bm);
+      }
     }
+  }
+
+  // Add groups to be arranged alongside bookmarks
+  if (S.cfg.groups) {
+      for (const group of S.cfg.groups) {
+         allBms.push(group);
+      }
   }
 
   // ⚡ Bolt: Cache hidden lookups to a Set for O(1) checks during sorting
@@ -283,7 +311,7 @@ function initFreeDrag() {
     }
   });
 
-  document.querySelectorAll('#canvas .card').forEach(card => {
+  document.querySelectorAll('#canvas .card, #canvas .card--group .card').forEach(card => {
     // Remove any previous listener to avoid double-binding after re-render
     card.removeEventListener('pointerdown', onDragStart);
     card.addEventListener('pointerdown', onDragStart, { passive: false });
@@ -293,6 +321,7 @@ function initFreeDrag() {
 
 function onDragStart(e) {
   if (e.button !== 0) return;
+  e.stopPropagation();
   // Only initiate drag if the user specifically clicks the drag handle.
   // This ensures CSS resize handles (usually bottom-right) aren't swallowed by drag.
   if (!e.target.closest('.card-drag-handle')) return;
@@ -315,16 +344,24 @@ function onDragStart(e) {
   let startX = parseFloat(card.style.left) || 0;
   let startY = parseFloat(card.style.top)  || 0;
 
-  // If we're dragging a group, calculate its position
   const isGroup = card.classList.contains('card--group');
+  const parentGroup = card.closest('.card--group');
 
-
-  if (isGrid) {
-      // If we're in grid mode, calculate the absolute starting position based on its layout rect
+  if (isGrid || (parentGroup && !isGroup)) {
+      // If we're in grid mode OR dragging a card out of a group, calculate absolute starting position relative to canvas
       const canvasRect = canvas.getBoundingClientRect();
       const cardRect = card.getBoundingClientRect();
       startX = cardRect.left - canvasRect.left;
-      startY = cardRect.top - canvasRect.top + canvas.scrollTop; // handle scroll offset if canvas scrolls
+      startY = cardRect.top - canvasRect.top + canvas.scrollTop;
+
+      if (parentGroup && !isGroup) {
+          // Force layout translation relative to the main canvas
+          card.style.position = 'absolute';
+          card.style.left = startX + 'px';
+          card.style.top = startY + 'px';
+          // Move the DOM node out of the group and into the canvas so it isn't clipped and moves relative to canvas
+          canvas.appendChild(card);
+      }
   }
 
   const bmId   = card.dataset.id;
@@ -347,6 +384,15 @@ function onDragStart(e) {
     moved: false,
     maxStaticPx, // ⚡ Bolt: Cached O(1) height calculation value
   };
+
+  // If moving a card out of a group, append it to canvas so it's not clipped by the group's bounding box
+  if (parentGroup && !isGroup) {
+     const canvasEl = document.getElementById('canvas');
+     // Force layout translation
+     card.style.left = startX + 'px';
+     card.style.top = startY + 'px';
+     canvasEl.appendChild(card);
+  }
 
   card.classList.add('card--dragging');
   document.body.style.userSelect = 'none';
@@ -1783,6 +1829,9 @@ function renderCard(bm, cat, dimmed) {
         </div>`}
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
+        ${pos.groupId ? `<button class="btn-icon" title="Remove from Group" aria-label="Remove from group" onclick="removeFromGroup('${bm.id}')">
+          <i data-lucide="ListMinus" style="width:12px;height:12px"></i>
+        </button>` : ''}
         <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
@@ -2734,6 +2783,20 @@ function handleSearch(q) {
   if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
 }
 
+
+function removeFromGroup(bmId) {
+    if (S.cfg.cardPositions && S.cfg.cardPositions[bmId]) {
+        // Place it somewhere visible on the main canvas
+        S.cfg.cardPositions[bmId].x = 16;
+        S.cfg.cardPositions[bmId].y = 16;
+        delete S.cfg.cardPositions[bmId].groupId;
+        saveData();
+        render();
+        applyLayout();
+        showToast('Item removed from group.');
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  EXPORT
 // ═══════════════════════════════════════════════════════════════
@@ -3058,8 +3121,34 @@ document.addEventListener('pointermove', e => {
 
   const dx = e.clientX - _drag.startClientX;
   const dy = e.clientY - _drag.startClientY;
-  _drag.curX = Math.max(0, _drag.startX + dx);
-  _drag.curY = Math.max(0, _drag.startY + dy);
+
+  // Calculate relative to the canvas.
+  // We use the absolute client positions minus the canvas bounding box,
+  // to ensure that no matter where the mouse is, we move the card globally on the canvas.
+  const canvas = document.getElementById('canvas');
+  if (canvas) {
+     const canvasRect = canvas.getBoundingClientRect();
+     // The absolute position on canvas = mouse pos - canvas top/left - offset where mouse grabbed card
+     // To keep it simple, we just use the delta from the start pos like before,
+     // but we no longer constrain it to 0,0 locally if we drag out of a group,
+     // because it might go negative relative to the original group coordinate system,
+     // but we translated the startX and startY to canvas coords in onDragStart!
+     // We no longer constrain it to 0,0 locally if we drag out of a group,
+     // because it might go negative relative to the original group coordinate system,
+     // but we translated the startX and startY to canvas coords in onDragStart!
+     _drag.curX = Math.max(0, _drag.startX + dx);
+     _drag.curY = Math.max(0, _drag.startY + dy);
+
+     // Update position dynamically
+     _drag.el.style.left = _drag.curX + 'px';
+     _drag.el.style.top  = _drag.curY + 'px';
+  } else {
+     _drag.curX = Math.max(0, _drag.startX + dx);
+     _drag.curY = Math.max(0, _drag.startY + dy);
+
+     _drag.el.style.left = _drag.curX + 'px';
+     _drag.el.style.top  = _drag.curY + 'px';
+  }
   _drag.el.style.left = _drag.curX + 'px';
   _drag.el.style.top  = _drag.curY + 'px';
 
@@ -3101,9 +3190,10 @@ document.addEventListener('pointerup', e => {
        const groupEl = document.querySelector(`.card--group[data-id="${targetGroupId}"]`);
        const groupRect = groupEl.getBoundingClientRect();
 
-       // Calculate relative x,y inside group container
-       const relX = e.clientX - groupRect.left;
-       const relY = e.clientY - groupRect.top;
+       // Calculate relative x,y inside group container (approximate based on current drag position)
+       // Subtract group's left from the card's current absolute left
+       const relX = _drag.curX - (groupRect.left - (canvas ? canvas.getBoundingClientRect().left : 0));
+       const relY = _drag.curY - (groupRect.top - (canvas ? canvas.getBoundingClientRect().top : 0));
 
        S.cfg.cardPositions[_drag.bmId] = { ...existing, x: relX, y: relY, groupId: targetGroupId, _px: true };
     } else {
@@ -3112,6 +3202,7 @@ document.addEventListener('pointerup', e => {
             delete existing.groupId;
         }
         S.cfg.cardPositions[_drag.bmId] = { ...existing, x: _drag.curX, y: _drag.curY, _px: true };
+        delete S.cfg.cardPositions[_drag.bmId].groupId;
     }
 
     // Switch the dragged card to absolute so it doesn't snap back immediately
