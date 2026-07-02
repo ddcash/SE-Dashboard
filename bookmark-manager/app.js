@@ -101,6 +101,20 @@ function autoArrangeCards() {
   if (!S.cfg.cardPositions) S.cfg.cardPositions = {};
   const cats = S.data.categories || [];
   if (!cats.length) return;
+
+  // ⚡ Bolt: Early return if all bookmarks already have positions to skip expensive O(N log N) sorting
+  let missingPositions = false;
+  for (const cat of cats) {
+    for (const bm of cat.bookmarks) {
+      if (!(bm.id in S.cfg.cardPositions)) {
+        missingPositions = true;
+        break;
+      }
+    }
+    if (missingPositions) break;
+  }
+  if (!missingPositions) return;
+
   const vw       = window.innerWidth || 1200;
   const { cardWidth: CARD_W, cardHeight: CARD_H, gap: GAP, padding: PAD } = APP_CONFIG.canvas;
   const cols     = Math.max(1, Math.floor((vw - PAD * 2) / (CARD_W + GAP)));
@@ -116,9 +130,12 @@ function autoArrangeCards() {
     }
   }
 
+  // ⚡ Bolt: Cache hidden lookups to a Set for O(1) checks during sorting
+  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+
   allBms.sort((a, b) => {
-    const aHidden = isHidden('bookmarks', a.id) ? 1 : 0;
-    const bHidden = isHidden('bookmarks', b.id) ? 1 : 0;
+    const aHidden = hiddenBms.has(a.id) ? 1 : 0;
+    const bHidden = hiddenBms.has(b.id) ? 1 : 0;
     return aHidden - bHidden;
   });
 
