@@ -419,8 +419,10 @@ body::after {
   width: auto;
   min-width: 0;
   max-width: 100%;
-  resize: none;
+  resize: both;
+  overflow: hidden;
   height: auto;
+  padding-bottom: 24px; /* leave room for resize handle and hidden elements */
 }
 
 .search-results--cards .card-link {
@@ -1441,4 +1443,40 @@ input[type="color"].form-input::-moz-color-swatch,
   opacity: 0.6;
   pointer-events: none;
   border-radius: inherit;
+}
+
+
+/* GROUPING STYLES */
+.card--group {
+    min-width: 320px;
+    min-height: 200px;
+    background-color: var(--bg2);
+    border: 2px dashed var(--border);
+    z-index: 10;
+    padding: 16px;
+}
+.group-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+}
+.group-drag-handle {
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: grab;
+}
+.group-content {
+    position: relative;
+    width: 100%;
+    height: calc(100% - 40px);
+    display: block; /* ensure it's not a grid */
+}
+.group-content .card {
+    position: absolute !important;
+    margin: 0 !important;
 }
