@@ -1869,7 +1869,8 @@ function renderCard(bm, cat, dimmed) {
       <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
          onclick="trackClick(event,'${bm.id}','${catId}')">
         ${bgImgSrc ? `<img src="${bgImgSrc}" class="card-bg-image">` : ''}
-        ${cs.hideText ? '' : `<div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
+        ${cs.hideIcon ? '' : `<div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>`}
+        ${cs.hideText ? '' : `
         <div class="card-body">
           <div class="card-title">${esc(bm.title)}</div>
           ${bm.description ? `<div class="card-desc">${esc(bm.description)}</div>` : ''}
@@ -2269,6 +2270,35 @@ async function publishBookmark(catId, bmId) {
   render();
 }
 
+
+function addTagBubble(val) {
+   val = val.trim();
+   if (!val) return;
+   const container = document.getElementById('tag-bubbles');
+
+   // Don't add if already exists visually
+   for(const bubble of container.querySelectorAll('.tag-bubble')) {
+       if(bubble.textContent.replace('×', '').trim() === val) return;
+   }
+
+   const span = document.createElement('span');
+   span.className = 'tag-bubble';
+   span.innerHTML = `${esc(val)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button>`;
+   container.appendChild(span);
+   updateTagsInput();
+}
+
+function updateTagsInput() {
+   const container = document.getElementById('tag-bubbles');
+   const tags = Array.from(container.querySelectorAll('.tag-bubble')).map(el => el.textContent.replace('×', '').trim());
+   document.getElementById('bm-tags-hidden').value = tags.join(',');
+}
+
+function openNewCategoryFromEditor() {
+   closeModal(); // close current bookmark modal
+   openCategoryModal(null);
+}
+
 function openCardModal(catId, bmId) {
   const cat    = S.data.categories.find(c => c.id === catId);
   const bm     = bmId ? cat?.bookmarks.find(b => b.id === bmId) : null;
@@ -2285,7 +2315,7 @@ function openCardModal(catId, bmId) {
     </button>`).join('');
 
   const localAssets = Object.keys(S.assetUrls || {});
-  const catOptions = S.data.categories.map(c =>
+  const catOptions = [...S.data.categories].sort((a,b) => a.name.localeCompare(b.name)).map(c =>
     `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
   openModal(`
@@ -2315,9 +2345,15 @@ function openCardModal(catId, bmId) {
             placeholder="Optional notes…">${esc(bm?.description||'')}</textarea>
         </div>
         <div class="form-row">
-          <label for="bm-tags">Tags <span class="hint-inline">(comma-separated)</span></label>
-          <input id="bm-tags" type="text" name="tags" class="form-input"
-            value="${esc((bm?.tags||[]).join(', '))}" placeholder="dev, work, tools">
+          <label>Tags</label>
+          <div class="tag-input-container">
+             <div id="tag-bubbles" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
+                 ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
+             </div>
+             <input type="hidden" id="bm-tags-hidden" name="tags" value="${esc((bm?.tags||[]).join(','))}">
+             <input id="bm-tags-input" type="text" class="form-input" placeholder="Type a tag and press Enter/Comma"
+                onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault(); addTagBubble(this.value); this.value='';}">
+          </div>
         </div>
         <div class="form-row">
           <label for="bm-category">Category</label>
@@ -2325,6 +2361,10 @@ function openCardModal(catId, bmId) {
           ${isMaster ? '<p class="hint-text">Master bookmarks cannot be moved between categories.</p>' : ''}
         </div>
 
+        <div class="form-row">
+          <label><input type="checkbox" name="hideIconMain" ${cs.hideIcon ? 'checked' : ''}> Hide icon on card</label>
+          <p class="hint-text">Hide the icon entirely.</p>
+        </div>
         <div class="form-row">
           <label><input type="checkbox" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
           <p class="hint-text">Keep the card cleaner by hiding the category label.</p>
@@ -2723,6 +2763,7 @@ async function submitCard(e, catId, bmId) {
     cs.bgImage = true;
     cs.hideText = fd.get('hideText') === 'on';
   }
+  cs.hideIcon = fd.get('hideIcon') === 'on' || fd.get('hideIconMain') === 'on';
   const textColor = fd.get('textColor');
   if (textColor) cs.textColor = textColor;
   const textSize = fd.get('textSize');
