@@ -1442,3 +1442,37 @@ input[type="color"].form-input::-moz-color-swatch,
   pointer-events: none;
   border-radius: inherit;
 }
+
+
+/* GROUPING STYLES */
+.card--group {
+    min-width: 320px;
+    min-height: 200px;
+    background-color: var(--bg2);
+    border: 2px dashed var(--border);
+    z-index: 10;
+    padding: 16px;
+}
+.group-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+}
+.group-drag-handle {
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: grab;
+}
+.group-content {
+    position: relative;
+    width: 100%;
+    height: calc(100% - 40px);
+}
+.group-content .card {
+    position: absolute !important;
+}
