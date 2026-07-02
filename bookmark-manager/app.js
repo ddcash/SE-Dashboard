@@ -12,7 +12,7 @@ const S = {
   masterFileName:   '',
   masterData:       { version: 1, categories: [] },
   data:             { version: 1, categories: [] },
-  cfg:              { theme: 'dark', layout: {}, hidden: { bookmarks: [], categories: [] }, cardPositions: {}, masterPrompted: false, overrides: { bookmarks: {}, categories: {} }, userCategories: [], userBookmarks: [] },
+  cfg:              { theme: 'dark', layout: {}, hidden: { bookmarks: [], categories: [] }, cardPositions: {}, masterPrompted: false, overrides: { bookmarks: {}, categories: {} }, userCategories: [], userBookmarks: [], groups: [] },
   assetUrls:        {},
   masterAssetUrls:  {},
   query:            '',
@@ -91,6 +91,7 @@ function openNewBookmarkModal() {
 
 function resetLayout() {
   S.cfg.cardPositions = {};
+  S.cfg.forceAbsoluteLayout = false;
   render();
   showToast('Layout reset — cards re-arranged.');
 }
@@ -176,6 +177,26 @@ function applyLayout() {
   });
 
   const isWrapped = maxRight > (vw - APP_CONFIG.canvas.padding);
+
+  // Once manually arranged via drag, don't re-wrap immediately until reset or specifically requested
+  // We determine if we've been dragged out of wrapping by checking if wrapped is "false" but would be true,
+  // except we just changed it to false in the drag event.
+  // Actually, simpler: if it is wrapped, but we are actively setting it to false in pointermove/up,
+  // applyLayout is recalculating and setting it BACK to true because maxRight is large.
+  // We can add a flag to S.cfg to indicate we are using "absolute layout".
+  if (S.cfg.forceAbsoluteLayout) {
+     canvas.dataset.wrapped = "false";
+     canvas.style.display = 'block';
+     cards.forEach(card => {
+       const id = card.dataset.id;
+       if (positions[id] && positions[id].x !== undefined) {
+         card.style.position = 'absolute';
+         card.style.left = positions[id].x + 'px';
+         card.style.top = positions[id].y + 'px';
+       }
+     });
+     return;
+  }
 
   if (isWrapped) {
     canvas.dataset.wrapped = "true";
@@ -278,17 +299,33 @@ function onDragStart(e) {
   // Don't drag when interacting with links, buttons, or action overlays
   if (e.target.closest('a, button, .card-actions')) return;
 
+  // Allow dragging even when wrapped. We will convert visual position to absolute on drop.
   const canvas = document.getElementById('canvas');
-  if (canvas && canvas.dataset.wrapped === "true") {
+  /* if (canvas && canvas.dataset.wrapped === "true") {
     showToast('Cannot drag cards while window is small. Resize window to enable dragging.');
     return;
-  }
+  } */
 
   e.preventDefault();
 
   const card   = e.currentTarget;
-  const startX = parseFloat(card.style.left) || 0; // current position in px
-  const startY = parseFloat(card.style.top)  || 0;
+
+  const isGrid = canvas && canvas.dataset.wrapped === "true";
+  let startX = parseFloat(card.style.left) || 0;
+  let startY = parseFloat(card.style.top)  || 0;
+
+  // If we're dragging a group, calculate its position
+  const isGroup = card.classList.contains('card--group');
+
+
+  if (isGrid) {
+      // If we're in grid mode, calculate the absolute starting position based on its layout rect
+      const canvasRect = canvas.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      startX = cardRect.left - canvasRect.left;
+      startY = cardRect.top - canvasRect.top + canvas.scrollTop; // handle scroll offset if canvas scrolls
+  }
+
   const bmId   = card.dataset.id;
 
   // Pre-calculate max static Y of all OTHER cards so updateCanvasHeight is O(1) during 60fps pointermove
@@ -1421,6 +1458,144 @@ function openSettingsModal() {
   populateSettingsModal();
 }
 
+
+function openCategoryEditModal() {
+  const categories = S.data.categories || [];
+  const rows = categories.map(cat => {
+    return `
+      <div class="delete-category-row">
+        <div>
+          <strong>${esc(cat.name)}</strong>
+        </div>
+        <button type="button" class="btn btn--primary" onclick="closeModal(); openCategoryModal('${cat.id}')">
+          <i data-lucide="Pencil" style="width:13px;height:13px"></i> Edit
+        </button>
+      </div>`;
+  }).join('');
+
+  openModal(`
+    <div class="modal-header">
+      <h2>Edit Category</h2>
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+    </div>
+    <div class="modal-body">
+      ${rows || '<p class="hint">No categories available to edit.</p>'}
+    </div>
+  `);
+}
+
+
+function openGroupModal(groupId) {
+    let group = null;
+    if (groupId && S.cfg.groups) {
+        group = S.cfg.groups.find(g => g.id === groupId);
+    }
+
+    openModal(`
+    <div class="modal-header">
+      <h2>${group ? 'Edit Group' : 'New Group'}</h2>
+      ${group ? `<button type="button" class="btn btn--danger" style="margin-right: 12px;" onclick="deleteGroup('${groupId}')">
+          <i data-lucide="Trash2" style="width:13px;height:13px"></i> Delete
+      </button>` : ''}
+      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="group-form" onsubmit="submitGroup(event, '${groupId || ''}')">
+        <div class="form-row">
+          <label for="grp-title">Group Title</label>
+          <input id="grp-title" type="text" name="title" class="form-input" required
+            value="${esc(group?.title || '')}" placeholder="My Group">
+        </div>
+        <div class="form-row">
+          <label>Appearance</label>
+          <div style="display:flex; gap:8px;">
+             <input type="text" name="bgColor" class="form-input" placeholder="Background Color (e.g. #333, rgba...)" value="${esc(group?.bgColor || '')}">
+             <input type="text" name="textColor" class="form-input" placeholder="Text Color" value="${esc(group?.textColor || '')}">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Background Image URL</label>
+          <input type="text" name="bgImage" class="form-input" placeholder="https://..." value="${esc(group?.bgImage || '')}">
+        </div>
+        <div class="form-row">
+          <label>Text Style</label>
+          <div style="display:flex; gap:16px;">
+             <label class="custom-checkbox">
+               <input type="checkbox" name="textWeight" value="bold" ${group?.textWeight === 'bold' ? 'checked' : ''}>
+               <div class="checkbox-box"></div>
+               Bold
+             </label>
+             <label class="custom-checkbox">
+               <input type="checkbox" name="textItalic" value="true" ${group?.textItalic ? 'checked' : ''}>
+               <div class="checkbox-box"></div>
+               Italic
+             </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn--primary">Save</button>
+        </div>
+      </form>
+    </div>
+  `);
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function submitGroup(e, groupId) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const title = fd.get('title').trim();
+    const bgColor = fd.get('bgColor').trim();
+    const textColor = fd.get('textColor').trim();
+    const bgImage = fd.get('bgImage').trim();
+    const textWeight = fd.get('textWeight');
+    const textItalic = fd.get('textItalic') === 'true';
+
+    if (!S.cfg.groups) S.cfg.groups = [];
+
+    if (groupId) {
+        const group = S.cfg.groups.find(g => g.id === groupId);
+        if (group) {
+            Object.assign(group, { title, bgColor, textColor, bgImage, textWeight, textItalic });
+        }
+    } else {
+        const newGroup = {
+            id: `grp-${uid()}`,
+            title,
+            bgColor,
+            textColor,
+            bgImage,
+            textWeight,
+            textItalic
+        };
+        S.cfg.groups.push(newGroup);
+    }
+
+    closeModal();
+    render();
+    saveData();
+}
+
+function deleteGroup(groupId) {
+    if (!confirm("Delete this group? The cards inside it will not be deleted, they will just be removed from the group.")) return;
+    if (S.cfg.groups) {
+        S.cfg.groups = S.cfg.groups.filter(g => g.id !== groupId);
+
+        // Remove any cards that were attached to this group
+        if (S.cfg.cardPositions) {
+            for (const bmId in S.cfg.cardPositions) {
+                if (S.cfg.cardPositions[bmId].groupId === groupId) {
+                    delete S.cfg.cardPositions[bmId].groupId;
+                }
+            }
+        }
+    }
+    closeModal();
+    render();
+    saveData();
+}
+
 function openCategoryDeleteModal() {
   const categories = S.data.categories || [];
   const rows = categories.map(cat => {
@@ -1616,12 +1791,50 @@ function renderCard(bm, cat, dimmed) {
 }
 
 // Flat list of all visible cards for the canvas layout
+
+function renderGroup(group) {
+    const pos = S.cfg.cardPositions?.[group.id] || { x: 0, y: 0 };
+    const inlineStyle = [
+        pos.w ? `width:${pos.w}px` : '',
+        pos.h ? `height:${pos.h}px` : '',
+        group.bgImage ? `background-image:url('${esc(group.bgImage)}');background-size:cover;background-position:center;` : '',
+        group.bgColor ? `background-color:${esc(group.bgColor)};` : '',
+        group.textColor ? `color:${esc(group.textColor)};--text:${esc(group.textColor)};` : ''
+    ].filter(Boolean).join(';');
+
+    return `
+    <div class="card card--group" data-id="${group.id}" style="${inlineStyle}">
+      <div class="card-drag-handle group-drag-handle">
+         <i data-lucide="GripHorizontal" style="width:14px;height:14px;opacity:0.5"></i>
+      </div>
+      <div class="group-header">
+         <h3 style="${group.textWeight === 'bold' ? 'font-weight:bold;' : ''} ${group.textItalic ? 'font-style:italic;' : ''}">
+           ${esc(group.title || 'Group')}
+         </h3>
+      </div>
+      <div class="group-content">
+          <!-- Cards inside the group will be rendered absolute relative to this container -->
+      </div>
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal('${group.id}')">
+          <i data-lucide="Pencil" style="width:12px;height:12px"></i>
+        </button>
+      </div>
+    </div>`;
+}
+
 function renderAllCards() {
   let html = '';
 
   // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+
+  if (S.cfg.groups) {
+      for (const group of S.cfg.groups) {
+          html += renderGroup(group);
+      }
+  }
 
   for (const cat of S.data.categories) {
     const catHidden  = hiddenCats.has(cat.id);
@@ -1633,11 +1846,33 @@ function renderAllCards() {
 
       // Dim card when category filter is active and this card isn't in that category
       const dimmed = !!S.activeCat && S.activeCat !== cat.id;
-      html += renderCard(bm, cat, dimmed);
+
+      const pos = S.cfg.cardPositions?.[bm.id];
+      if (pos && pos.groupId) {
+         // This card belongs to a group, defer rendering to that group
+         // We do this by injecting the card HTML into the group's content via DOM manipulation after html generation
+         // To do that safely, we will build a map of group HTML content
+         if (!window._groupHtml) window._groupHtml = {};
+         if (!window._groupHtml[pos.groupId]) window._groupHtml[pos.groupId] = '';
+         window._groupHtml[pos.groupId] += renderCard(bm, cat, dimmed);
+      } else {
+         html += renderCard(bm, cat, dimmed);
+      }
     }
   }
+
+  // Inject group contents
+  if (S.cfg.groups) {
+      for (const group of S.cfg.groups) {
+          const content = window._groupHtml?.[group.id] || '';
+          html = html.replace(`<div class="group-content">`, `<div class="group-content">${content}`);
+      }
+  }
+  window._groupHtml = {};
+
   return html;
 }
+
 
 function renderSearchResults() {
   const rows = [];
@@ -1859,6 +2094,75 @@ function closeModal() {
 // ═══════════════════════════════════════════════════════════════
 //  CARD MODAL
 // ═══════════════════════════════════════════════════════════════
+
+async function publishBookmark(catId, bmId) {
+  if (!confirm("Are you sure you want to publish this bookmark to the master file for everyone to see?")) return;
+
+  const cat = S.data.categories.find(c => c.id === catId);
+  const bm = cat?.bookmarks.find(b => b.id === bmId);
+  if (!cat || !bm) return;
+
+  // Check if master category exists
+  let masterCat = S.masterData.categories.find(c => c.id === cat.id || c.name === cat.name);
+  if (!masterCat) {
+     masterCat = {
+       id: cat.__master ? cat.id : `cat-${uid()}`,
+       name: cat.name,
+       icon: cat.icon,
+       color: cat.color,
+       bookmarks: []
+     };
+     S.masterData.categories.push(masterCat);
+  }
+
+  // Check for dupes
+  const exists = masterCat.bookmarks.find(b => b.url === bm.url);
+  if (exists) {
+    const keepLocal = confirm(`This URL already exists in the master file under ${masterCat.name}. Do you want to hide the master's version and keep your local edits visible?`);
+    if (keepLocal) {
+      if (!S.cfg.hidden) S.cfg.hidden = { bookmarks: [], categories: [] };
+      if (!S.cfg.hidden.bookmarks.includes(exists.id)) {
+        S.cfg.hidden.bookmarks.push(exists.id);
+      }
+      showToast('Master version hidden. Your local version is visible.');
+    } else {
+      deleteBookmark(bm.id, cat.id);
+      showToast('Local duplicate deleted. Master version is now visible.');
+    }
+    saveData();
+    closeModal();
+    render();
+    return;
+  }
+
+  const masterBm = {
+    id: `bm-${uid()}`,
+    title: bm.title,
+    url: bm.url,
+    description: bm.description,
+    tags: bm.tags,
+    icon: bm.icon,
+    clicks: bm.clicks,
+    customStyle: bm.customStyle
+  };
+
+  masterCat.bookmarks.push(masterBm);
+
+  // Save to master
+  await writeMasterJSON(S.masterData);
+
+  // Optionally delete local version since it's now in master
+  if (confirm("Published successfully! Do you want to delete your local copy since it is now in the master file?")) {
+    cat.bookmarks = cat.bookmarks.filter(b => b.id !== bmId);
+    S.cfg.userBookmarks = (S.cfg.userBookmarks || []).filter(b => b.id !== bmId);
+  }
+
+  mergeData();
+  saveData();
+  closeModal();
+  render();
+}
+
 function openCardModal(catId, bmId) {
   const cat    = S.data.categories.find(c => c.id === catId);
   const bm     = bmId ? cat?.bookmarks.find(b => b.id === bmId) : null;
@@ -1881,6 +2185,9 @@ function openCardModal(catId, bmId) {
   openModal(`
     <div class="modal-header">
       <h2>${bm ? 'Edit Bookmark' : 'New Bookmark'}</h2>
+      ${bm && !isMaster ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" onclick="publishBookmark('${catId}', '${bmId}')">
+          <i data-lucide="UploadCloud" style="width:13px;height:13px"></i> Publish to Master
+      </button>` : ''}
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
@@ -2042,6 +2349,59 @@ function openCardModal(catId, bmId) {
 // ═══════════════════════════════════════════════════════════════
 //  CATEGORY MODAL
 // ═══════════════════════════════════════════════════════════════
+
+async function publishCategory(catId) {
+  if (!confirm("Are you sure you want to publish this entire category to the master file?")) return;
+
+  const cat = S.data.categories.find(c => c.id === catId);
+  if (!cat) return;
+
+  // Check if master category exists
+  let masterCat = S.masterData.categories.find(c => c.name === cat.name);
+  if (masterCat) {
+     alert("A category with this name already exists in the master file. You should move your bookmarks into it manually or publish them individually.");
+     return;
+  }
+
+  masterCat = {
+    id: `cat-${uid()}`,
+    name: cat.name,
+    icon: cat.icon,
+    color: cat.color,
+    bookmarks: []
+  };
+
+  // Clone bookmarks
+  for (const bm of cat.bookmarks) {
+    masterCat.bookmarks.push({
+      id: `bm-${uid()}`,
+      title: bm.title,
+      url: bm.url,
+      description: bm.description,
+      tags: bm.tags,
+      icon: bm.icon,
+      clicks: bm.clicks,
+      customStyle: bm.customStyle
+    });
+  }
+
+  S.masterData.categories.push(masterCat);
+
+  // Save to master
+  await writeMasterJSON(S.masterData);
+
+  if (confirm("Category published successfully! Do you want to delete your local copy since it is now in the master file?")) {
+    S.data.categories = S.data.categories.filter(c => c.id !== catId);
+    S.cfg.userCategories = (S.cfg.userCategories || []).filter(c => c.id !== catId);
+    S.cfg.userBookmarks = (S.cfg.userBookmarks || []).filter(b => b.categoryId !== catId);
+  }
+
+  mergeData();
+  saveData();
+  closeModal();
+  render();
+}
+
 function openCategoryModal(catId) {
   const cat      = catId ? S.data.categories.find(c => c.id === catId) : null;
   const catHidden = cat ? isHidden('categories', catId) : false;
@@ -2062,6 +2422,9 @@ function openCategoryModal(catId) {
   openModal(`
     <div class="modal-header">
       <h2>${cat ? 'Edit Category' : 'New Category'}</h2>
+      ${cat && !cat.__master ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" onclick="publishCategory('${catId}')">
+          <i data-lucide="UploadCloud" style="width:13px;height:13px"></i> Publish to Master
+      </button>` : ''}
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
@@ -2352,6 +2715,12 @@ function trackClick(event, bmId, catId) {
   // Non-blocking background write; don't prevent default
   const bm = S.data.categories.find(c => c.id === catId)?.bookmarks.find(b => b.id === bmId);
   if (bm) { bm.clicks = (bm.clicks || 0) + 1; saveData(); }
+
+  // Unfocus category if one is focused
+  if (S.activeCat) {
+    S.activeCat = null;
+    render();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2508,10 +2877,18 @@ async function confirmImport() {
 
   for (const cat of cats) {
     let dest = S.data.categories.find(c => c.name === cat.name);
-    if (!dest) { dest = { ...cat, bookmarks: [] }; S.data.categories.push(dest); addedCats++; }
+    if (!dest) {
+      dest = { ...cat, bookmarks: [] };
+      S.data.categories.push(dest);
+      S.cfg.userCategories.push({ id: dest.id, name: dest.name, icon: dest.icon, color: dest.color });
+      addedCats++;
+    }
     for (const bm of cat.bookmarks) {
       if (!existing.has(bm.url)) {
-        dest.bookmarks.push(bm); existing.add(bm.url); addedBms++;
+        dest.bookmarks.push(bm);
+        S.cfg.userBookmarks.push({ ...bm, categoryId: dest.id });
+        existing.add(bm.url);
+        addedBms++;
       } else dupes++;
     }
   }
@@ -2557,6 +2934,8 @@ function closePalette() {
 function updatePalette(q) {
   const CMDS = [
     { label: 'New Category',      icon: 'FolderPlus', fn: () => { closePalette(); openCategoryModal(null); } },
+    { label: 'New Group',         icon: 'Layout',    fn: () => { closePalette(); openGroupModal(null); } },
+    { label: 'Edit Category',     icon: 'Pencil',    fn: () => { closePalette(); openCategoryEditModal(); } },
     { label: 'Delete Category',   icon: 'Trash2',    fn: () => { closePalette(); openCategoryDeleteModal(); } },
     { label: 'Change Background', icon: 'Image',     fn: () => { closePalette(); openSettingsModal(); } },
     { label: 'Settings',          icon: 'SlidersHorizontal', fn: () => { closePalette(); openSettingsModal(); } },
@@ -2653,13 +3032,36 @@ document.getElementById('palette-overlay').addEventListener('click', e => {
 document.addEventListener('pointermove', e => {
   if (!_drag) return;
   e.preventDefault();
+
+  if (!_drag.moved) {
+    _drag.moved = true;
+    const canvas = document.getElementById('canvas');
+    if (canvas && canvas.dataset.wrapped === "true") {
+      S.cfg.forceAbsoluteLayout = true;
+      canvas.dataset.wrapped = "false";
+      canvas.style.display = 'block';
+      // Force all cards to absolute layout so the whole layout doesn't collapse
+      const cards = Array.from(canvas.querySelectorAll('.card'));
+      cards.forEach(card => {
+        const id = card.dataset.id;
+        const pos = S.cfg.cardPositions[id];
+        if (pos && pos.x !== undefined) {
+           card.style.position = 'absolute';
+           card.style.left = pos.x + 'px';
+           card.style.top = pos.y + 'px';
+        }
+      });
+      _drag.el.style.position = 'absolute';
+    }
+  }
+
   const dx = e.clientX - _drag.startClientX;
   const dy = e.clientY - _drag.startClientY;
   _drag.curX = Math.max(0, _drag.startX + dx);
   _drag.curY = Math.max(0, _drag.startY + dy);
   _drag.el.style.left = _drag.curX + 'px';
   _drag.el.style.top  = _drag.curY + 'px';
-  _drag.moved = true;
+
   updateCanvasHeight();
 }, { passive: false });
 
@@ -2668,9 +3070,57 @@ document.addEventListener('pointerup', e => {
   _drag.el.classList.remove('card--dragging');
   document.body.style.userSelect = '';
   if (_drag.moved) {
+    // If the canvas was wrapped, disable wrapping globally or switch to absolute layout
+    const canvas = document.getElementById('canvas');
+    if (canvas && canvas.dataset.wrapped === "true") {
+      canvas.dataset.wrapped = "false";
+      canvas.style.display = 'block';
+    }
+
+    // Check if we dropped on a group (only for bookmarks, not groups)
+    let targetGroupId = null;
+    if (!_drag.el.classList.contains('card--group')) {
+        // Find which group we are hovering over
+        const groups = document.querySelectorAll('.card--group');
+        for (const grp of groups) {
+             const rect = grp.getBoundingClientRect();
+             if (e.clientX >= rect.left && e.clientX <= rect.right &&
+                 e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                 targetGroupId = grp.dataset.id;
+                 break;
+             }
+        }
+    }
+
     const existing = S.cfg.cardPositions[_drag.bmId] || {};
-    S.cfg.cardPositions[_drag.bmId] = { ...existing, x: _drag.curX, y: _drag.curY, _px: true };
+
+    if (targetGroupId) {
+       // Snap inside group
+       const canvasRect = canvas.getBoundingClientRect();
+       const groupEl = document.querySelector(`.card--group[data-id="${targetGroupId}"]`);
+       const groupRect = groupEl.getBoundingClientRect();
+
+       // Calculate relative x,y inside group container
+       const relX = e.clientX - groupRect.left;
+       const relY = e.clientY - groupRect.top;
+
+       S.cfg.cardPositions[_drag.bmId] = { ...existing, x: relX, y: relY, groupId: targetGroupId, _px: true };
+    } else {
+        if (existing.groupId && !_drag.el.classList.contains('card--group')) {
+            // we dragged it out of a group
+            delete existing.groupId;
+        }
+        S.cfg.cardPositions[_drag.bmId] = { ...existing, x: _drag.curX, y: _drag.curY, _px: true };
+    }
+
+    // Switch the dragged card to absolute so it doesn't snap back immediately
+    // If it's in a group we rely on render() to place it there physically in DOM
+    _drag.el.style.position = 'absolute';
+    _drag.el.style.left = _drag.curX + 'px';
+    _drag.el.style.top = _drag.curY + 'px';
+
     saveData();
+    render();
     applyLayout();
   }
   _drag = null;
