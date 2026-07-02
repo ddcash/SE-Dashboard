@@ -216,8 +216,8 @@ function applyLayout() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
 
-  // If a category is selected, we want an auto-arranged wrapped view regardless of custom positions
-  if (S.activeCat) {
+  // If a category or query is selected, we want an auto-arranged wrapped view regardless of custom positions
+  if (S.activeCat || S.query) {
       canvas.dataset.wrapped = "true";
       // Using flex layout with wrap enables variable-sized cards to flow naturally.
       canvas.style.display = 'flex';
@@ -1824,7 +1824,7 @@ function renderCard(bm, cat, dimmed) {
   const inlineStyle = [
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
-    !S.activeCat && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
+    !(S.activeCat || S.query) && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
     `--card-opacity:${cardOpacity}`,
     `--card-local-text-scale:${cardTextScale}`,
     cardColorStyle,
@@ -2069,6 +2069,8 @@ function renderDashboard() {
   const cats        = S.data.categories || [];
   const isEmpty     = cats.length === 0 && !S.query;
   const hiddenBmCount  = (S.cfg.hidden?.bookmarks  || []).length;
+  // Let the wrapper know if it's search or filtered
+  const isSearchOrFilter = S.query || S.activeCat;
   const hiddenCatCount = (S.cfg.hidden?.categories || []).length;
   const hiddenTotal    = hiddenBmCount + hiddenCatCount;
 
@@ -2323,10 +2325,21 @@ function openCardModal(catId, bmId) {
         </div>
         <div class="form-row">
           <label for="bm-category">Category</label>
-          <select id="bm-category" name="categoryId" class="form-input" ${isMaster ? 'disabled' : ''}>${catOptions}</select>
+          <div style="display:flex; gap:8px;">
+            <select id="bm-category" name="categoryId" class="form-input" style="flex:1;" ${isMaster ? 'disabled' : ''}>
+              ${catOptions}
+            </select>
+            <button type="button" class="btn btn--ghost" onclick="openNewCategoryFromEditor()" title="New Category">
+               <i data-lucide="Plus" style="width:14px;height:14px"></i>
+            </button>
+          </div>
           ${isMaster ? '<p class="hint-text">Master bookmarks cannot be moved between categories.</p>' : ''}
         </div>
 
+        <div class="form-row">
+          <label><input type="checkbox" name="hideIconMain" ${cs.hideIcon ? 'checked' : ''}> Hide icon on card</label>
+          <p class="hint-text">Hide the icon entirely from rendering.</p>
+        </div>
         <div class="form-row">
           <label><input type="checkbox" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
           <p class="hint-text">Keep the card cleaner by hiding the category label.</p>
@@ -2725,6 +2738,7 @@ async function submitCard(e, catId, bmId) {
     cs.bgImage = true;
     cs.hideText = fd.get('hideText') === 'on';
   }
+  cs.hideIcon = fd.get('hideIcon') === 'on' || fd.get('hideIconMain') === 'on';
   const textColor = fd.get('textColor');
   if (textColor) cs.textColor = textColor;
   const textSize = fd.get('textSize');
