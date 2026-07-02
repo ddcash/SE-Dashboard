@@ -167,16 +167,41 @@ function autoArrangeCards() {
     return aHidden - bHidden;
   });
 
+  let currentX = PAD;
+  let currentY = PAD;
+  let rowHeight = CARD_H;
+
+  // We need to figure out where to start placing new items.
+  // Find the bottom-most item
+  for (const id in S.cfg.cardPositions) {
+     const pos = S.cfg.cardPositions[id];
+     if (pos.x !== undefined && !pos.groupId) {
+        currentY = Math.max(currentY, pos.y + (pos.h || CARD_H) + GAP);
+     }
+  }
+
   for (const bm of allBms) {
     if (!(bm.id in S.cfg.cardPositions)) {
-      const col = count % cols;
-      const row = Math.floor(count / cols);
+      // Find the item's custom width if it has one
+      // Since it doesn't have a position yet, it might not have w/h, but let's default
+      const w = CARD_W;
+      const h = CARD_H;
+
+      if (currentX + w > vw - PAD) {
+         currentX = PAD;
+         currentY += rowHeight + GAP;
+         rowHeight = h;
+      } else {
+         rowHeight = Math.max(rowHeight, h);
+      }
+
       S.cfg.cardPositions[bm.id] = {
-        x: PAD + col * (CARD_W + GAP),
-        y: PAD + row * (CARD_H + GAP),
+        x: currentX,
+        y: currentY,
         _px: true
       };
-      count++;
+
+      currentX += w + GAP;
       changed = true;
     }
   }
@@ -190,6 +215,24 @@ function autoArrangeCards() {
 function applyLayout() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
+
+  // If a category is selected, we want an auto-arranged wrapped view regardless of custom positions
+  if (S.activeCat) {
+      canvas.dataset.wrapped = "true";
+      // Using flex layout with wrap enables variable-sized cards to flow naturally.
+      canvas.style.display = 'flex';
+      canvas.style.flexWrap = 'wrap';
+      canvas.style.gap = `${APP_CONFIG.canvas.gap}px`;
+      canvas.style.alignItems = 'flex-start';
+      canvas.style.alignContent = 'flex-start';
+      const cards = Array.from(canvas.querySelectorAll('.card'));
+      cards.forEach(card => {
+          card.style.position = 'relative';
+          card.style.left = '';
+          card.style.top = '';
+      });
+      return;
+  }
 
   const vw = window.innerWidth;
   const positions = S.cfg.cardPositions || {};
@@ -228,8 +271,10 @@ function applyLayout() {
 
   if (isWrapped) {
     canvas.dataset.wrapped = "true";
-    canvas.style.display = 'grid';
-    canvas.style.gridTemplateColumns = `repeat(auto-fill, minmax(${APP_CONFIG.canvas.cardWidth}px, 1fr))`;
+    canvas.style.display = 'flex';
+    canvas.style.flexWrap = 'wrap';
+    canvas.style.alignItems = 'flex-start';
+    canvas.style.alignContent = 'flex-start';
     canvas.style.gap = `${APP_CONFIG.canvas.gap}px`;
     cards.forEach(card => {
       if (card.closest('.group-content')) return;
@@ -1776,7 +1821,7 @@ function renderCard(bm, cat, dimmed) {
   const inlineStyle = [
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
-    pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
+    !S.activeCat && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
     `--card-opacity:${cardOpacity}`,
     `--card-local-text-scale:${cardTextScale}`,
     cardColorStyle,
@@ -1884,7 +1929,10 @@ function renderAllCards() {
 
   if (S.cfg.groups) {
       for (const group of S.cfg.groups) {
-          html += renderGroup(group);
+          // Only render groups if NO active category is selected (otherwise we just want a flat list)
+          if (!S.activeCat) {
+              html += renderGroup(group);
+          }
       }
   }
 
@@ -1896,11 +1944,12 @@ function renderAllCards() {
       const bmHidden = hiddenBms.has(bm.id);
       if (!S.showHidden && bmHidden) continue;
 
-      // Dim card when category filter is active and this card isn't in that category
-      const dimmed = !!S.activeCat && S.activeCat !== cat.id;
+      // If a category filter is active, entirely skip cards not in that category
+      if (S.activeCat && S.activeCat !== cat.id) continue;
+      const dimmed = false;
 
       const pos = S.cfg.cardPositions?.[bm.id];
-      if (pos && pos.groupId) {
+      if (!S.activeCat && pos && pos.groupId) {
          // This card belongs to a group, defer rendering to that group
          // We do this by injecting the card HTML into the group's content via DOM manipulation after html generation
          // To do that safely, we will build a map of group HTML content
