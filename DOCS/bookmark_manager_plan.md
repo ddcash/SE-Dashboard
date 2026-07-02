@@ -153,10 +153,11 @@ Create a premium, dark-mode glassmorphism dashboard UI that works entirely stati
 - Item Customizability: Each bookmark item should support:
   - Custom card background color, border color, and border style.
   - Icon Type selection:
+    - Includes toggle for Hide Icon feature.
     1. Lucide library icons (dynamic search list).
     2. Auto-fetched favicon (using `https://www.google.com/s2/favicons?domain=...` fallback).
     3. Custom Web Image URL.
-    4. Uploaded local image (linked to the `/assets` directory).
+    4. Uploaded local image (linked to the `/assets` directory, previewable in Asset Gallery).
 - Layout: Render these custom styles natively on each card component. If a bookmark card has `file:///` scheme, show a unique "Local File" tag/indicator.
 ```
 
@@ -202,3 +203,6 @@ Write a build script (e.g., using `vite-plugin-singlefile`) that bundles all CSS
 
 ### E. Quick-Add Bookmarklet
 Provide a simple javascript-based "Add Bookmark" bookmarklet that users can drag to their browser's bookmark bar. Clicking it on any web page automatically copies a correctly structured JSON snippet to their clipboard or pre-populates a "Quick Add" box when they open the dashboard.
+
+### F. Ideas and Enhancements
+Future ideas and enhancements are tracked in the `Ideas and Enhancements.md` file.

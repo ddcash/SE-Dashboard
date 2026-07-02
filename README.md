@@ -1,116 +1,100 @@
 # SE-Dashboard
 
-SE-Dashboard is a local-first bookmark and link manager built to run entirely in the browser. It is designed for personal use, with all data stored on your device in a directory you choose.
+## Description
 
-## Overview
-
-The application is located in the `bookmark-manager/` folder. It works without a server or account by using the browser's File System Access API to read and write files directly in a selected directory.
-
-Key capabilities:
-- Organize bookmarks into categories
-- Custom icons, tags, and descriptions
-- Drag cards freely across a canvas
-- Search and filter bookmarks with fuzzy matching
-- Preserve card positions after searching and clearing results
-- Hide / unhide bookmarks and categories
-- Global theme settings with dark/solid black defaults
-- Adjustable card opacity globally and per card
-- Import from HTML, JSON, and CSV
-- Export the bookmark database to JSON
-- Automatic backup snapshots
-- Local asset uploads for custom images/icons
-- Resume the previous directory session using IndexedDB
-
-## Quick Start
-
-1. Open `bookmark-manager/index.html` in a supported browser.
-2. Choose a directory to use as the app data folder.
-3. The app creates and loads these files inside the folder:
-   - `master_bookmarks.json` — main bookmark data, edited through the command palette
-   - `local_settings.json` — UI layout and hidden item settings
-   - `backups/` — timestamped snapshots of your bookmark data
-   - `assets/` — uploaded image/icon assets
-4. Start by creating a category, then add bookmarks.
-
-## Browser Requirements
-
-This app requires a browser with the File System Access API, such as:
-- Google Chrome
-- Microsoft Edge
-
-It is not guaranteed to work in browsers that do not implement this API.
+SE-Dashboard is a local-first bookmark and link manager built to run entirely in the browser. It is designed for personal use, with all data stored on your device in a directory you choose. It works without a server or account by using the browser's File System Access API to read and write files directly in a selected directory.
 
 ## Features
 
 ### Bookmark & Category Management
-- Create and edit categories with custom icons and colors
-- Add bookmarks to categories with title, URL, description, and tags
-- Change bookmark icons using:
-  - built-in Lucide icons
-  - favicon fetch from website hosts
-  - custom image URL
-  - uploaded local image
-- Move bookmarks between categories from the editor
+- Create and edit categories with custom icons and colors.
+- Add bookmarks to categories with title, URL, description, and tags.
+- Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
+- Move bookmarks between categories from the editor.
+- **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
 
 ### Freeform Canvas Layout
-- Cards are placed in a scrollable canvas layout
-- Drag bookmark cards to reposition them freely
-- Reset layout from the command palette to restore the default arrangement
-- Positions are saved in `local_settings.json`
+- Cards are placed in a scrollable canvas layout.
+- Drag bookmark cards to reposition them freely.
+- Reset layout from the command palette to restore the default arrangement.
+- **Layout Persistence**: Positions are securely saved in `local_settings.json` and persist across sessions.
 
 ### Search & Filtering
-- Search titles, URLs, descriptions, and tags with fuzzy match
-- Filter categories with clickable pills
-- Preserve your current card layout when search is cleared
-- Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette
-- Toggle hidden items on or off
+- Search titles, URLs, descriptions, and tags with fuzzy match.
+- Filter categories with clickable pills.
+- Preserve your current card layout when search is cleared.
+- Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette.
+- Toggle hidden items on or off.
 
 ### Appearance & Theme
-- Dark theme defaults to a solid black background
-- Choose between solid color, gradient, or image backgrounds
-- Adjust global card opacity for the dashboard
-- Override opacity for individual cards when editing a bookmark
-- Customize accent colors, font scale, and category badge visibility
+- Dark theme defaults to a solid black background.
+- Choose between solid color, gradient, or image backgrounds.
+- Adjust global card opacity for the dashboard.
+- Override opacity for individual cards when editing a bookmark.
+- Customize accent colors, font scale, and category badge visibility.
+- **Asset Gallery Previews**: Preview uploaded images and custom icons in a built-in gallery view.
 
 ### Hidden Items & Visibility
-- Hide individual bookmarks or categories without deleting data
-- Reveal hidden items at any time
-- Hidden visibility is stored separately from the main bookmark data
+- Hide individual bookmarks or categories without deleting data.
+- Reveal hidden items at any time.
+- Hidden visibility is stored separately from the main bookmark data.
 
 ### Import / Export
-- Import bookmarks from:
-  - Netscape-style bookmark HTML exports
-  - JSON files containing categories/bookmarks or arrays of items
-  - CSV files with headers like `url`, `title`, `category`, `tags`, `description`
-- Export the current bookmark database as JSON
+- Import bookmarks from Netscape-style bookmark HTML exports, JSON files, and CSV files.
+- Export the current bookmark database as JSON.
 
 ### Local Asset Uploads
-- Upload custom image files for bookmark icons or backgrounds
-- Uploaded assets are stored inside the app directory's `assets/` folder
-- Local images are rendered using browser object URLs
+- Upload custom image files for bookmark icons or backgrounds.
+- Uploaded assets are stored inside the app directory's `assets/` folder.
+- Local images are rendered using browser object URLs.
 
 ### Backups & External Change Detection
-- Creates timestamped backups in `backups/`
-- Keeps up to 20 backup files by default
-- Detects external edits to `master_bookmarks.json` and reloads automatically
+- Creates timestamped backups in `backups/`.
+- Keeps up to 20 backup files by default.
+- Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Private & Local-Only
-- No online sync or cloud storage
-- No login or account required
-- All bookmark data remains in the directory you choose
+### Performance & Security Improvements
+- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
+- XSS protection protocols on rendering inline events.
 
 ### Master File Editing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
-- The editor is intentionally not exposed as a dashboard button to avoid accidental master data changes.
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
-- Enter a detailed commit message and save changes to keep a local commit history.
 
-## File Structure
+## Installation
+
+Since SE-Dashboard runs entirely in the browser, there is no traditional installation required.
+
+1. Clone or download this repository to your local machine.
+2. The core application is located in the `bookmark-manager/` folder.
+
+## How to setup/configure
+
+1. **Choose a Directory:** Create an empty folder on your computer where you want to store your bookmark data.
+2. **Browser Requirements:** Open `bookmark-manager/index.html` in a browser that supports the File System Access API (such as Google Chrome or Microsoft Edge). *Note: It is not guaranteed to work in browsers that do not implement this API.*
+3. **Connect Directory:** Click "Connect Directory" in the application and select the folder you created.
+4. The app will automatically initialize and create the following structure inside your folder:
+   - `master_bookmarks.json` — Main bookmark data.
+   - `local_settings.json` — UI layout and hidden item settings.
+   - `backups/` — Timestamped snapshots of your bookmark data.
+   - `assets/` — Uploaded image/icon assets.
+
+## How to use
+
+- **Adding Items:** Start by creating a category, then add bookmarks to it.
+- **Customizing Layout:** Drag and drop cards to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
+- **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
+- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
+- **Restoring Sessions:** When you reopen the app, it can resume the last directory if browser permissions are still granted. If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
+- **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`, `test_xss.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. Run `node test_xss.js` to verify URL sanitization.
+
+### File Structure
 
 ```
 SE-Dashboard/
   README.md
+  Ideas and Enhancements.md
   bookmark-manager/
     index.html
     app.js
@@ -119,49 +103,12 @@ SE-Dashboard/
     vendors.js
   DOCS/
     bookmark_manager_plan.md
+    GRAPH_REPORT.md
 ```
 
-### Data files created by the app
+## Disclaimers
 
-- `master_bookmarks.json`
-  - Stores categories, bookmarks, click counts, custom styles, and icon settings
-- `local_settings.json`
-  - Stores layout positions, hidden bookmarks/categories, and theme options
-- `backups/`
-  - Contains automatic timestamped JSON backups
-- `assets/`
-  - Contains uploaded images used as bookmark icons/backgrounds
-
-## Usage Notes
-
-- When you reopen the app, it can resume the last directory if browser permissions are still granted.
-- If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
-- Bookmark cards support any URL scheme, including `https://`, `file:///`, and custom app protocols like `vscode://`.
-- The app saves changes automatically whenever bookmarks or layout settings are modified.
-
-## Development & Customization
-
-If you want to modify the app:
-- `bookmark-manager/index.html` is the entry point
-- `bookmark-manager/app.js` contains the application logic
-- `bookmark-manager/config.js` defines default data, colors, and backup settings
-- `bookmark-manager/styles.css` contains the UI styles
-
-## Recommended Workflow
-
-1. Open `bookmark-manager/index.html` in Chrome or Edge
-2. Click **Connect Directory** and choose a folder
-3. Create categories and add bookmarks
-4. Use **Import** to migrate bookmarks from another system
-5. Use **Export** to save the current database
-6. To update the shared `master_bookmarks.json` safely, open the command palette with `Ctrl+K` / `Cmd+K` and select "Edit Master Bookmarks"
-7. Drag cards to arrange your dashboard visually
-
-## Troubleshooting
-
-- If the app shows an error about directory access, make sure the browser supports File System Access API.
-- If drag or pointer behavior feels inconsistent, use a modern Chromium-based browser.
-- If imported bookmarks do not appear, verify the file format and headers in CSV/JSON.
+This project is intended as a personal local bookmark dashboard. Ensure you regularly backup your chosen data directory, although the application does create automatic snapshots in the `backups/` folder.
 
 ## License
 
