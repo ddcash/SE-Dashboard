@@ -1945,7 +1945,14 @@ function renderSearchResults() {
   }
 
   if (!rows.length) {
-    return `<div class="search-empty">No results for "${esc(S.query)}"</div>`;
+    return `
+      <div class="empty-state">
+        <i data-lucide="SearchX" style="width:48px;height:48px"></i>
+        <p>No results found for "${esc(S.query)}"</p>
+        <button class="btn btn--primary" onclick="handleSearch('')">
+          <i data-lucide="X" style="width:13px;height:13px"></i> Clear Search
+        </button>
+      </div>`;
   }
 
   return `
