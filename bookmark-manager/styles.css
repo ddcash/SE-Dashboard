@@ -1472,7 +1472,9 @@ input[type="color"].form-input::-moz-color-swatch,
     position: relative;
     width: 100%;
     height: calc(100% - 40px);
+    display: block; /* ensure it's not a grid */
 }
 .group-content .card {
     position: absolute !important;
+    margin: 0 !important;
 }
