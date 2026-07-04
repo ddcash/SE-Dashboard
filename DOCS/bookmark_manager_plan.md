@@ -114,15 +114,21 @@ Saves the specific layout overrides for this browser instance:
 * Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
 * Enable fuzzy searching across URLs, tags, and custom metadata.
 
-### Phase 3: Drag-and-Drop & Customization Modal
-* Integrate `@hello-pangea/dnd` for moving and reordering columns/cards.
+### Phase 3: Drag-and-Drop, Customization Modal, & Groups
+* Integrate drag-and-drop for moving and reordering cards on the canvas.
 * Build a **Card Editor Modal** allowing users to:
   * Select an icon (Lucide library search, external URL image, local favicon, or custom image upload).
   * Customize individual card background colors, borders, and text colors.
   * Set arbitrary parameters (like opening target, description notes).
+* Build **Groups** functionality:
+  * Allow creating visual group containers on the freeform canvas layout.
+  * Allow customizing group styling (background color, background image, text color, bold/italic font styles).
+  * Enable dragging cards directly into (and out of) groups.
 
-### Phase 4: Import / Export Module
+### Phase 4: Import / Export & Master Publishing Module
 * Build a parser to import standard HTML Netscape bookmarks files, CSVs, and JSONs.
+* **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
+* Support editing and publishing to a remote master file URL via HTTP PUT requests.
 
 ---
 
