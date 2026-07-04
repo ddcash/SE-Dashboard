@@ -1267,7 +1267,7 @@ function populateMasterEditorVisual() {
           <label>Color</label>
           <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
         </div>
-        <button type="button" class="btn btn--danger" onclick="deleteMasterCategory('${cat.id}')">Delete Category</button>
+        <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
       </div>
       <div class="master-bookmark-list">
         ${cat.bookmarks.map(bm => `
@@ -1276,7 +1276,7 @@ function populateMasterEditorVisual() {
               <div><label>Title</label><input type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
               <div><label>URL</label><input type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
               <div><label>Icon</label><input type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
-              <button type="button" class="btn btn--danger" onclick="deleteMasterBookmark('${cat.id}','${bm.id}')">Delete</button>
+              <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" data-bm-id="${esc(bm.id)}" onclick="deleteMasterBookmark(this.dataset.catId, this.dataset.bmId)">Delete</button>
             </div>
             <div class="master-bookmark-row-bottom">
               <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
@@ -1285,7 +1285,7 @@ function populateMasterEditorVisual() {
             </div>
           </div>
         `).join('')}
-        <button type="button" class="btn btn--ghost master-editor-add-btn" onclick="addMasterBookmark('${cat.id}')">Add Bookmark</button>
+        <button type="button" class="btn btn--ghost master-editor-add-btn" data-cat-id="${esc(cat.id)}" onclick="addMasterBookmark(this.dataset.catId)">Add Bookmark</button>
       </div>
     </div>
   `).join('');
@@ -1571,7 +1571,7 @@ function openCategoryEditModal() {
         <div>
           <strong>${esc(cat.name)}</strong>
         </div>
-        <button type="button" class="btn btn--primary" onclick="closeModal(); openCategoryModal('${cat.id}')">
+        <button type="button" class="btn btn--primary" data-cat-id="${esc(cat.id)}" onclick="closeModal(); openCategoryModal(this.dataset.catId)">
           <i data-lucide="Pencil" style="width:13px;height:13px"></i> Edit
         </button>
       </div>`;
@@ -1598,7 +1598,7 @@ function openGroupModal(groupId) {
     openModal(`
     <div class="modal-header">
       <h2>${group ? 'Edit Group' : 'New Group'}</h2>
-      ${group ? `<button type="button" class="btn btn--danger" style="margin-right: 12px;" onclick="deleteGroup('${groupId}')">
+      ${group ? `<button type="button" class="btn btn--danger" style="margin-right: 12px;" data-group-id="${esc(groupId)}" onclick="deleteGroup(this.dataset.groupId)">
           <i data-lucide="Trash2" style="width:13px;height:13px"></i> Delete
       </button>` : ''}
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
@@ -1710,7 +1710,7 @@ function openCategoryDeleteModal() {
           <strong>${esc(cat.name)}</strong>
           <div class="hint-text">${isMaster ? 'Provided by master file — will be hidden.' : 'User-created category — will be deleted.'}</div>
         </div>
-        <button type="button" class="btn ${isMaster ? 'btn--ghost' : 'btn--danger'}" onclick="deleteCategory('${cat.id}')">
+        <button type="button" class="btn ${isMaster ? 'btn--ghost' : 'btn--danger'}" data-cat-id="${esc(cat.id)}" onclick="deleteCategory(this.dataset.catId)">
           <i data-lucide="${isMaster ? 'EyeOff' : 'Trash2'}" style="width:13px;height:13px"></i>
           ${isMaster ? 'Hide' : 'Delete'}
         </button>
@@ -2103,8 +2103,8 @@ function renderDashboard() {
     const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
-        style="--pill-color:${esc(cat.color||'#6366f1')}"
-        onclick="setActiveCat('${cat.id}')" title="${esc(cat.name)}">
+        style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
+        onclick="setActiveCat(this.dataset.catId)" title="${esc(cat.name)}">
         ${renderIcon({ type:'lucide', value: cat.icon||'Folder' }, 12)}
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
@@ -2332,7 +2332,7 @@ function openCardModal(catId, bmId) {
 
   const iconGrid = LUCIDE_ICONS.map(n => `
     <button type="button" aria-label="${n} icon" class="icon-option ${iType === 'lucide' && iVal === n ? 'selected' : ''}"
-      data-icon="${n}" onclick="pickLucideIcon(this,'${n}')">
+      data-icon="${n}" onclick="pickLucideIcon(this, this.dataset.icon)">
       <i data-lucide="${n}" style="width:16px;height:16px"></i>
     </button>`).join('');
 
@@ -2343,7 +2343,7 @@ function openCardModal(catId, bmId) {
   openModal(`
     <div class="modal-header">
       <h2>${bm ? 'Edit Bookmark' : 'New Bookmark'}</h2>
-      ${bm && !isMaster ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" onclick="publishBookmark('${catId}', '${bmId}')">
+      ${bm && !isMaster ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" data-cat-id="${esc(catId)}" data-bm-id="${esc(bmId)}" onclick="publishBookmark(this.dataset.catId, this.dataset.bmId)">
           <i data-lucide="UploadCloud" style="width:13px;height:13px"></i> Publish to Master
       </button>` : ''}
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
@@ -2444,7 +2444,7 @@ function openCardModal(catId, bmId) {
             <div class="asset-gallery" style="max-height: 200px; overflow-y: auto; resize: vertical;">
               ${Object.entries(S.assetUrls).map(([name, url]) => `
                 <button type="button" class="asset-thumb ${iType==='local' && iVal===name ? 'selected' : ''}"
-                  onclick="selectLocalAsset('${name}')">
+                  data-asset-name="${esc(name)}" onclick="selectLocalAsset(this.dataset.assetName)">
                   <img src="${url}" alt="Asset" loading="lazy" onmouseenter="showAssetPreview(this.src)" onmouseleave="hideAssetPreview()"/>
                 </button>
               `).join('')}
@@ -2505,7 +2505,7 @@ function openCardModal(catId, bmId) {
         </div>
 
         <div class="modal-footer">
-          ${bm && !isMaster ? `<button type="button" class="btn btn--danger" onclick="confirmDeleteBookmark('${bm.id}','${catId}')">
+          ${bm && !isMaster ? `<button type="button" class="btn btn--danger" data-cat-id="${esc(catId)}" data-bm-id="${esc(bm.id)}" onclick="confirmDeleteBookmark(this.dataset.bmId, this.dataset.catId)">
             <i data-lucide="Trash2" style="width:13px;height:13px"></i>
             Delete
           </button>` : ''}
@@ -2586,18 +2586,18 @@ function openCategoryModal(catId) {
 
   const iconGrid = LUCIDE_ICONS.map(n => `
     <button type="button" aria-label="${n} icon" class="icon-option ${cIcon===n?'selected':''}"
-      data-icon="${n}" onclick="pickLucideIcon(this,'${n}')">
+      data-icon="${n}" onclick="pickLucideIcon(this, this.dataset.icon)">
       <i data-lucide="${n}" style="width:16px;height:16px"></i>
     </button>`).join('');
 
   const swatches = CAT_COLORS.map(c => `
     <button type="button" aria-label="${c} color" class="color-swatch ${c===cColor?'selected':''}"
-      style="background:${c}" onclick="pickCatColor(this,'${c}')"></button>`).join('');
+      style="background:${c}" data-color="${c}" onclick="pickCatColor(this, this.dataset.color)"></button>`).join('');
 
   openModal(`
     <div class="modal-header">
       <h2>${cat ? 'Edit Category' : 'New Category'}</h2>
-      ${cat && !cat.__master ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" onclick="publishCategory('${catId}')">
+      ${cat && !cat.__master ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" data-cat-id="${esc(catId)}" onclick="publishCategory(this.dataset.catId)">
           <i data-lucide="UploadCloud" style="width:13px;height:13px"></i> Publish to Master
       </button>` : ''}
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
@@ -2622,7 +2622,7 @@ function openCategoryModal(catId) {
 
         <div class="modal-footer">
           ${cat ? `<button type="button" class="btn ${catHidden ? 'btn--primary' : 'btn--ghost'}"
-            onclick="${catHidden ? 'unhide' : 'hide'}Item('categories','${catId}');closeModal()">
+            data-cat-id="${esc(catId)}" onclick="${catHidden ? 'unhide' : 'hide'}Item('categories', this.dataset.catId);closeModal()">
             <i data-lucide="${catHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${catHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
@@ -2727,7 +2727,7 @@ function selectLocalAsset(name) {
   setIconValue(name);
   const panel = document.getElementById('icon-panel-local');
   panel?.querySelectorAll('.asset-thumb').forEach(btn => btn.classList.remove('selected'));
-  const selected = panel?.querySelector(`.asset-thumb[onclick="selectLocalAsset('${name}')"]`);
+  const selected = panel?.querySelector(`.asset-thumb[data-asset-name="${esc(name)}"]`);
   if (selected) selected.classList.add('selected');
   const form = document.getElementById('card-form');
   if (form) form.querySelector('[name="iconType"]').value = 'local';
