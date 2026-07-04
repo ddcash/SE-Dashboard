@@ -13,14 +13,16 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Move bookmarks between categories from the editor.
 - **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
 
-### Freeform Canvas Layout
+### Freeform Canvas Layout & Groups
 - Cards are placed in a scrollable canvas layout.
-- Drag bookmark cards to reposition them freely.
+- Create resizable **Groups** to visually organize cards on the canvas.
+- Drag bookmark cards to reposition them freely, or drag them in and out of groups.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions are securely saved in `local_settings.json` and persist across sessions.
 
 ### Search & Filtering
 - Search titles, URLs, descriptions, and tags with fuzzy match.
+- Clear and actionable empty states when search yields no results.
 - Filter categories with clickable pills.
 - Preserve your current card layout when search is cleared.
 - Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette.
@@ -55,10 +57,11 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Performance & Security Improvements
 - Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events.
+- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
 
-### Master File Editing
+### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
+- **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 
@@ -83,7 +86,8 @@ Since SE-Dashboard runs entirely in the browser, there is no traditional install
 ## How to use
 
 - **Adding Items:** Start by creating a category, then add bookmarks to it.
-- **Customizing Layout:** Drag and drop cards to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
+- **Customizing Layout & Groups:** Create groups from the command palette to visually containerize bookmarks. Drag and drop cards around the canvas or into groups to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
+- **Publishing:** From the Category Editor, you can easily "Publish to Master" to share an entire personal category directly with the shared master file.
 - **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
 - **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
 - **Restoring Sessions:** When you reopen the app, it can resume the last directory if browser permissions are still granted. If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
