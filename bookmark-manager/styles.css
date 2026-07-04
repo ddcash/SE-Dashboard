@@ -419,10 +419,8 @@ body::after {
   width: auto;
   min-width: 0;
   max-width: 100%;
-  resize: both;
-  overflow: hidden;
+  resize: none;
   height: auto;
-  padding-bottom: 24px; /* leave room for resize handle and hidden elements */
 }
 
 .search-results--cards .card-link {

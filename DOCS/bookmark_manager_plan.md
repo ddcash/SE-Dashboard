@@ -94,9 +94,7 @@ Saves the specific layout overrides for this browser instance:
     "gridColumns": 4,
     "categoryOrder": ["cat-dev-tools"],
     "hiddenCategories": []
-  },
-  "groups": [],
-  "cardPositions": {}
+  }
 }
 ```
 
@@ -117,17 +115,14 @@ Saves the specific layout overrides for this browser instance:
 * Enable fuzzy searching across URLs, tags, and custom metadata.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
-* Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
+* Integrate `@hello-pangea/dnd` for moving and reordering columns/cards.
 * Build a **Card Editor Modal** allowing users to:
   * Select an icon (Lucide library search, external URL image, local favicon, or custom image upload).
   * Customize individual card background colors, borders, and text colors.
   * Set arbitrary parameters (like opening target, description notes).
-* Implement **Master File Publishing**: Allow users to share personal categories directly to the master file from within the app.
 
-### Phase 4: Import / Export & Master Publishing Module
+### Phase 4: Import / Export Module
 * Build a parser to import standard HTML Netscape bookmarks files, CSVs, and JSONs.
-* **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
-* Support editing and publishing to a remote master file URL via HTTP PUT requests.
 
 ---
 
@@ -173,10 +168,9 @@ Add an interactive Card Customization Editor modal and implement layout dragging
    - Rename the bookmark, change the URL, edit description notes, and manage tags.
    - Set custom styles: Choose custom HSL/Hex colors for the card background, border, and text.
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
-2. Drag-and-Drop & Canvas Layout:
-   - Users can drag cards to reposition them freely around the canvas layout.
-   - Users can create resizable groups from the command palette and place cards within them.
-3. Publishing: Allow users to publish entire personal categories to the shared master file directly from the category editor.
+2. Drag-and-Drop:
+   - Users can drag cards to reorder them within a category, or move them between categories.
+   - Users can drag category panels to rearrange dashboard columns.
 Save all modifications instantly back to the directory's files.
 ```
 
