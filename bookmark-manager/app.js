@@ -43,11 +43,19 @@ function sanitizeUrl(url) {
   return u;
 }
 
+// ⚡ Bolt: Cache lowercased query to avoid O(N) string allocations during loop
+let _lastFuzzyQ = null;
+let _lastFuzzyQLower = null;
+
 function fuzzyMatch(str, q) {
   if (!q) return true;
-  str = str.toLowerCase(); q = q.toLowerCase();
+  if (q !== _lastFuzzyQ) {
+    _lastFuzzyQ = q;
+    _lastFuzzyQLower = q.toLowerCase();
+  }
+  str = String(str).toLowerCase();
   let i = 0;
-  for (const ch of q) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
+  for (const ch of _lastFuzzyQLower) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
   return true;
 }
 
@@ -1991,13 +1999,15 @@ function renderSearchResults() {
 
   for (const cat of S.data.categories) {
     if (!S.showHidden && hiddenCats.has(cat.id)) continue;
+    // ⚡ Bolt: Hoist loop-invariant category name match to avoid redundant work per bookmark
+    const catMatch = fuzzyMatch(cat.name || '', S.query);
+
     for (const bm of cat.bookmarks) {
       if (!S.showHidden && hiddenBms.has(bm.id)) continue;
-      const match =
+      const match = catMatch ||
         fuzzyMatch(bm.title,            S.query) ||
         fuzzyMatch(bm.url,              S.query) ||
         fuzzyMatch(bm.description||'',  S.query) ||
-        fuzzyMatch(cat.name || '',      S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
       rows.push({ bm, cat });
