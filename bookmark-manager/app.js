@@ -90,21 +90,22 @@ function openNewBookmarkModal() {
 }
 
 function resetLayout() {
-  // Only remove positions of cards that are NOT in a group
+  // Only remove coordinates of cards that are NOT in a group, preserving custom width and height (w, h)
   if (S.cfg.cardPositions) {
      for (const id in S.cfg.cardPositions) {
          if (!S.cfg.cardPositions[id].groupId && !id.startsWith('grp-')) {
-             delete S.cfg.cardPositions[id];
+             delete S.cfg.cardPositions[id].x;
+             delete S.cfg.cardPositions[id].y;
          }
      }
   }
 
-  // Also space out groups automatically if they have no position (or reset them too)
   // Let's reset groups as well, so they get auto-arranged, but items INSIDE groups keep their relative x/y.
   if (S.cfg.cardPositions) {
      for (const id in S.cfg.cardPositions) {
          if (id.startsWith('grp-')) {
-             delete S.cfg.cardPositions[id];
+             delete S.cfg.cardPositions[id].x;
+             delete S.cfg.cardPositions[id].y;
          }
      }
   }
@@ -145,7 +146,9 @@ function autoArrangeCards() {
   const allBms = [];
   for (const cat of cats) {
     for (const bm of cat.bookmarks) {
-      if (!S.cfg.cardPositions[bm.id] || !S.cfg.cardPositions[bm.id].groupId) {
+      // ONLY arrange if they do NOT have a manual position or aren't in a group
+      // But wait... autoArrangeCards() assigns absolute positions to items without positions!
+      if (!S.cfg.cardPositions[bm.id] || (!S.cfg.cardPositions[bm.id].groupId && S.cfg.cardPositions[bm.id].x === undefined)) {
          allBms.push(bm);
       }
     }
@@ -154,7 +157,9 @@ function autoArrangeCards() {
   // Add groups to be arranged alongside bookmarks
   if (S.cfg.groups) {
       for (const group of S.cfg.groups) {
-         allBms.push(group);
+         if (!S.cfg.cardPositions[group.id] || S.cfg.cardPositions[group.id].x === undefined) {
+             allBms.push(group);
+         }
       }
   }
 
@@ -1023,6 +1028,9 @@ async function loadData() {
     S.masterData = DEFAULT_DATA;
   }
 
+  // If we just loaded S.masterData, we must call mergeData() to inject it into S.data so it displays!
+  mergeData();
+
   if (!Array.isArray(S.masterData.categories)) {
     S.masterData.categories = [];
   }
@@ -1559,7 +1567,7 @@ function openCategoryEditModal() {
         <div>
           <strong>${esc(cat.name)}</strong>
         </div>
-        <button type="button" class="btn btn--primary" onclick="closeModal(); openCategoryModal('${cat.id}')">
+        <button type="button" class="btn btn--primary" onclick="closeModal(); setTimeout(() => openCategoryModal('${cat.id}'), 250)">
           <i data-lucide="Pencil" style="width:13px;height:13px"></i> Edit
         </button>
       </div>`;
@@ -1914,6 +1922,12 @@ function renderGroup(group) {
           <!-- Cards inside the group will be rendered absolute relative to this container -->
       </div>
       <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn-icon btn-icon--hide" title="Auto-arrange items inside this group" aria-label="Auto-arrange items" onclick="autoArrangeGroup('${group.id}')">
+          <i data-lucide="LayoutGrid" style="width:12px;height:12px"></i>
+        </button>
+        <button class="btn-icon btn-icon--hide" title="Hide Group (items remain searchable)" aria-label="Hide group" onclick="hideGroup('${group.id}')">
+          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
+        </button>
         <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal('${group.id}')">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
@@ -1930,8 +1944,9 @@ function renderAllCards() {
 
   if (S.cfg.groups) {
       for (const group of S.cfg.groups) {
-          // Only render groups if NO active category is selected (otherwise we just want a flat list)
+          // Only render groups if NO active category is selected and not hidden
           if (!S.activeCat) {
+              if (S.cfg.hidden?.groups?.includes(group.id) && !S.showHidden) continue;
               html += renderGroup(group);
           }
       }
@@ -2019,8 +2034,9 @@ function renderSearchResults() {
 }
 
 function render() {
-  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-  const scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft;
+  const scrollContainer = document.documentElement || document.body;
+  const scrollTop = scrollContainer.scrollTop;
+  const scrollLeft = scrollContainer.scrollLeft;
 
   applyThemeSettings();
   if (S.dir && !S.query) autoArrangeCards(); // fill in positions for any new cards before DOM build
@@ -3041,6 +3057,51 @@ async function confirmImport() {
   showToast(`Imported ${addedBms} bookmarks into ${addedCats} new categories.${dupes ? ` (${dupes} duplicates skipped)` : ''}`);
 }
 
+
+function autoArrangeGroup(groupId) {
+   let currentX = 16;
+   let currentY = 16;
+   let rowHeight = 0;
+
+   const group = S.cfg.groups.find(g => g.id === groupId);
+   const groupPos = S.cfg.cardPositions[groupId] || {};
+   const maxWidth = (groupPos.w || 320) - 32; // padding
+
+   for (const bmId in S.cfg.cardPositions) {
+       const pos = S.cfg.cardPositions[bmId];
+       if (pos.groupId === groupId) {
+           const w = pos.w || APP_CONFIG.canvas.cardWidth;
+           const h = pos.h || APP_CONFIG.canvas.cardHeight;
+
+           if (currentX + w > maxWidth && currentX > 16) {
+               currentX = 16;
+               currentY += rowHeight + 16;
+               rowHeight = h;
+           } else {
+               rowHeight = Math.max(rowHeight, h);
+           }
+
+           pos.x = currentX;
+           pos.y = currentY;
+           pos._px = true;
+
+           currentX += w + 16;
+       }
+   }
+
+   saveData();
+   render();
+   showToast('Group items auto-arranged.');
+}
+
+function hideGroup(groupId) {
+   if (!S.cfg.hidden.groups) S.cfg.hidden.groups = [];
+   S.cfg.hidden.groups.push(groupId);
+   saveData();
+   render();
+   showToast('Group hidden. Items inside remain searchable.');
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  COMMAND PALETTE
 // ═══════════════════════════════════════════════════════════════
@@ -3302,8 +3363,10 @@ document.addEventListener('pointerup', e => {
     _drag.el.style.top = _drag.curY + 'px';
 
     saveData();
-    render();
-    applyLayout();
+    // Use requestAnimationFrame to let DOM settle before layout apply to avoid visual jitter
+    requestAnimationFrame(() => {
+        render();
+    });
   }
   _drag = null;
 });
