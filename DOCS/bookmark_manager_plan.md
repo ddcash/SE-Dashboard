@@ -124,8 +124,10 @@ Saves the specific layout overrides for this browser instance:
   * Set arbitrary parameters (like opening target, description notes).
 * Implement **Master File Publishing**: Allow users to share personal categories directly to the master file from within the app.
 
-### Phase 4: Import / Export Module
+### Phase 4: Import / Export & Master Publishing Module
 * Build a parser to import standard HTML Netscape bookmarks files, CSVs, and JSONs.
+* **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
+* Support editing and publishing to a remote master file URL via HTTP PUT requests.
 
 ---
 

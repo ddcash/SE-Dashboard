@@ -18,12 +18,13 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Create resizable **Groups** to visually organize cards on the canvas.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
 - Reset layout from the command palette to restore the default arrangement.
-- **Layout Persistence**: Positions are securely saved in `local_settings.json` and persist across sessions.
+- **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
 ### Search & Filtering
 - Search titles, URLs, descriptions, and tags with fuzzy match.
 - Clear and actionable empty states when search yields no results.
 - Filter categories with clickable pills.
+- Empty states feature helpful Call-to-Action (CTA) buttons to quickly create new items or clear filters.
 - Preserve your current card layout when search is cleared.
 - Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette.
 - Toggle hidden items on or off.
@@ -64,6 +65,12 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
+- **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
+
+### Performance & Security Improvements
+- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
+- Enhanced search filtering performance with optimized string matching algorithms.
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
 
 ## Installation
 
