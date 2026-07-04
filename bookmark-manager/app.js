@@ -1902,7 +1902,7 @@ function renderCard(bm, cat, dimmed) {
 
 // Flat list of all visible cards for the canvas layout
 
-function renderGroup(group) {
+function renderGroup(group, innerHTML = '') {
     const pos = S.cfg.cardPositions?.[group.id] || { x: 0, y: 0 };
     const inlineStyle = [
         pos.w ? `width:${pos.w}px` : '',
@@ -1923,7 +1923,7 @@ function renderGroup(group) {
          </h3>
       </div>
       <div class="group-content">
-          <!-- Cards inside the group will be rendered absolute relative to this container -->
+          ${innerHTML}
       </div>
       <div class="card-actions" onclick="event.stopPropagation()">
         <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal(this.closest('.card').dataset.id)">
@@ -1934,20 +1934,11 @@ function renderGroup(group) {
 }
 
 function renderAllCards() {
-  let html = '';
+  let cardsHtml = '';
 
   // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
-
-  if (S.cfg.groups) {
-      for (const group of S.cfg.groups) {
-          // Only render groups if NO active category is selected (otherwise we just want a flat list)
-          if (!S.activeCat) {
-              html += renderGroup(group);
-          }
-      }
-  }
 
   for (const cat of S.data.categories) {
     const catHidden  = hiddenCats.has(cat.id);
@@ -1964,31 +1955,28 @@ function renderAllCards() {
       const pos = S.cfg.cardPositions?.[bm.id];
       if (!S.activeCat && pos && pos.groupId) {
          // This card belongs to a group, defer rendering to that group
-         // We do this by injecting the card HTML into the group's content via DOM manipulation after html generation
-         // To do that safely, we will build a map of group HTML content
          if (!window._groupHtml) window._groupHtml = {};
          if (!window._groupHtml[pos.groupId]) window._groupHtml[pos.groupId] = '';
          window._groupHtml[pos.groupId] += renderCard(bm, cat, dimmed);
       } else {
-         html += renderCard(bm, cat, dimmed);
+         cardsHtml += renderCard(bm, cat, dimmed);
       }
     }
   }
 
-  // Inject group contents
+  let html = '';
   if (S.cfg.groups) {
       for (const group of S.cfg.groups) {
-          const content = window._groupHtml?.[group.id] || '';
-          // We need to inject the content into the specific group, not just the first one found
-          html = html.replace(`<div class="card card--group" data-id="${group.id}"`, `<div class="card card--group" data-id="${group.id}"`).replace(
-              new RegExp(`(<div class="card card--group" data-id="${group.id}"[\\s\\S]*?<div class="group-content">)`),
-              `$1${content}`
-          );
+          // Only render groups if NO active category is selected (otherwise we just want a flat list)
+          if (!S.activeCat) {
+              const content = window._groupHtml?.[group.id] || '';
+              html += renderGroup(group, content);
+          }
       }
   }
   window._groupHtml = {};
 
-  return html;
+  return html + cardsHtml;
 }
 
 
