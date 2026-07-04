@@ -43,11 +43,19 @@ function sanitizeUrl(url) {
   return u;
 }
 
+// ⚡ Bolt: Cache lowercased query to avoid O(N) string allocations during loop
+let _lastFuzzyQ = null;
+let _lastFuzzyQLower = null;
+
 function fuzzyMatch(str, q) {
   if (!q) return true;
-  str = str.toLowerCase(); q = q.toLowerCase();
+  if (q !== _lastFuzzyQ) {
+    _lastFuzzyQ = q;
+    _lastFuzzyQLower = q.toLowerCase();
+  }
+  str = String(str).toLowerCase();
   let i = 0;
-  for (const ch of q) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
+  for (const ch of _lastFuzzyQLower) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
   return true;
 }
 
@@ -1865,7 +1873,7 @@ function renderCard(bm, cat, dimmed) {
   ].filter(Boolean).join(' ');
 
   return `
-    <div class="${classes}" data-id="${bm.id}" data-cat="${catId}" style="${inlineStyle}">
+    <div class="${classes}" data-id="${esc(bm.id)}" data-cat="${esc(catId)}" style="${inlineStyle}">
       <div class="card-drag-handle">
         <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
       </div>
@@ -1905,7 +1913,7 @@ function renderGroup(group) {
     ].filter(Boolean).join(';');
 
     return `
-    <div class="card card--group" data-id="${group.id}" style="${inlineStyle}">
+    <div class="card card--group" data-id="${esc(group.id)}" style="${inlineStyle}">
       <div class="card-drag-handle group-drag-handle">
          <i data-lucide="GripHorizontal" style="width:14px;height:14px;opacity:0.5"></i>
       </div>
@@ -1991,13 +1999,15 @@ function renderSearchResults() {
 
   for (const cat of S.data.categories) {
     if (!S.showHidden && hiddenCats.has(cat.id)) continue;
+    // ⚡ Bolt: Hoist loop-invariant category name match to avoid redundant work per bookmark
+    const catMatch = fuzzyMatch(cat.name || '', S.query);
+
     for (const bm of cat.bookmarks) {
       if (!S.showHidden && hiddenBms.has(bm.id)) continue;
-      const match =
+      const match = catMatch ||
         fuzzyMatch(bm.title,            S.query) ||
         fuzzyMatch(bm.url,              S.query) ||
         fuzzyMatch(bm.description||'',  S.query) ||
-        fuzzyMatch(cat.name || '',      S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
       rows.push({ bm, cat });
@@ -2005,7 +2015,14 @@ function renderSearchResults() {
   }
 
   if (!rows.length) {
-    return `<div class="search-empty">No results for "${esc(S.query)}"</div>`;
+    return `
+      <div class="empty-state">
+        <i data-lucide="SearchX" style="width:48px;height:48px"></i>
+        <p>No results found for "${esc(S.query)}"</p>
+        <button class="btn btn--primary" onclick="handleSearch('')">
+          <i data-lucide="X" style="width:13px;height:13px"></i> Clear Search
+        </button>
+      </div>`;
   }
 
   return `
