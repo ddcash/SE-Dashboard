@@ -38,15 +38,24 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  if (/^(javascript|data|vbscript):/i.test(u)) return '#';
+  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
 
+// ⚡ Bolt: Cache lowercased query to avoid O(N) string allocations during loop
+let _lastFuzzyQ = null;
+let _lastFuzzyQLower = null;
+
 function fuzzyMatch(str, q) {
   if (!q) return true;
-  str = str.toLowerCase(); q = q.toLowerCase();
+  if (q !== _lastFuzzyQ) {
+    _lastFuzzyQ = q;
+    _lastFuzzyQLower = q.toLowerCase();
+  }
+  str = String(str).toLowerCase();
   let i = 0;
-  for (const ch of q) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
+  for (const ch of _lastFuzzyQLower) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
   return true;
 }
 
@@ -216,8 +225,8 @@ function applyLayout() {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
 
-  // If a category is selected, we want an auto-arranged wrapped view regardless of custom positions
-  if (S.activeCat) {
+  // If a category or query is selected, we want an auto-arranged wrapped view regardless of custom positions
+  if (S.activeCat || S.query) {
       canvas.dataset.wrapped = "true";
       // Using flex layout with wrap enables variable-sized cards to flow naturally.
       canvas.style.display = 'flex';
@@ -664,13 +673,16 @@ async function selectDefaultMasterFile() {
 
 async function saveMasterAssetsUrl() {
   const urlInput = document.getElementById('master-assets-url-input');
-  if (!urlInput || !urlInput.value) return;
+  if (!urlInput) return;
   const url = urlInput.value.trim();
 
   S.cfg.masterAssetsUrl = url;
-  S.masterAssetsHandle = null;
-  S.pendingMasterAssetsHandle = null;
-  await idbSet('masterAssetsHandle', null);
+  if (url) {
+      S.masterAssetsHandle = null;
+      S.pendingMasterAssetsHandle = null;
+      await idbSet('masterAssetsHandle', null);
+  }
+
   await writeJSON(APP_CONFIG.files.settings, S.cfg);
 
   await loadAssets();
@@ -1255,7 +1267,7 @@ function populateMasterEditorVisual() {
           <label>Color</label>
           <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
         </div>
-        <button type="button" class="btn btn--danger" onclick="deleteMasterCategory('${cat.id}')">Delete Category</button>
+        <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
       </div>
       <div class="master-bookmark-list">
         ${cat.bookmarks.map(bm => `
@@ -1264,7 +1276,7 @@ function populateMasterEditorVisual() {
               <div><label>Title</label><input type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
               <div><label>URL</label><input type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
               <div><label>Icon</label><input type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
-              <button type="button" class="btn btn--danger" onclick="deleteMasterBookmark('${cat.id}','${bm.id}')">Delete</button>
+              <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" data-bm-id="${esc(bm.id)}" onclick="deleteMasterBookmark(this.dataset.catId, this.dataset.bmId)">Delete</button>
             </div>
             <div class="master-bookmark-row-bottom">
               <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
@@ -1273,7 +1285,7 @@ function populateMasterEditorVisual() {
             </div>
           </div>
         `).join('')}
-        <button type="button" class="btn btn--ghost master-editor-add-btn" onclick="addMasterBookmark('${cat.id}')">Add Bookmark</button>
+        <button type="button" class="btn btn--ghost master-editor-add-btn" data-cat-id="${esc(cat.id)}" onclick="addMasterBookmark(this.dataset.catId)">Add Bookmark</button>
       </div>
     </div>
   `).join('');
@@ -1559,7 +1571,7 @@ function openCategoryEditModal() {
         <div>
           <strong>${esc(cat.name)}</strong>
         </div>
-        <button type="button" class="btn btn--primary" onclick="closeModal(); openCategoryModal('${cat.id}')">
+        <button type="button" class="btn btn--primary" data-cat-id="${esc(cat.id)}" onclick="closeModal(); openCategoryModal(this.dataset.catId)">
           <i data-lucide="Pencil" style="width:13px;height:13px"></i> Edit
         </button>
       </div>`;
@@ -1586,7 +1598,7 @@ function openGroupModal(groupId) {
     openModal(`
     <div class="modal-header">
       <h2>${group ? 'Edit Group' : 'New Group'}</h2>
-      ${group ? `<button type="button" class="btn btn--danger" style="margin-right: 12px;" onclick="deleteGroup('${groupId}')">
+      ${group ? `<button type="button" class="btn btn--danger" style="margin-right: 12px;" data-group-id="${esc(groupId)}" onclick="deleteGroup(this.dataset.groupId)">
           <i data-lucide="Trash2" style="width:13px;height:13px"></i> Delete
       </button>` : ''}
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
@@ -1698,7 +1710,7 @@ function openCategoryDeleteModal() {
           <strong>${esc(cat.name)}</strong>
           <div class="hint-text">${isMaster ? 'Provided by master file — will be hidden.' : 'User-created category — will be deleted.'}</div>
         </div>
-        <button type="button" class="btn ${isMaster ? 'btn--ghost' : 'btn--danger'}" onclick="deleteCategory('${cat.id}')">
+        <button type="button" class="btn ${isMaster ? 'btn--ghost' : 'btn--danger'}" data-cat-id="${esc(cat.id)}" onclick="deleteCategory(this.dataset.catId)">
           <i data-lucide="${isMaster ? 'EyeOff' : 'Trash2'}" style="width:13px;height:13px"></i>
           ${isMaster ? 'Hide' : 'Delete'}
         </button>
@@ -1821,13 +1833,13 @@ function renderCard(bm, cat, dimmed) {
   const inlineStyle = [
     pos.w ? `width:${pos.w}px` : '',
     pos.h ? `height:${pos.h}px` : '',
-    !S.activeCat && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
+    !(S.activeCat || S.query) && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
     `--card-opacity:${cardOpacity}`,
     `--card-local-text-scale:${cardTextScale}`,
     cardColorStyle,
     bgImageStyle,
     cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
-    cs.textColor && !cs.hideText ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
+    cs.textColor ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
     cs.textWeight === 'bold' && !cs.hideText ? 'font-weight:bold' : '',
     cs.textItalic && !cs.hideText ? 'font-style:italic' : '',
   ].filter(Boolean).join(';');
@@ -1847,10 +1859,10 @@ function renderCard(bm, cat, dimmed) {
     ? `<span class="hidden-badge"><i data-lucide="EyeOff" style="width:9px;height:9px"></i> hidden</span>`
     : '';
   const hideBtn = hidden
-    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks','${bm.id}')">
+    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks', this.closest('.card').dataset.id)">
          <i data-lucide="Eye" style="width:12px;height:12px"></i>
        </button>`
-    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks','${bm.id}')">
+    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks', this.closest('.card').dataset.id)">
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
@@ -1861,14 +1873,15 @@ function renderCard(bm, cat, dimmed) {
   ].filter(Boolean).join(' ');
 
   return `
-    <div class="${classes}" data-id="${bm.id}" data-cat="${catId}" style="${inlineStyle}">
+    <div class="${classes}" data-id="${esc(bm.id)}" data-cat="${esc(catId)}" style="${inlineStyle}">
       <div class="card-drag-handle">
         <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
       </div>
       <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
-         onclick="trackClick(event,'${bm.id}','${catId}')">
+         onclick="trackClick(event, this.closest('.card').dataset.id, this.closest('.card').dataset.cat)">
         ${bgImgSrc ? `<img src="${bgImgSrc}" class="card-bg-image">` : ''}
-        ${cs.hideText ? '' : `<div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>
+        ${cs.hideIcon ? '' : `<div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>`}
+        ${cs.hideText ? '' : `
         <div class="card-body">
           <div class="card-title">${esc(bm.title)}</div>
           ${bm.description ? `<div class="card-desc">${esc(bm.description)}</div>` : ''}
@@ -1876,10 +1889,10 @@ function renderCard(bm, cat, dimmed) {
         </div>`}
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
-        ${pos.groupId ? `<button class="btn-icon" title="Remove from Group" aria-label="Remove from group" onclick="removeFromGroup('${bm.id}')">
+        ${pos.groupId ? `<button class="btn-icon" title="Remove from Group" aria-label="Remove from group" onclick="removeFromGroup(this.closest('.card').dataset.id)">
           <i data-lucide="ListMinus" style="width:12px;height:12px"></i>
         </button>` : ''}
-        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal(this.closest('.card').dataset.cat, this.closest('.card').dataset.id)">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
         ${hideBtn}
@@ -1889,7 +1902,7 @@ function renderCard(bm, cat, dimmed) {
 
 // Flat list of all visible cards for the canvas layout
 
-function renderGroup(group) {
+function renderGroup(group, innerHTML = '') {
     const pos = S.cfg.cardPositions?.[group.id] || { x: 0, y: 0 };
     const inlineStyle = [
         pos.w ? `width:${pos.w}px` : '',
@@ -1900,7 +1913,7 @@ function renderGroup(group) {
     ].filter(Boolean).join(';');
 
     return `
-    <div class="card card--group" data-id="${group.id}" style="${inlineStyle}">
+    <div class="card card--group" data-id="${esc(group.id)}" style="${inlineStyle}">
       <div class="card-drag-handle group-drag-handle">
          <i data-lucide="GripHorizontal" style="width:14px;height:14px;opacity:0.5"></i>
       </div>
@@ -1910,10 +1923,10 @@ function renderGroup(group) {
          </h3>
       </div>
       <div class="group-content">
-          <!-- Cards inside the group will be rendered absolute relative to this container -->
+          ${innerHTML}
       </div>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal('${group.id}')">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal(this.closest('.card').dataset.id)">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
       </div>
@@ -1921,7 +1934,7 @@ function renderGroup(group) {
 }
 
 function renderAllCards() {
-  let html = '';
+  let cardsHtml = '';
 
   // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
@@ -1951,31 +1964,28 @@ function renderAllCards() {
       const pos = S.cfg.cardPositions?.[bm.id];
       if (!S.activeCat && pos && pos.groupId) {
          // This card belongs to a group, defer rendering to that group
-         // We do this by injecting the card HTML into the group's content via DOM manipulation after html generation
-         // To do that safely, we will build a map of group HTML content
          if (!window._groupHtml) window._groupHtml = {};
          if (!window._groupHtml[pos.groupId]) window._groupHtml[pos.groupId] = '';
          window._groupHtml[pos.groupId] += renderCard(bm, cat, dimmed);
       } else {
-         html += renderCard(bm, cat, dimmed);
+         cardsHtml += renderCard(bm, cat, dimmed);
       }
     }
   }
 
-  // Inject group contents
+  let html = '';
   if (S.cfg.groups) {
       for (const group of S.cfg.groups) {
-          const content = window._groupHtml?.[group.id] || '';
-          // We need to inject the content into the specific group, not just the first one found
-          html = html.replace(`<div class="card card--group" data-id="${group.id}"`, `<div class="card card--group" data-id="${group.id}"`).replace(
-              new RegExp(`(<div class="card card--group" data-id="${group.id}"[\\s\\S]*?<div class="group-content">)`),
-              `$1${content}`
-          );
+          // Only render groups if NO active category is selected (otherwise we just want a flat list)
+          if (!S.activeCat) {
+              const content = window._groupHtml?.[group.id] || '';
+              html += renderGroup(group, content);
+          }
       }
   }
   window._groupHtml = {};
 
-  return html;
+  return html + cardsHtml;
 }
 
 
@@ -1986,13 +1996,15 @@ function renderSearchResults() {
 
   for (const cat of S.data.categories) {
     if (!S.showHidden && hiddenCats.has(cat.id)) continue;
+    // ⚡ Bolt: Hoist loop-invariant category name match to avoid redundant work per bookmark
+    const catMatch = fuzzyMatch(cat.name || '', S.query);
+
     for (const bm of cat.bookmarks) {
       if (!S.showHidden && hiddenBms.has(bm.id)) continue;
-      const match =
+      const match = catMatch ||
         fuzzyMatch(bm.title,            S.query) ||
         fuzzyMatch(bm.url,              S.query) ||
         fuzzyMatch(bm.description||'',  S.query) ||
-        fuzzyMatch(cat.name || '',      S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
       rows.push({ bm, cat });
@@ -2000,7 +2012,14 @@ function renderSearchResults() {
   }
 
   if (!rows.length) {
-    return `<div class="search-empty">No results for "${esc(S.query)}"</div>`;
+    return `
+      <div class="empty-state">
+        <i data-lucide="SearchX" style="width:48px;height:48px"></i>
+        <p>No results found for "${esc(S.query)}"</p>
+        <button class="btn btn--primary" onclick="handleSearch('')">
+          <i data-lucide="X" style="width:13px;height:13px"></i> Clear Search
+        </button>
+      </div>`;
   }
 
   return `
@@ -2066,6 +2085,8 @@ function renderDashboard() {
   const cats        = S.data.categories || [];
   const isEmpty     = cats.length === 0 && !S.query;
   const hiddenBmCount  = (S.cfg.hidden?.bookmarks  || []).length;
+  // Let the wrapper know if it's search or filtered
+  const isSearchOrFilter = S.query || S.activeCat;
   const hiddenCatCount = (S.cfg.hidden?.categories || []).length;
   const hiddenTotal    = hiddenBmCount + hiddenCatCount;
 
@@ -2079,8 +2100,8 @@ function renderDashboard() {
     const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
-        style="--pill-color:${esc(cat.color||'#6366f1')}"
-        onclick="setActiveCat('${cat.id}')" title="${esc(cat.name)}">
+        style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
+        onclick="setActiveCat(this.dataset.catId)" title="${esc(cat.name)}">
         ${renderIcon({ type:'lucide', value: cat.icon||'Folder' }, 12)}
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
@@ -2268,6 +2289,35 @@ async function publishBookmark(catId, bmId) {
   render();
 }
 
+
+function addTagBubble(val) {
+   val = val.trim();
+   if (!val) return;
+   const container = document.getElementById('tag-bubbles');
+
+   // Don't add if already exists visually
+   for(const bubble of container.querySelectorAll('.tag-bubble')) {
+       if(bubble.textContent.replace('×', '').trim() === val) return;
+   }
+
+   const span = document.createElement('span');
+   span.className = 'tag-bubble';
+   span.innerHTML = `${esc(val)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button>`;
+   container.appendChild(span);
+   updateTagsInput();
+}
+
+function updateTagsInput() {
+   const container = document.getElementById('tag-bubbles');
+   const tags = Array.from(container.querySelectorAll('.tag-bubble')).map(el => el.textContent.replace('×', '').trim());
+   document.getElementById('bm-tags-hidden').value = tags.join(',');
+}
+
+function openNewCategoryFromEditor() {
+   closeModal(); // close current bookmark modal
+   openCategoryModal(null);
+}
+
 function openCardModal(catId, bmId) {
   const cat    = S.data.categories.find(c => c.id === catId);
   const bm     = bmId ? cat?.bookmarks.find(b => b.id === bmId) : null;
@@ -2279,18 +2329,18 @@ function openCardModal(catId, bmId) {
 
   const iconGrid = LUCIDE_ICONS.map(n => `
     <button type="button" aria-label="${n} icon" class="icon-option ${iType === 'lucide' && iVal === n ? 'selected' : ''}"
-      data-icon="${n}" onclick="pickLucideIcon(this,'${n}')">
+      data-icon="${n}" onclick="pickLucideIcon(this, this.dataset.icon)">
       <i data-lucide="${n}" style="width:16px;height:16px"></i>
     </button>`).join('');
 
   const localAssets = Object.keys(S.assetUrls || {});
-  const catOptions = S.data.categories.map(c =>
+  const catOptions = [...S.data.categories].sort((a,b) => a.name.localeCompare(b.name)).map(c =>
     `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
 
   openModal(`
     <div class="modal-header">
       <h2>${bm ? 'Edit Bookmark' : 'New Bookmark'}</h2>
-      ${bm && !isMaster ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" onclick="publishBookmark('${catId}', '${bmId}')">
+      ${bm && !isMaster ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" data-cat-id="${esc(catId)}" data-bm-id="${esc(bmId)}" onclick="publishBookmark(this.dataset.catId, this.dataset.bmId)">
           <i data-lucide="UploadCloud" style="width:13px;height:13px"></i> Publish to Master
       </button>` : ''}
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
@@ -2314,16 +2364,33 @@ function openCardModal(catId, bmId) {
             placeholder="Optional notes…">${esc(bm?.description||'')}</textarea>
         </div>
         <div class="form-row">
-          <label for="bm-tags">Tags <span class="hint-inline">(comma-separated)</span></label>
-          <input id="bm-tags" type="text" name="tags" class="form-input"
-            value="${esc((bm?.tags||[]).join(', '))}" placeholder="dev, work, tools">
+          <label>Tags</label>
+          <div class="tag-input-container">
+             <div id="tag-bubbles" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
+                 ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
+             </div>
+             <input type="hidden" id="bm-tags-hidden" name="tags" value="${esc((bm?.tags||[]).join(','))}">
+             <input id="bm-tags-input" type="text" class="form-input" placeholder="Type a tag and press Enter/Comma"
+                onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault(); addTagBubble(this.value); this.value='';}">
+          </div>
         </div>
         <div class="form-row">
           <label for="bm-category">Category</label>
-          <select id="bm-category" name="categoryId" class="form-input" ${isMaster ? 'disabled' : ''}>${catOptions}</select>
+          <div style="display:flex; gap:8px;">
+            <select id="bm-category" name="categoryId" class="form-input" style="flex:1;" ${isMaster ? 'disabled' : ''}>
+              ${catOptions}
+            </select>
+            <button type="button" class="btn btn--ghost" onclick="openNewCategoryFromEditor()" title="New Category">
+               <i data-lucide="Plus" style="width:14px;height:14px"></i>
+            </button>
+          </div>
           ${isMaster ? '<p class="hint-text">Master bookmarks cannot be moved between categories.</p>' : ''}
         </div>
 
+        <div class="form-row">
+          <label><input type="checkbox" name="hideIconMain" ${cs.hideIcon ? 'checked' : ''}> Hide icon on card</label>
+          <p class="hint-text">Hide the icon entirely.</p>
+        </div>
         <div class="form-row">
           <label><input type="checkbox" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
           <p class="hint-text">Keep the card cleaner by hiding the category label.</p>
@@ -2374,7 +2441,7 @@ function openCardModal(catId, bmId) {
             <div class="asset-gallery" style="max-height: 200px; overflow-y: auto; resize: vertical;">
               ${Object.entries(S.assetUrls).map(([name, url]) => `
                 <button type="button" class="asset-thumb ${iType==='local' && iVal===name ? 'selected' : ''}"
-                  onclick="selectLocalAsset('${name}')">
+                  data-asset-name="${esc(name)}" onclick="selectLocalAsset(this.dataset.assetName)">
                   <img src="${url}" alt="Asset" loading="lazy" onmouseenter="showAssetPreview(this.src)" onmouseleave="hideAssetPreview()"/>
                 </button>
               `).join('')}
@@ -2435,7 +2502,7 @@ function openCardModal(catId, bmId) {
         </div>
 
         <div class="modal-footer">
-          ${bm && !isMaster ? `<button type="button" class="btn btn--danger" onclick="confirmDeleteBookmark('${bm.id}','${catId}')">
+          ${bm && !isMaster ? `<button type="button" class="btn btn--danger" data-cat-id="${esc(catId)}" data-bm-id="${esc(bm.id)}" onclick="confirmDeleteBookmark(this.dataset.bmId, this.dataset.catId)">
             <i data-lucide="Trash2" style="width:13px;height:13px"></i>
             Delete
           </button>` : ''}
@@ -2516,18 +2583,18 @@ function openCategoryModal(catId) {
 
   const iconGrid = LUCIDE_ICONS.map(n => `
     <button type="button" aria-label="${n} icon" class="icon-option ${cIcon===n?'selected':''}"
-      data-icon="${n}" onclick="pickLucideIcon(this,'${n}')">
+      data-icon="${n}" onclick="pickLucideIcon(this, this.dataset.icon)">
       <i data-lucide="${n}" style="width:16px;height:16px"></i>
     </button>`).join('');
 
   const swatches = CAT_COLORS.map(c => `
     <button type="button" aria-label="${c} color" class="color-swatch ${c===cColor?'selected':''}"
-      style="background:${c}" onclick="pickCatColor(this,'${c}')"></button>`).join('');
+      style="background:${c}" data-color="${c}" onclick="pickCatColor(this, this.dataset.color)"></button>`).join('');
 
   openModal(`
     <div class="modal-header">
       <h2>${cat ? 'Edit Category' : 'New Category'}</h2>
-      ${cat && !cat.__master ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" onclick="publishCategory('${catId}')">
+      ${cat && !cat.__master ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" data-cat-id="${esc(catId)}" onclick="publishCategory(this.dataset.catId)">
           <i data-lucide="UploadCloud" style="width:13px;height:13px"></i> Publish to Master
       </button>` : ''}
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
@@ -2552,7 +2619,7 @@ function openCategoryModal(catId) {
 
         <div class="modal-footer">
           ${cat ? `<button type="button" class="btn ${catHidden ? 'btn--primary' : 'btn--ghost'}"
-            onclick="${catHidden ? 'unhide' : 'hide'}Item('categories','${catId}');closeModal()">
+            data-cat-id="${esc(catId)}" onclick="${catHidden ? 'unhide' : 'hide'}Item('categories', this.dataset.catId);closeModal()">
             <i data-lucide="${catHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${catHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
@@ -2657,7 +2724,7 @@ function selectLocalAsset(name) {
   setIconValue(name);
   const panel = document.getElementById('icon-panel-local');
   panel?.querySelectorAll('.asset-thumb').forEach(btn => btn.classList.remove('selected'));
-  const selected = panel?.querySelector(`.asset-thumb[onclick="selectLocalAsset('${name}')"]`);
+  const selected = panel?.querySelector(`.asset-thumb[data-asset-name="${esc(name)}"]`);
   if (selected) selected.classList.add('selected');
   const form = document.getElementById('card-form');
   if (form) form.querySelector('[name="iconType"]').value = 'local';
@@ -2722,6 +2789,7 @@ async function submitCard(e, catId, bmId) {
     cs.bgImage = true;
     cs.hideText = fd.get('hideText') === 'on';
   }
+  cs.hideIcon = fd.get('hideIcon') === 'on' || fd.get('hideIconMain') === 'on';
   const textColor = fd.get('textColor');
   if (textColor) cs.textColor = textColor;
   const textSize = fd.get('textSize');
