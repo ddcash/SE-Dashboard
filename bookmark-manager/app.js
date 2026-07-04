@@ -1851,10 +1851,10 @@ function renderCard(bm, cat, dimmed) {
     ? `<span class="hidden-badge"><i data-lucide="EyeOff" style="width:9px;height:9px"></i> hidden</span>`
     : '';
   const hideBtn = hidden
-    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks','${bm.id}')">
+    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks', this.closest('.card').dataset.id)">
          <i data-lucide="Eye" style="width:12px;height:12px"></i>
        </button>`
-    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks','${bm.id}')">
+    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks', this.closest('.card').dataset.id)">
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
@@ -1865,12 +1865,12 @@ function renderCard(bm, cat, dimmed) {
   ].filter(Boolean).join(' ');
 
   return `
-    <div class="${classes}" data-id="${bm.id}" data-cat="${catId}" style="${inlineStyle}">
+    <div class="${classes}" data-id="${esc(bm.id)}" data-cat="${esc(catId)}" style="${inlineStyle}">
       <div class="card-drag-handle">
         <i data-lucide="GripVertical" style="width:11px;height:11px"></i>
       </div>
       <a href="${esc(sanitizeUrl(bm.url))}" target="_blank" rel="noreferrer" class="card-link"
-         onclick="trackClick(event,'${bm.id}','${catId}')">
+         onclick="trackClick(event, this.closest('.card').dataset.id, this.closest('.card').dataset.cat)">
         ${bgImgSrc ? `<img src="${bgImgSrc}" class="card-bg-image">` : ''}
         ${cs.hideIcon ? '' : `<div class="card-icon-wrap">${renderIcon(bm.icon, 20)}</div>`}
         ${cs.hideText ? '' : `
@@ -1881,10 +1881,10 @@ function renderCard(bm, cat, dimmed) {
         </div>`}
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
-        ${pos.groupId ? `<button class="btn-icon" title="Remove from Group" aria-label="Remove from group" onclick="removeFromGroup('${bm.id}')">
+        ${pos.groupId ? `<button class="btn-icon" title="Remove from Group" aria-label="Remove from group" onclick="removeFromGroup(this.closest('.card').dataset.id)">
           <i data-lucide="ListMinus" style="width:12px;height:12px"></i>
         </button>` : ''}
-        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal('${catId}','${bm.id}')">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal(this.closest('.card').dataset.cat, this.closest('.card').dataset.id)">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
         ${hideBtn}
@@ -1905,7 +1905,7 @@ function renderGroup(group) {
     ].filter(Boolean).join(';');
 
     return `
-    <div class="card card--group" data-id="${group.id}" style="${inlineStyle}">
+    <div class="card card--group" data-id="${esc(group.id)}" style="${inlineStyle}">
       <div class="card-drag-handle group-drag-handle">
          <i data-lucide="GripHorizontal" style="width:14px;height:14px;opacity:0.5"></i>
       </div>
@@ -1918,7 +1918,7 @@ function renderGroup(group) {
           <!-- Cards inside the group will be rendered absolute relative to this container -->
       </div>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal('${group.id}')">
+        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal(this.closest('.card').dataset.id)">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
       </div>
