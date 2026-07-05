@@ -3191,6 +3191,8 @@ function onPaletteKey(e) {
 function showToast(msg) {
   const t = document.createElement('div');
   t.className = 'toast';
+  t.setAttribute('role', 'status');
+  t.setAttribute('aria-live', 'polite');
   t.textContent = msg;
   document.body.appendChild(t);
   requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('toast--visible')));
