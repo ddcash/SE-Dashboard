@@ -62,8 +62,20 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+// ⚡ Bolt: Cache hidden array references into Sets to turn O(N) includes() into O(1) lookups during massive render loops
+const _hiddenCache = {};
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  const arr = S.cfg.hidden?.[type];
+  if (!arr) return false;
+  if (!_hiddenCache[type]) {
+    _hiddenCache[type] = { arr: null, set: null, len: 0 };
+  }
+  if (_hiddenCache[type].arr !== arr || _hiddenCache[type].len !== arr.length) {
+    _hiddenCache[type].arr = arr;
+    _hiddenCache[type].len = arr.length;
+    _hiddenCache[type].set = new Set(arr);
+  }
+  return _hiddenCache[type].set.has(id);
 }
 
 function hideItem(type, id) {
