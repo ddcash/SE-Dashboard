@@ -28,6 +28,9 @@ graph TD
    * **Local Files & Folders**: `file:///C:/path/to/document.pdf` or `file:///Users/username/Projects` (supported because the host page is on the `file://` protocol).
    * **App Deep Links**: Custom schemes like `vscode://`, `obsidian://`, `spotify://`, `zoommtg://`, `slack://`, etc.
 3. **No Auth & Zero-Installation**: Runs entirely on the local device, requiring no login or installation.
+4. **Performance & Security**:
+   * Uses highly optimized DOM rendering, converting operations like array `.find()` into O(1) Set lookups inside tight render loops to maintain 60FPS on large datasets.
+   * Strict XSS protections avoid inline JavaScript interpolation for user data (`onclick="fn('${data}')"`) in favor of global data variables, DOM traversal, and `data-*` attributes.
 
 ---
 
