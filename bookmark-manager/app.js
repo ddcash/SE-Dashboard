@@ -1607,7 +1607,7 @@ function openGroupModal(groupId) {
       <form id="group-form" onsubmit="submitGroup(event, '${groupId || ''}')">
         <div class="form-row">
           <label for="grp-title">Group Title</label>
-          <input id="grp-title" type="text" name="title" class="form-input" required
+          <input id="grp-title" type="text" name="title" class="form-input" required autofocus
             value="${esc(group?.title || '')}" placeholder="My Group">
         </div>
         <div class="form-row">
@@ -2349,7 +2349,7 @@ function openCardModal(catId, bmId) {
       <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
         <div class="form-row">
           <label for="bm-title">Title *</label>
-          <input id="bm-title" type="text" name="title" class="form-input" required
+          <input id="bm-title" type="text" name="title" class="form-input" required autofocus
             value="${esc(bm?.title||'')}" placeholder="My Bookmark" ${isMaster ? 'readonly' : ''}>
         </div>
         <div class="form-row">
@@ -2603,7 +2603,7 @@ function openCategoryModal(catId) {
       <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
         <div class="form-row">
           <label for="cat-name">Name *</label>
-          <input id="cat-name" type="text" name="name" class="form-input" required
+          <input id="cat-name" type="text" name="name" class="form-input" required autofocus
             value="${esc(cat?.name||'')}" placeholder="Dev Tools">
         </div>
 
