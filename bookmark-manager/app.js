@@ -1420,8 +1420,17 @@ function resetThemeSettings() {
   populateSettingsModal();
 }
 
+// ⚡ Bolt: Cache theme settings to avoid layout thrashing.
+// Updating ~25 variables on :root every time render() is called (like 60fps dragging or searching)
+// forces the browser to recalculate styles for the entire document, causing severe UI lag.
+let _lastThemeSettingsJson = null;
+
 function applyThemeSettings() {
   const s = S.cfg.themeSettings || {};
+  const sJson = JSON.stringify(s);
+  if (sJson === _lastThemeSettingsJson) return;
+  _lastThemeSettingsJson = sJson;
+
   const root = document.documentElement;
   root.style.setProperty('--accent', s.accentColor || '#89b4fa');
   root.style.setProperty('--card-opacity', s.cardOpacity || '1');
