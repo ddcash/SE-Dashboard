@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2025-07-08 - Layout thrashing in applyThemeSettings
+**Learning:** Because `applyThemeSettings` explicitly updates ~25 CSS variables on `:root` and is called inside the `render()` loop, it forces the browser to recalculate styles for the entire document on every keystroke (e.g., during search) or pointermove event.
+**Action:** When a function applies global CSS updates and is frequently called, always cache the relevant application state (`JSON.stringify(S.cfg.themeSettings)`) to avoid redundant DOM updates and prevent UI lag.
