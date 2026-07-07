@@ -1985,7 +1985,18 @@ function renderAllCards() {
   }
   window._groupHtml = {};
 
-  return html + cardsHtml;
+  const combinedHtml = html + cardsHtml;
+  if (!combinedHtml) {
+    return `
+      <div class="empty-state" aria-live="polite">
+        <i data-lucide="BookmarkPlus" style="width:48px;height:48px"></i>
+        <p>No bookmarks yet. Add one to get started.</p>
+        <button class="btn btn--primary" onclick="openNewBookmarkModal()">
+          <i data-lucide="Plus" style="width:13px;height:13px"></i> Add Bookmark
+        </button>
+      </div>`;
+  }
+  return combinedHtml;
 }
 
 
@@ -2013,7 +2024,7 @@ function renderSearchResults() {
 
   if (!rows.length) {
     return `
-      <div class="empty-state">
+      <div class="empty-state" aria-live="polite">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
         <p>No results found for "${esc(S.query)}"</p>
         <button class="btn btn--primary" onclick="handleSearch('')">
@@ -2180,7 +2191,7 @@ function renderDashboard() {
 
     <main class="dashboard">
       ${isEmpty ? `
-        <div class="empty-state">
+        <div class="empty-state" aria-live="polite">
           <i data-lucide="BookMarked" style="width:48px;height:48px"></i>
           <p>No categories yet. Create one to start adding bookmarks.</p>
           <button class="btn btn--primary" onclick="openCategoryModal(null)">
