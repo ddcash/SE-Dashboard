@@ -56,10 +56,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
-
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
@@ -69,8 +65,14 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Performance & Security Improvements
 - Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+- O(1) hidden item lookups for fast rendering and cached theme settings to prevent layout thrashing.
+- Enhanced search filtering performance with optimized string matching algorithms and direct HTML string concatenation.
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters (preventing `javascript:`, `data:`).
+
+### Accessibility & UX Improvements
+- **Keyboard Navigation**: Primary modal inputs feature autofocus for seamless keyboard navigation.
+- **Screen Reader Support**: Toast notifications and empty state containers use `aria-live="polite"` to ensure they are announced by screen readers.
+- **Empty States**: Clear and actionable empty states for search and zero-bookmark scenarios.
 
 ## Installation
 
