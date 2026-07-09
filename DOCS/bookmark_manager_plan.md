@@ -115,6 +115,15 @@ Saves the specific layout overrides for this browser instance:
 * Build a premium, glassmorphic card dashboard using CSS variables.
 * Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
 * Enable fuzzy searching across URLs, tags, and custom metadata.
+* **Performance Enhancements**:
+  * Optimize string matching algorithms for searching.
+  * Optimize rendering of large lists (e.g. search results) utilizing direct string concatenation rather than intermediate array allocations.
+  * Cache CSS variables for theme settings to avoid unnecessary re-paints and layout thrashing.
+  * O(1) Lookups for hidden items to reduce linear search overhead during filter phases.
+* **Security & Accessibility (A11y)**:
+  * Restrict protocol formats against obfuscation vectors (e.g., Javascript: injections).
+  * Address Cross-Site Scripting (XSS) vectors by moving user input from inline handlers to dataset attributes.
+  * Incorporate robust empty states, explicitly tagged with `aria-live="polite"`. Use specific `for` properties in modal labels for screen readers.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
