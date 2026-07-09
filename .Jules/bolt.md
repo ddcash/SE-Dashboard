@@ -1,0 +1,3 @@
+## 2024-07-09 - Avoid Array Allocation in High-Frequency Renders
+**Learning:** High-frequency render functions in this app (like `renderSearchResults`) suffer performance hits from intermediate array allocations and operations (e.g., `.push()`, `.map().join('')`) instead of direct string concatenation.
+**Action:** Use direct HTML string concatenation instead of building and mapping intermediate arrays in render loops.
