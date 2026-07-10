@@ -98,7 +98,7 @@ Since SE-Dashboard runs entirely in the browser, there is no traditional install
 - **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
 - **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
 - **Restoring Sessions:** When you reopen the app, it can resume the last directory if browser permissions are still granted. If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
-- **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`, `test_xss.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. Run `node test_xss.js` to verify URL sanitization.
+- **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`) to ensure functionality and security. To run Playwright UI tests and XSS sanitization checks, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` and `node test-ui.js`.
 
 ### File Structure
 
