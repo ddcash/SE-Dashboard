@@ -5,3 +5,7 @@
 ## 2026-07-15 - Search Empty State Pattern
 **Learning:** When search yields no results, presenting unstyled text without clear actions leaves users feeling stuck and breaks the visual immersion of the app.
 **Action:** Always use the `.empty-state` container pattern with a relevant icon and a clear call-to-action button (like "Clear Search") for empty result states to maintain consistency and guide the user out of the dead end.
+
+## 2026-07-16 - Screen Reader Support for Empty States
+**Learning:** Dynamic empty states (such as no search results or no categories) are often not announced by screen readers when they are rendered into the DOM, leaving visually impaired users unaware of the application's status.
+**Action:** Always add the `aria-live="polite"` attribute to dynamic empty state container elements so that screen readers announce the state change without interrupting the user's flow.
