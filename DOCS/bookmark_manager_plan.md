@@ -173,6 +173,7 @@ Add an interactive Card Customization Editor modal and implement layout dragging
    - Rename the bookmark, change the URL, edit description notes, and manage tags.
    - Set custom styles: Choose custom HSL/Hex colors for the card background, border, and text.
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
+   - Publish individual bookmarks to the shared master file directly from the card editor (prompting to delete local copies afterward).
 2. Drag-and-Drop & Canvas Layout:
    - Users can drag cards to reposition them freely around the canvas layout.
    - Users can create resizable groups from the command palette and place cards within them.

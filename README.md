@@ -17,7 +17,8 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
-- Reset layout from the command palette to restore the default arrangement.
+- Reset layout from the command palette to restore the default arrangement of top-level items, while intelligently preserving the relative positions of cards inside groups.
+- View filtered/active categories in an automatic flex-wrapped grid layout.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
 ### Search & Filtering
@@ -63,6 +64,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
+- **Publish Bookmark**: Publish individual bookmarks directly to the shared master file from the card editor, with an option to immediately delete the local copy.
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
