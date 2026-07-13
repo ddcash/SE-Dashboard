@@ -114,7 +114,8 @@ Saves the specific layout overrides for this browser instance:
 ### Phase 2: Core Frontend UI & Universal Launching
 * Build a premium, glassmorphic card dashboard using CSS variables.
 * Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
-* Enable fuzzy searching across URLs, tags, and custom metadata.
+* Enable fuzzy searching across URLs, tags, and custom metadata, optimized with direct string concatenation to reduce memory allocation during high-frequency render loops.
+* Incorporate accessibility features, such as adding `aria-live` regions to empty states for screen readers.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
@@ -177,6 +178,7 @@ Add an interactive Card Customization Editor modal and implement layout dragging
    - Users can drag cards to reposition them freely around the canvas layout.
    - Users can create resizable groups from the command palette and place cards within them.
 3. Publishing: Allow users to publish entire personal categories to the shared master file directly from the category editor.
+4. Security: Implement strict data-attribute handling for inline `onsubmit` handlers in forms to prevent XSS vulnerabilities via entity decoding bypass.
 Save all modifications instantly back to the directory's files.
 ```
 
