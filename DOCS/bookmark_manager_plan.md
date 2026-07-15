@@ -117,7 +117,7 @@ Saves the specific layout overrides for this browser instance:
 * Enable fuzzy searching across URLs, tags, and custom metadata.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
-* Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
+* Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually (including dragging into and out of groups).
 * Build a **Card Editor Modal** allowing users to:
   * Select an icon (Lucide library search, external URL image, local favicon, or custom image upload).
   * Customize individual card background colors, borders, and text colors.
