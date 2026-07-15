@@ -11,6 +11,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Add bookmarks to categories with title, URL, description, and tags.
 - Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
 - Move bookmarks between categories from the editor.
+- Quickly create new categories directly from the bookmark editor drop-down.
 - **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
 
 ### Freeform Canvas Layout & Groups
@@ -55,10 +56,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Creates timestamped backups in `backups/`.
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
