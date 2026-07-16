@@ -56,9 +56,15 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
+### Accessibility
+- **Screen Reader Support**: Dynamic empty states automatically announce updates via `aria-live` attributes.
+- **Keyboard Navigation**: Ensures forms and settings modals are accessible with proper `for` attribute label bindings.
+
+### Performance & Security
+- Highly optimized DOM rendering using direct HTML string concatenation (eliminating intermediate array allocations) for rapid search result updates.
+- Efficient native event loop bindings to ensure maximum framerates even on large dashboards.
+- Enhanced search filtering performance with optimized string matching algorithms.
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict `data-*` attribute extraction for inline event handlers, avoiding unsafe direct interpolation of user inputs. Added URL protocol obfuscation filters (e.g. `javascript:`, `data:`).
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
@@ -66,11 +72,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
 
 ## Installation
 
