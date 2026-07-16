@@ -115,6 +115,9 @@ Saves the specific layout overrides for this browser instance:
 * Build a premium, glassmorphic card dashboard using CSS variables.
 * Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
 * Enable fuzzy searching across URLs, tags, and custom metadata.
+* **Performance**: Implement fast DOM rendering with direct HTML string concatenations for search results and category UI.
+* **Security**: Implement robust XSS protections using `data-*` attributes for inline event handlers and URL protocol sanitization.
+* **Accessibility**: Enhance usability with `aria-live` regions for dynamic empty states and explicit `for` bindings on modal labels.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
