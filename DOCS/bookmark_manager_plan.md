@@ -114,7 +114,10 @@ Saves the specific layout overrides for this browser instance:
 ### Phase 2: Core Frontend UI & Universal Launching
 * Build a premium, glassmorphic card dashboard using CSS variables.
 * Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
-* Enable fuzzy searching across URLs, tags, and custom metadata.
+* Enable fuzzy searching across URLs, tags, and custom metadata, optimized with direct HTML string concatenation for fast rendering.
+* Implement performance optimizations, such as O(1) lookups for hidden items and caching for theme settings.
+* Implement robust accessibility features, such as `aria-live` regions for dynamic empty states/toast notifications and explicit `for` attributes on form labels.
+* Implement strong security features, strictly migrating inline `onsubmit` handlers to data attributes to protect against XSS vulnerabilities.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
