@@ -1256,16 +1256,16 @@ function populateMasterEditorVisual() {
     <div class="master-category-panel" data-cat-id="${cat.id}">
       <div class="master-category-header">
         <div>
-          <label>Name</label>
-          <input type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
+          <label for="cat-name-${cat.id}">Name</label>
+          <input id="cat-name-${cat.id}" type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
         </div>
         <div>
-          <label>Icon</label>
-          <input type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
+          <label for="cat-icon-${cat.id}">Icon</label>
+          <input id="cat-icon-${cat.id}" type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
         </div>
         <div>
-          <label>Color</label>
-          <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
+          <label for="cat-color-${cat.id}">Color</label>
+          <input id="cat-color-${cat.id}" type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
         </div>
         <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
       </div>
@@ -1273,15 +1273,15 @@ function populateMasterEditorVisual() {
         ${cat.bookmarks.map(bm => `
           <div class="master-bookmark-row" data-bm-id="${bm.id}">
             <div class="master-bookmark-row-top">
-              <div><label>Title</label><input type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
-              <div><label>URL</label><input type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
-              <div><label>Icon</label><input type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
+              <div><label for="bm-title-${bm.id}">Title</label><input id="bm-title-${bm.id}" type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
+              <div><label for="bm-url-${bm.id}">URL</label><input id="bm-url-${bm.id}" type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
+              <div><label for="bm-icon-${bm.id}">Icon</label><input id="bm-icon-${bm.id}" type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
               <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" data-bm-id="${esc(bm.id)}" onclick="deleteMasterBookmark(this.dataset.catId, this.dataset.bmId)">Delete</button>
             </div>
             <div class="master-bookmark-row-bottom">
-              <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
-              <div><label>Tags</label><input type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
-              <div class="form-row"><label><input type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
+              <div><label for="bm-desc-${bm.id}">Description</label><input id="bm-desc-${bm.id}" type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
+              <div><label for="bm-tags-${bm.id}">Tags</label><input id="bm-tags-${bm.id}" type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
+              <div class="form-row"><label for="bm-hide-cat-${bm.id}"><input id="bm-hide-cat-${bm.id}" type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
             </div>
           </div>
         `).join('')}
@@ -1498,51 +1498,51 @@ function openSettingsModal() {
       <div class="settings-grid">
         <section class="settings-section">
           <h3>General</h3>
-          <label>Theme Mode</label>
+          <label for="settings-theme-mode">Theme Mode</label>
           <select id="settings-theme-mode" class="form-input">
             <option value="dark">Dark</option>
             <option value="light">Light</option>
             <option value="system">System</option>
           </select>
-          <label>Accent Color</label>
+          <label for="settings-accent-color">Accent Color</label>
           <input type="color" id="settings-accent-color" class="form-input" value="#89b4fa">
-          <label>Font Scale</label>
+          <label for="settings-font-scale">Font Scale</label>
           <input type="range" id="settings-font-scale" class="form-input" min="0.8" max="1.4" step="0.05" value="1" oninput="document.getElementById('settings-font-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-font-scale-value">100%</span></div>
-          <label>Card Text Scale</label>
+          <label for="settings-card-text-scale">Card Text Scale</label>
           <input type="range" id="settings-card-text-scale" class="form-input" min="0.8" max="1.6" step="0.05" value="1" oninput="document.getElementById('settings-card-text-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-card-text-scale-value">100%</span></div>
-          <label><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
-          <label>Card Opacity</label>
+          <label for="settings-show-category-badge"><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
+          <label for="settings-card-opacity">Card Opacity</label>
           <input type="range" id="settings-card-opacity" class="form-input" min="0.4" max="1" step="0.02" value="0.96" oninput="document.getElementById('settings-card-opacity-value').textContent = Math.round(this.value*100) + '%'">
           <div class="settings-helper"><span id="settings-card-opacity-value">96%</span></div>
         </section>
         <section class="settings-section">
           <h3>Background</h3>
-          <label>Background Type</label>
+          <label for="settings-bg-type">Background Type</label>
           <select id="settings-bg-type" class="form-input" onchange="toggleBgOptions()">
             <option value="solid">Solid</option>
             <option value="gradient">Gradient</option>
             <option value="image">Image</option>
           </select>
           <div id="bg-solid-options" class="bg-options">
-            <label>Solid Color</label>
+            <label for="settings-bg-solid">Solid Color</label>
             <input type="color" id="settings-bg-solid" class="form-input" value="#000000">
           </div>
           <div id="bg-gradient-options" class="bg-options">
-            <label>Gradient Color 1</label>
+            <label for="settings-bg-color1">Gradient Color 1</label>
             <input type="color" id="settings-bg-color1" class="form-input" value="#090910">
-            <label>Gradient Color 2</label>
+            <label for="settings-bg-color2">Gradient Color 2</label>
             <input type="color" id="settings-bg-color2" class="form-input" value="#0e0e1a">
-            <label>Angle</label>
+            <label for="settings-bg-angle">Angle</label>
             <input type="number" id="settings-bg-angle" class="form-input" min="0" max="360" value="135">
           </div>
           <div id="bg-image-options" class="bg-options hidden">
-            <label>Image URL</label>
+            <label for="settings-bg-image-url">Image URL</label>
             <input type="text" id="settings-bg-image-url" class="form-input" placeholder="https://example.com/bg.jpg">
-            <label>Upload Background</label>
+            <label for="settings-bg-image-upload">Upload Background</label>
             <input type="file" id="settings-bg-image-upload" class="form-input" accept="image/*" onchange="handleBackgroundUpload(this)">
-            <label>Overlay Opacity</label>
+            <label for="settings-bg-overlay">Overlay Opacity</label>
             <input type="range" id="settings-bg-overlay" class="form-input" min="0" max="0.6" step="0.05" value="0.16" oninput="document.getElementById('settings-bg-overlay-value').textContent = Math.round(this.value * 100) + '%'">
             <div class="settings-helper"><span id="settings-bg-overlay-value">16%</span></div>
           </div>
