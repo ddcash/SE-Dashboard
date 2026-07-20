@@ -124,7 +124,12 @@ Saves the specific layout overrides for this browser instance:
   * Set arbitrary parameters (like opening target, description notes).
 * Implement **Master File Publishing**: Allow users to share personal categories directly to the master file from within the app.
 
-### Phase 4: Import / Export & Master Publishing Module
+### Phase 4: Performance, Security & Accessibility Polish
+* **Performance**: Optimize critical high-frequency rendering loops (like search results and canvas updates) by replacing intermediate array memory allocations with direct string concatenation and O(1) Set lookups.
+* **Security**: Implement strict protection against Stored and DOM XSS vulnerabilities, ensuring secure data-attribute handling for inline events and blocking malicious URL protocols (`javascript:`, `data:`).
+* **Accessibility**: Enhance dynamic screen reader support using `aria-live` regions for status updates and empty states, and properly associate all form inputs with explicit `for` labels.
+
+### Phase 5: Import / Export & Master Publishing Module
 * Build a parser to import standard HTML Netscape bookmarks files, CSVs, and JSONs.
 * **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
 * Support editing and publishing to a remote master file URL via HTTP PUT requests.
