@@ -1604,7 +1604,7 @@ function openGroupModal(groupId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="group-form" onsubmit="submitGroup(event, '${groupId || ''}')">
+      <form id="group-form" data-group-id="${esc(groupId || '')}" onsubmit="submitGroup(event, this.dataset.groupId)">
         <div class="form-row">
           <label for="grp-title">Group Title</label>
           <input id="grp-title" type="text" name="title" class="form-input" required
@@ -2346,7 +2346,7 @@ function openCardModal(catId, bmId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
+      <form id="card-form" data-cat-id="${esc(catId)}" data-bm-id="${esc(bmId||'')}" onsubmit="submitCard(event, this.dataset.catId, this.dataset.bmId)">
         <div class="form-row">
           <label for="bm-title">Title *</label>
           <input id="bm-title" type="text" name="title" class="form-input" required
@@ -2507,7 +2507,7 @@ function openCardModal(catId, bmId) {
             Delete
           </button>` : ''}
           ${bm ? `<button type="button" class="btn ${bmHidden ? 'btn--primary' : 'btn--ghost'}"
-            data-bmid="${esc(bmId)}" onclick="${bmHidden ? 'unhide' : 'hide'}Item('bookmarks', this.dataset.bmid);closeModal()">
+            data-bmid="${esc(bmId)}" data-action="${bmHidden ? 'unhide' : 'hide'}" onclick="window[this.dataset.action + 'Item']('bookmarks', this.dataset.bmid);closeModal()">
             <i data-lucide="${bmHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${bmHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
@@ -2600,7 +2600,7 @@ function openCategoryModal(catId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
+      <form id="cat-form" data-cat-id="${esc(catId||'')}" onsubmit="submitCategory(event, this.dataset.catId)">
         <div class="form-row">
           <label for="cat-name">Name *</label>
           <input id="cat-name" type="text" name="name" class="form-input" required
@@ -2619,7 +2619,7 @@ function openCategoryModal(catId) {
 
         <div class="modal-footer">
           ${cat ? `<button type="button" class="btn ${catHidden ? 'btn--primary' : 'btn--ghost'}"
-            data-cat-id="${esc(catId)}" onclick="${catHidden ? 'unhide' : 'hide'}Item('categories', this.dataset.catId);closeModal()">
+            data-cat-id="${esc(catId)}" data-action="${catHidden ? 'unhide' : 'hide'}" onclick="window[this.dataset.action + 'Item']('categories', this.dataset.catId);closeModal()">
             <i data-lucide="${catHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
             ${catHidden ? 'Unhide' : 'Hide'}</button>` : ''}
           <div class="spacer"></div>
@@ -3154,7 +3154,7 @@ function updatePalette(q) {
   window._palBms = matchBms.map(m => m.bm);
 
   const cmdsHtml = matchCmds.map((c, i) => `
-    <div class="palette-item" onclick="window._palActions[${i}]()">
+    <div class="palette-item" data-idx="${i}" onclick="window._palActions[this.dataset.idx]()">
       <i data-lucide="${c.icon}" style="width:14px;height:14px"></i>
       <span>${esc(c.label)}</span>
       <span class="palette-item-type">Command</span>
