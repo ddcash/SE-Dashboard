@@ -56,10 +56,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
-
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
@@ -67,10 +63,11 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+
+### Accessibility, Performance & Security Improvements
+- **Accessibility:** Dynamic empty states include `aria-live="polite"` attributes to ensure screen reader announcements. Forms support correct input `id` and `label` `for` attribute linking for keyboard navigation, and autofocus logic directs users correctly when modals open.
+- **Performance:** Highly optimized DOM rendering and native event loop bindings ensure maximum framerates even on large dashboards. Search results rendering uses direct HTML string concatenation, avoiding intermediate array allocations. Theme settings are cached for rapid updates and hidden items lookups are reduced to O(1) time complexity.
+- **Security:** Robust protection against XSS vulnerabilities via strict data-attribute handling for inline event handlers (such as form `onsubmit`), replacing vulnerable string interpolations. Input parsing mitigates dangerous URL protocol obfuscation (e.g. `javascript:`, `data:`).
 
 ## Installation
 
