@@ -190,6 +190,21 @@ Build a parser utility in Javascript/TypeScript that runs entirely on the client
 
 ---
 
+
+### Prompt 5: Performance, Accessibility, & Security Optimization
+```text
+Focus on refining the user experience, enhancing performance, and patching security vulnerabilities:
+1. Performance:
+   - Optimize high-frequency loops (like search rendering) by replacing intermediate array allocations with direct HTML string concatenation.
+   - Cache settings and use O(1) lookups for hidden items to prevent layout thrashing and maintain high framerates.
+2. Accessibility:
+   - Add `aria-live="polite"` attributes to dynamic empty state containers so screen readers announce changes.
+   - Use explicit `for` attributes on form labels.
+   - Automatically focus primary inputs in modals.
+3. Security:
+   - Prevent XSS by eliminating direct string interpolation in inline event handlers (e.g., `onsubmit`). Pass dynamic data via `data-*` attributes instead.
+```
+
 ## 5. Potential Enhancements & Future Features
 
 Consider adding these advanced features to further elevate the user experience and customizability:
