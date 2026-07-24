@@ -1,104 +1,89 @@
 # SE-Dashboard
 
 ## Description
-
-SE-Dashboard is a local-first bookmark and link manager built to run entirely in the browser. It is designed for personal use, with all data stored on your device in a directory you choose. It works without a server or account by using the browser's File System Access API to read and write files directly in a selected directory.
+SE-Dashboard is a local-first bookmark and link manager built to run entirely in the browser. It is designed for personal use, with all data stored on your device in a directory you choose. It works seamlessly without a server or account by using the browser's native File System Access API to read and write files directly in your selected local directory.
 
 ## Features
 
 ### Bookmark & Category Management
-- Create and edit categories with custom icons and colors.
-- Add bookmarks to categories with title, URL, description, and tags.
-- Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
-- Move bookmarks between categories from the editor.
-- **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
+- **Extensive Metadata:** Add bookmarks to categories with titles, URLs, descriptions, and searchable tags.
+- **Visual Customization:** Create and edit categories with custom icons and accent colors.
+- **Flexible Iconography:** Change bookmark icons using built-in Lucide icons, favicon fetching from website hosts, custom image URLs, or uploaded local images.
+- **Card Styling:** Customize individual cards with background colors, border styles, and text color configurations to fit your aesthetic.
+- **Hide Icon Setting:** Toggle the visibility of icons for a cleaner, minimalist look.
+- **Seamless Organization:** Move bookmarks smoothly between categories using the built-in editor.
 
-### Freeform Canvas Layout & Groups
-- Cards are placed in a scrollable canvas layout.
-- Create resizable **Groups** to visually organize cards on the canvas.
-- Drag bookmark cards to reposition them freely, or drag them in and out of groups.
-- Reset layout from the command palette to restore the default arrangement.
-- **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
+### Freeform Canvas Layout & Grouping
+- **Interactive Canvas:** Cards are placed in a freeform, scrollable canvas layout that you can freely pan and interact with.
+- **Draggable Cards:** Drag bookmark cards to reposition them freely anywhere on the canvas.
+- **Visual Groups:** Create resizable, dashed-border Groups to visually containerize and organize your cards. Cards can be dragged in and out of groups at will.
+- **Layout Persistence:** All positions (including absolute coordinates and group assignments) are securely saved in `local_settings.json` and persist across sessions.
+- **Layout Reset:** Reset the layout from the command palette to restore the default grid arrangement at any time.
 
 ### Search & Filtering
-- Search titles, URLs, descriptions, and tags with fuzzy match.
-- Clear and actionable empty states when search yields no results.
-- Filter categories with clickable pills.
-- Empty states feature helpful Call-to-Action (CTA) buttons to quickly create new items or clear filters.
-- Preserve your current card layout when search is cleared.
-- Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette.
-- Toggle hidden items on or off.
+- **Fuzzy Search:** Rapidly search across titles, URLs, descriptions, and tags using fuzzy string matching for optimized performance.
+- **Empty States & CTAs:** Clear and actionable empty states appear when a search yields no results, complete with Call-to-Action (CTA) buttons to quickly create new items or clear your current filters.
+- **Category Filtering:** Filter by categories using clickable, color-coded pills.
+- **Layout Preservation:** Your custom card layout is preserved when search is cleared.
 
 ### Appearance & Theme
-- Dark theme defaults to a solid black background.
-- Choose between solid color, gradient, or image backgrounds.
-- Adjust global card opacity for the dashboard.
-- Override opacity for individual cards when editing a bookmark.
-- Customize accent colors, font scale, and category badge visibility.
-- **Asset Gallery Previews**: Preview uploaded images and custom icons in a built-in gallery view.
-
-### Hidden Items & Visibility
-- Hide individual bookmarks or categories without deleting data.
-- Reveal hidden items at any time.
-- Hidden visibility is stored separately from the main bookmark data.
-
-### Import / Export
-- Import bookmarks from Netscape-style bookmark HTML exports, JSON files, and CSV files.
-- Export the current bookmark database as JSON.
-
-### Local Asset Uploads
-- Upload custom image files for bookmark icons or backgrounds.
-- Uploaded assets are stored inside the app directory's `assets/` folder.
-- Local images are rendered using browser object URLs.
-
-### Backups & External Change Detection
-- Creates timestamped backups in `backups/`.
-- Keeps up to 20 backup files by default.
-- Detects external edits to `master_bookmarks.json` and reloads automatically.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
+- **Dark Mode Default:** A premium dark theme default with glassmorphic elements.
+- **Background Customization:** Choose between a solid color, gradient, or full image background for the dashboard.
+- **Asset Gallery Previews:** Uploaded custom images and icons can be easily viewed in a built-in gallery preview component.
+- **Global & Local Opacity:** Adjust global card opacity for the dashboard, or override opacity for individual cards when editing a bookmark.
+- **Fine-Tuned Typography & UI:** Customize accent colors, font scales, category badge visibility, and text formatting on custom backgrounds.
 
 ### Master File Editing & Publishing
-- The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
-- **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
-- Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
-- The master editor supports both a visual category/bookmark editor and a raw JSON editor.
-- **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
+- **Master Data Sharing:** Share the `master_bookmarks.json` file across instances or users. The file can even be accessed and updated securely from remote URLs via seamless HTTP PUT integration.
+- **Built-in Editor:** The Master File can be updated from within the app using a specialized master editor supporting both a visual UI and a raw JSON mode.
+- **Publish to Master:** Need to share a specific set of links? Publish entire personal categories directly to the shared master file directly from the category editor.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+### Import / Export & Local Assets
+- **Rich Imports:** Import bookmarks from standard Netscape-style HTML exports (Chrome/Safari), JSON files, and CSV files, efficiently handling and merging categories.
+- **Data Export:** Export your current entire bookmark database reliably as JSON.
+- **Local Asset Management:** Upload custom image files for bookmark icons or full background imagery. Uploaded assets are stored directly inside the app directory's `assets/` folder and rendered securely using browser object URLs.
+
+### Security, Performance, and Integrity
+- **Optimized Rendering:** Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates—even with large datasets and complex group injections.
+- **XSS & Protocol Protection:** Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters to safely handle complex schema configurations (e.g., `file://`, custom app schemes).
+- **Accessible Forms:** Adherence to web accessibility standards featuring explicit label associations and ARIA-compliant empty state live regions.
+- **Automatic Backups:** Creates automatic, timestamped backup snapshots inside the `backups/` folder (keeping up to 20 defaults).
+- **External Change Detection:** Actively detects external edits to the `master_bookmarks.json` file and automatically reloads the dashboard to prevent data desynchronization.
 
 ## Installation
 
-Since SE-Dashboard runs entirely in the browser, there is no traditional installation required.
+Since SE-Dashboard runs entirely in the browser using standard web APIs, there is no traditional installation, server, or backend setup required.
 
-1. Clone or download this repository to your local machine.
-2. The core application is located in the `bookmark-manager/` folder.
+1. Clone or download this repository directly to your local machine.
+2. The core application logic and interface are located entirely within the `bookmark-manager/` folder.
 
 ## How to setup/configure
 
-1. **Choose a Directory:** Create an empty folder on your computer where you want to store your bookmark data.
-2. **Browser Requirements:** Open `bookmark-manager/index.html` in a browser that supports the File System Access API (such as Google Chrome or Microsoft Edge). *Note: It is not guaranteed to work in browsers that do not implement this API.*
-3. **Connect Directory:** Click "Connect Directory" in the application and select the folder you created.
-4. The app will automatically initialize and create the following structure inside your folder:
-   - `master_bookmarks.json` — Main bookmark data.
-   - `local_settings.json` — UI layout and hidden item settings.
-   - `backups/` — Timestamped snapshots of your bookmark data.
-   - `assets/` — Uploaded image/icon assets.
+1. **Choose a Workspace:** Create an empty folder anywhere on your computer (e.g., `Documents/MyBookmarks`) where you want to store your dashboard's data and assets.
+2. **Browser Requirements:** Open the `bookmark-manager/index.html` file in a modern browser that supports the **File System Access API** (such as Google Chrome, Microsoft Edge, or other Chromium-based browsers). *Note: Firefox and Safari currently have limited or no support for this API.*
+3. **Connect Directory:** On the dashboard's welcome screen, click "Connect Directory" and select the empty folder you just created.
+4. **Initialization:** The app will request permissions and automatically initialize the required structure inside your folder:
+   - `master_bookmarks.json` — The main data store for all bookmark metadata.
+   - `local_settings.json` — Your local UI, session, and hidden item preferences.
+   - `backups/` — A folder for timestamped database snapshots.
+   - `assets/` — A folder for storing your uploaded images and custom icons.
 
 ## How to use
 
-- **Adding Items:** Start by creating a category, then add bookmarks to it.
-- **Customizing Layout & Groups:** Create groups from the command palette to visually containerize bookmarks. Drag and drop cards around the canvas or into groups to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
-- **Publishing:** From the Category Editor, you can easily "Publish to Master" to share an entire personal category directly with the shared master file.
-- **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
-- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
-- **Restoring Sessions:** When you reopen the app, it can resume the last directory if browser permissions are still granted. If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
-- **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`, `test_xss.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. Run `node test_xss.js` to verify URL sanitization.
+- **Adding Data:** Start by creating a category using the "New Category" button or command palette, then add new bookmarks to it.
+- **Customizing Layouts:**
+  - Open the command palette to create **Groups**.
+  - Drag and drop cards anywhere around the canvas or directly inside groups to visually containerize your links.
+  - Positions are automatically saved and persistent when you reopen the app.
+- **Publishing & Sharing:** From the Category Editor, you can easily "Publish to Master" to push your personal links to a shared or remote `master_bookmarks.json` file.
+- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on macOS) to instantly open the powerful command palette. From here, you can:
+  - Create New Categories or Groups
+  - Search your bookmarks
+  - Toggle hidden items and icon visibility
+  - Access global settings or change your background
+  - Safely edit the master data
+- **Session Restoring:** When reopening `index.html`, the application can seamlessly resume the last used directory if your browser permissions are still granted. If they expire, simply reconnect by selecting the same folder again.
+- **Development & Testing:** The repository includes rigorous testing scripts (`test.js`, `test-ui.js`, `test_xss.js`) to ensure UI integrity, security, and rendering correctness. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. Run `node test_xss.js` to verify URL sanitization.
 
 ### File Structure
 
@@ -119,8 +104,8 @@ SE-Dashboard/
 
 ## Disclaimers
 
-This project is intended as a personal local bookmark dashboard. Ensure you regularly backup your chosen data directory, although the application does create automatic snapshots in the `backups/` folder.
+This project is intended strictly as a personal local bookmark dashboard. While the application automatically creates redundant snapshots in the `backups/` folder, you should ensure you regularly back up your chosen data directory using your preferred file backup tools to avoid unintended data loss.
 
 ## License
 
-The project is intended as a personal local bookmark dashboard. There is no license file included in this repository.
+The project is intended as a personal local bookmark dashboard. There is no official license file included in this repository.
