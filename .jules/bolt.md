@@ -9,6 +9,11 @@
 ## 2025-07-04 - Inefficient HTML string modification in tight render loops
 **Learning:** Because this vanilla JS app reconstructs the DOM using `innerHTML` string concatenation, executing regular expression replacements (`.replace(new RegExp(...))`) on the massive aggregate HTML string to inject sub-components (like card groups) causes severe CPU blocking and scaling issues.
 **Action:** Always accumulate child HTML strings in memory and pass them directly into parent rendering functions (e.g. `renderGroup(group, innerHTML)`), rather than generating a skeleton and searching the massive DOM string afterward to inject content.
+
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2025-07-08 - Array allocations in high-frequency rendering functions
+**Learning:** Generating intermediate arrays (like `rows.push({bm, cat})`) only to map and join them immediately (`rows.map(...).join('')`) within high-frequency rendering functions (like `renderSearchResults` on keystrokes) causes excessive Garbage Collection (GC) pressure and unnecessary allocations, leading to jank.
+**Action:** Instead of allocating arrays to map over them, directly concatenate the resulting HTML strings in the loop (`resultsHtml += renderCard(...)`) to drastically reduce intermediate memory allocations.
