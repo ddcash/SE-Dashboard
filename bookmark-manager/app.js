@@ -2022,9 +2022,15 @@ function renderSearchResults() {
       </div>`;
   }
 
+  // ⚡ Bolt: Direct HTML string concatenation is faster than array map+join in tight render loops
+  let resultsHtml = '';
+  for (const { bm, cat } of rows) {
+    resultsHtml += renderCard(bm, cat, false, true);
+  }
+
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${resultsHtml}
     </div>`;
 }
 
