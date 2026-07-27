@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2026-07-27 - Expensive full DOM renders on rapid keystrokes
+**Learning:** In a vanilla JS app that relies on `innerHTML` replacement for the entire view, triggering a full render synchronously on every `oninput` keystroke causes severe main thread blocking and typing lag when dealing with a large DOM. The UI freezes trying to build intermediate search states the user doesn't care about.
+**Action:** Always debounce search inputs that trigger expensive DOM rebuilds or API calls. A small debounce (150-250ms) keeps typing perfectly smooth while still feeling instantly responsive to the user, bypassing 90% of the redundant rendering work.
