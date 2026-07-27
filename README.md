@@ -12,13 +12,15 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
 - Move bookmarks between categories from the editor.
 - **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
+- **Unfocus Categories**: Automatically unfocus the active category when a bookmark is clicked for a smoother browsing experience.
 
 ### Freeform Canvas Layout & Groups
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
-- Drag bookmark cards to reposition them freely, or drag them in and out of groups.
+- **Dynamic Grouping**: Drag bookmark cards to reposition them freely, drag them into groups to snap them inside, or drag them out of groups to place them on the main canvas.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
+- **Smart Drag-and-Drop**: Automatic detection and adjustments to canvas layout (e.g. temporary un-wrapping) when dragging cards to ensure precise placement.
 
 ### Search & Filtering
 - Search titles, URLs, descriptions, and tags with fuzzy match.
@@ -43,7 +45,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Hidden visibility is stored separately from the main bookmark data.
 
 ### Import / Export
-- Import bookmarks from Netscape-style bookmark HTML exports, JSON files, and CSV files.
+- Import bookmarks from Netscape-style bookmark HTML exports, JSON files, and CSV files. Imported categories and bookmarks are properly mapped and saved.
 - Export the current bookmark database as JSON.
 
 ### Local Asset Uploads
@@ -55,10 +57,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Creates timestamped backups in `backups/`.
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
@@ -93,10 +91,10 @@ Since SE-Dashboard runs entirely in the browser, there is no traditional install
 ## How to use
 
 - **Adding Items:** Start by creating a category, then add bookmarks to it.
-- **Customizing Layout & Groups:** Create groups from the command palette to visually containerize bookmarks. Drag and drop cards around the canvas or into groups to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
+- **Customizing Layout & Groups:** Create groups from the command palette (`Ctrl+K` -> New Group) to visually containerize bookmarks. Drag and drop cards around the canvas or into groups to arrange your dashboard visually. The positions are automatically saved and persistent across sessions. Removing a card from a group easily places it back onto the main canvas.
 - **Publishing:** From the Category Editor, you can easily "Publish to Master" to share an entire personal category directly with the shared master file.
 - **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
-- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
+- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can create new categories or groups, edit the current category, search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
 - **Restoring Sessions:** When you reopen the app, it can resume the last directory if browser permissions are still granted. If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
 - **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`, `test_xss.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. Run `node test_xss.js` to verify URL sanitization.
 
