@@ -175,7 +175,8 @@ Add an interactive Card Customization Editor modal and implement layout dragging
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
 2. Drag-and-Drop & Canvas Layout:
    - Users can drag cards to reposition them freely around the canvas layout.
-   - Users can create resizable groups from the command palette and place cards within them.
+   - Users can create resizable groups from the command palette and place cards within them. Ensure that cards can be dynamically dragged in and out of groups.
+   - Automatically handle canvas wrapping states when dragging items to maintain consistent layout flow.
 3. Publishing: Allow users to publish entire personal categories to the shared master file directly from the category editor.
 Save all modifications instantly back to the directory's files.
 ```
@@ -184,7 +185,7 @@ Save all modifications instantly back to the directory's files.
 ```text
 Build a parser utility in Javascript/TypeScript that runs entirely on the client-side:
 1. HTML Bookmark Importer: Parse the standard Chrome/Safari bookmark export format (Netscape HTML). Recursively traverse the `<DL>` and `<DT>` tags to extract folders as Categories and `<A>` links as Bookmarks.
-2. CSV/JSON Importer: Provide templates and parsing logic for CSV and JSON files.
+2. CSV/JSON Importer: Provide templates and parsing logic for CSV and JSON files. Ensure correctly formatted JSON settings are pushed into the local states.
 3. Duplication Resolution UI: If an imported URL already exists in the current bookmarks list, display a modal showing the duplicate, prompting the user to either "Keep Existing", "Overwrite with Import", or "Merge Tags & Description".
 ```
 
@@ -195,7 +196,7 @@ Build a parser utility in Javascript/TypeScript that runs entirely on the client
 Consider adding these advanced features to further elevate the user experience and customizability:
 
 ### A. Vercel/Linear Style Command Palette (`Ctrl + K` or `Cmd + K`)
-Allow power users to navigate the app, switch themes, search bookmarks, filter tags, and execute quick actions purely from the keyboard.
+Allow power users to navigate the app, switch themes, search bookmarks, filter tags, and execute quick actions purely from the keyboard. Include commands for creating new groups and editing current categories quickly.
 * *Example prompt:* `Implement a keyboard-accessible search palette that overlays the dashboard when Cmd/Ctrl + K is pressed, allowing instant navigation, tag toggling, and page configuration.`
 
 ### B. Drag & Drop Directory Scanning
