@@ -2144,7 +2144,7 @@ function renderDashboard() {
             placeholder="Search… (Ctrl+K for commands)"
             value="${esc(S.query)}"
             oninput="handleSearch(this.value)"
-            onkeydown="if(event.key==='Escape')handleSearch('')">
+            onkeydown="if(event.key==='Enter')handleSearch(this.value, true); if(event.key==='Escape')handleSearch('')">
           ${S.query ? `<button class="search-clear" onclick="handleSearch('')" aria-label="Clear search">
             <i data-lucide="X" style="width:12px;height:12px"></i></button>` : ''}
         </div>
@@ -2899,11 +2899,21 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
-function handleSearch(q) {
+let _searchTimeout;
+function handleSearch(q, immediate = false) {
   S.query = q;
-  render();
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  clearTimeout(_searchTimeout);
+
+  // ⚡ Bolt: Debounce expensive full-DOM render on search input to avoid CPU thrashing on rapid keystrokes.
+  // Immediate render on clear (q === '') to maintain responsive feel.
+  const doSearch = () => {
+    render();
+    const inp = document.getElementById('search-input');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  };
+
+  if (immediate || !q) doSearch();
+  else _searchTimeout = setTimeout(doSearch, 150);
 }
 
 
