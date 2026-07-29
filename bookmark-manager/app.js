@@ -2013,7 +2013,7 @@ function renderSearchResults() {
 
   if (!rows.length) {
     return `
-      <div class="empty-state">
+      <div class="empty-state" aria-live="polite">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
         <p>No results found for "${esc(S.query)}"</p>
         <button class="btn btn--primary" onclick="handleSearch('')">
@@ -2180,7 +2180,7 @@ function renderDashboard() {
 
     <main class="dashboard">
       ${isEmpty ? `
-        <div class="empty-state">
+        <div class="empty-state" aria-live="polite">
           <i data-lucide="BookMarked" style="width:48px;height:48px"></i>
           <p>No categories yet. Create one to start adding bookmarks.</p>
           <button class="btn btn--primary" onclick="openCategoryModal(null)">
