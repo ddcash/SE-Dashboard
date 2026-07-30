@@ -62,8 +62,22 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+
+// ⚡ Bolt: Cache Set representation of hidden arrays for O(1) lookups
+const _hiddenCache = { bookmarks: { set: new Set(), arr: null, len: -1 }, categories: { set: new Set(), arr: null, len: -1 } };
+
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  const arr = S.cfg.hidden?.[type];
+  if (!arr || arr.length === 0) return false;
+
+  const cache = _hiddenCache[type] || (_hiddenCache[type] = { set: new Set(), arr: null, len: -1 });
+  // Note: Must check length because S.cfg.hidden arrays are often mutated in-place via .push()
+  if (cache.arr !== arr || cache.len !== arr.length) {
+    cache.set = new Set(arr);
+    cache.arr = arr;
+    cache.len = arr.length;
+  }
+  return cache.set.has(id);
 }
 
 function hideItem(type, id) {
