@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2025-07-08 - Array caching with in-place mutations
+**Learning:** In this vanilla JS app, state arrays (like `S.cfg.hidden.bookmarks`) are often mutated in-place (e.g., via `.push()`) without re-assigning the array reference. Because of this, caching mechanisms that only rely on reference equality (`cache.arr !== arr`) fail to detect updates.
+**Action:** Always include length checks (`cache.len !== arr.length`) alongside reference checks when caching state derived from arrays to ensure proper cache invalidation.
