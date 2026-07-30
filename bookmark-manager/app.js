@@ -1604,7 +1604,7 @@ function openGroupModal(groupId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="group-form" onsubmit="submitGroup(event, '${groupId || ''}')">
+      <form id="group-form" data-group-id="${esc(groupId || '')}" onsubmit="submitGroup(event)">
         <div class="form-row">
           <label for="grp-title">Group Title</label>
           <input id="grp-title" type="text" name="title" class="form-input" required
@@ -1646,7 +1646,8 @@ function openGroupModal(groupId) {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-function submitGroup(e, groupId) {
+function submitGroup(e) {
+    const groupId = e.target.dataset.groupId;
     e.preventDefault();
     const fd = new FormData(e.target);
     const title = fd.get('title').trim();
@@ -2346,7 +2347,7 @@ function openCardModal(catId, bmId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
+      <form id="card-form" data-cat-id="${esc(catId)}" data-bm-id="${esc(bmId||'')}" onsubmit="submitCard(event)">
         <div class="form-row">
           <label for="bm-title">Title *</label>
           <input id="bm-title" type="text" name="title" class="form-input" required
@@ -2600,7 +2601,7 @@ function openCategoryModal(catId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
+      <form id="cat-form" data-cat-id="${esc(catId||'')}" onsubmit="submitCategory(event)">
         <div class="form-row">
           <label for="cat-name">Name *</label>
           <input id="cat-name" type="text" name="name" class="form-input" required
@@ -2765,7 +2766,9 @@ function pickCatColor(el, color) {
 // ═══════════════════════════════════════════════════════════════
 //  SAVE / DELETE
 // ═══════════════════════════════════════════════════════════════
-async function submitCard(e, catId, bmId) {
+async function submitCard(e) {
+  const catId = e.target.dataset.catId;
+  const bmId = e.target.dataset.bmId;
   // ensure card stays in place
   if (bmId && S.cfg.cardPositions[bmId] && !S.cfg.cardPositions[bmId]._px) {
      S.cfg.cardPositions[bmId]._px = true;
@@ -2848,7 +2851,8 @@ async function submitCard(e, catId, bmId) {
   saveData();    // background write, no await
 }
 
-async function submitCategory(e, catId) {
+async function submitCategory(e) {
+  const catId = e.target.dataset.catId;
   e.preventDefault();
   const fd    = new FormData(e.target);
   const name  = fd.get('name').trim();
