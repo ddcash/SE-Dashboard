@@ -20,3 +20,8 @@
 **Vulnerability:** User-controlled bookmark IDs (e.g., from imported JSON) and category IDs were directly interpolated into inline `onclick` event handlers (`onclick="trackClick(event,'${bm.id}','${catId}')"`). An attacker could bypass HTML-escaping because the browser decodes HTML entities before evaluating the JavaScript context.
 **Learning:** Interpolating user-supplied strings directly into inline JavaScript event handlers is unsafe, even if HTML-escaped (`esc()`), because the browser decodes HTML entities before evaluating the JavaScript.
 **Prevention:** Store user-provided dynamic identifiers (like IDs or URLs) in `data-` attributes on the DOM element and retrieve them dynamically within the event handler (e.g., `this.closest('.card').dataset.id`), preventing injection via entity decoding.
+
+## 2025-03-01 - Fix XSS in inline onsubmit event handlers
+**Vulnerability:** User-controlled category IDs, bookmark IDs, and group IDs were directly interpolated into inline `onsubmit` event handlers (e.g., `onsubmit="submitCard(event,'${catId}','${bmId||''}')"`). This allows attackers to bypass HTML-escaping because browsers decode HTML entities in attributes before executing JavaScript context.
+**Learning:** Interpolating user-supplied strings directly into inline form `onsubmit` event handlers is unsafe, even if escaped via `esc()`, because the browser entity-decodes before execution.
+**Prevention:** Store user-provided dynamic identifiers in `data-` attributes on the `form` element and retrieve them dynamically within the event handler using `this.dataset.propertyName`.
