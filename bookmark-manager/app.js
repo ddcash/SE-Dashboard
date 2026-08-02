@@ -2022,9 +2022,15 @@ function renderSearchResults() {
       </div>`;
   }
 
+  // ⚡ Bolt: Use direct string concatenation instead of intermediate array allocations like .map().join('')
+  let resultsHtml = '';
+  for (let i = 0; i < rows.length; i++) {
+    resultsHtml += renderCard(rows[i].bm, rows[i].cat, false, true);
+  }
+
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${resultsHtml}
     </div>`;
 }
 
