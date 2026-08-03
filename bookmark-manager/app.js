@@ -1990,7 +1990,11 @@ function renderAllCards() {
 
 
 function renderSearchResults() {
-  const rows = [];
+  // ⚡ Bolt optimization: Direct HTML string concatenation
+  // Accumulating strings directly avoids allocating intermediate objects and arrays
+  // on every keystroke, which reduces garbage collection overhead in this tight loop.
+  let html = '';
+  let count = 0;
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
@@ -2007,11 +2011,13 @@ function renderSearchResults() {
         fuzzyMatch(bm.description||'',  S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
-      rows.push({ bm, cat });
+
+      html += renderCard(bm, cat, false, true);
+      count++;
     }
   }
 
-  if (!rows.length) {
+  if (!count) {
     return `
       <div class="empty-state">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
@@ -2024,7 +2030,7 @@ function renderSearchResults() {
 
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${html}
     </div>`;
 }
 
