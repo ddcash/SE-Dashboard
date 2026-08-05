@@ -17,7 +17,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
-- Reset layout from the command palette to restore the default arrangement.
+- Reset layout from the command palette to restore the default arrangement while intelligently preserving items within groups.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
 ### Search & Filtering
@@ -31,8 +31,9 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Appearance & Theme
 - Dark theme defaults to a solid black background.
-- Choose between solid color, gradient, or image backgrounds.
+- Choose between solid color, gradient, or image backgrounds (with improved text formatting for readability).
 - Adjust global card opacity for the dashboard.
+- Assets uploaded to a master file repository are persisted across sessions.
 - Override opacity for individual cards when editing a bookmark.
 - Customize accent colors, font scale, and category badge visibility.
 - **Asset Gallery Previews**: Preview uploaded images and custom icons in a built-in gallery view.
@@ -96,7 +97,7 @@ Since SE-Dashboard runs entirely in the browser, there is no traditional install
 - **Customizing Layout & Groups:** Create groups from the command palette to visually containerize bookmarks. Drag and drop cards around the canvas or into groups to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
 - **Publishing:** From the Category Editor, you can easily "Publish to Master" to share an entire personal category directly with the shared master file.
 - **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
-- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
+- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, create groups, edit categories, change themes, toggle hidden items (and toggle icon visibility), reset the layout, and safely update the shared `master_bookmarks.json` file via the master editor.
 - **Restoring Sessions:** When you reopen the app, it can resume the last directory if browser permissions are still granted. If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
 - **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`, `test_xss.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. Run `node test_xss.js` to verify URL sanitization.
 
