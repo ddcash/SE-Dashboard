@@ -37,8 +37,14 @@ function esc(s) {
 
 function sanitizeUrl(url) {
   if (!url) return '';
-  const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  let u = String(url).trim();
+  let decoded = u;
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(decoded, 'text/html');
+    decoded = doc.documentElement.textContent;
+  } catch (e) {}
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
