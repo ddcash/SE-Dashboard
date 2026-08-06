@@ -37,10 +37,17 @@ function esc(s) {
 
 function sanitizeUrl(url) {
   if (!url) return '';
-  const u = String(url).trim();
+  let u = String(url).trim();
+
+  // Decode HTML entities to prevent bypasses like javascript&colon;
+  try {
+    const doc = new DOMParser().parseFromString(u, 'text/html');
+    u = doc.documentElement.textContent || u;
+  } catch(e) {}
+
   const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
-  return u;
+  return String(url).trim();
 }
 
 // ⚡ Bolt: Cache lowercased query to avoid O(N) string allocations during loop
