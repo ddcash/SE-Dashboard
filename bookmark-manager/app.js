@@ -1990,7 +1990,8 @@ function renderAllCards() {
 
 
 function renderSearchResults() {
-  const rows = [];
+  let hasResults = false;
+  let resultsHtml = '';
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
@@ -2007,11 +2008,13 @@ function renderSearchResults() {
         fuzzyMatch(bm.description||'',  S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
-      rows.push({ bm, cat });
+      // ⚡ Bolt: Direct string concatenation instead of array allocation + map/join for better performance
+      resultsHtml += renderCard(bm, cat, false, true);
+      hasResults = true;
     }
   }
 
-  if (!rows.length) {
+  if (!hasResults) {
     return `
       <div class="empty-state">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
@@ -2024,7 +2027,7 @@ function renderSearchResults() {
 
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${resultsHtml}
     </div>`;
 }
 
