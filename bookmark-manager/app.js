@@ -2899,11 +2899,31 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
+// ⚡ Bolt: Debounce search to prevent full DOM re-renders on every keystroke
+let _searchTimeout;
 function handleSearch(q) {
   S.query = q;
-  render();
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+
+  // Clear any pending render
+  if (_searchTimeout) clearTimeout(_searchTimeout);
+
+  // If query is empty (e.g. from clear button or Escape), render immediately
+  if (!q) {
+    const wasFocused = document.activeElement && document.activeElement.id === 'search-input';
+    render();
+    const inp = document.getElementById('search-input');
+    if (wasFocused && inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    return;
+  }
+
+  // Otherwise debounce the expensive DOM rebuild
+  _searchTimeout = setTimeout(() => {
+    const wasFocused = document.activeElement && document.activeElement.id === 'search-input';
+    render();
+    const inp = document.getElementById('search-input');
+    // Restore focus and cursor position since the DOM is rebuilt, only if it was active
+    if (wasFocused && inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }, 150);
 }
 
 
