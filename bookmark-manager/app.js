@@ -39,7 +39,9 @@ function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
   const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
-  if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+  let decoded = new DOMParser().parseFromString(sanitized, 'text/html').documentElement.textContent;
+  decoded = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  if (/^(javascript|data|vbscript):/i.test(decoded)) return '#';
   return u;
 }
 
