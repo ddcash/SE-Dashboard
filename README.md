@@ -17,7 +17,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
-- Reset layout from the command palette to restore the default arrangement.
+- Reset layout from the command palette to restore the default arrangement for top-level items (items within groups maintain their relative positions).
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
 ### Search & Filtering
@@ -55,10 +55,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Creates timestamped backups in `backups/`.
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
