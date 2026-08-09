@@ -1990,7 +1990,8 @@ function renderAllCards() {
 
 
 function renderSearchResults() {
-  const rows = [];
+  // ⚡ Bolt: Concatenate string directly rather than array allocation/mapping/joining
+  let cardsHtml = '';
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
@@ -2007,13 +2008,13 @@ function renderSearchResults() {
         fuzzyMatch(bm.description||'',  S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
-      rows.push({ bm, cat });
+      cardsHtml += renderCard(bm, cat, false, true);
     }
   }
 
-  if (!rows.length) {
+  if (!cardsHtml) {
     return `
-      <div class="empty-state">
+      <div class="empty-state" aria-live="polite">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
         <p>No results found for "${esc(S.query)}"</p>
         <button class="btn btn--primary" onclick="handleSearch('')">
@@ -2024,7 +2025,7 @@ function renderSearchResults() {
 
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${cardsHtml}
     </div>`;
 }
 
