@@ -2022,9 +2022,14 @@ function renderSearchResults() {
       </div>`;
   }
 
+  let resultsHtml = '';
+  for (const { bm, cat } of rows) {
+    resultsHtml += renderCard(bm, cat, false, true);
+  }
+
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${resultsHtml}
     </div>`;
 }
 
