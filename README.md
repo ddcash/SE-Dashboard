@@ -8,6 +8,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Bookmark & Category Management
 - Create and edit categories with custom icons and colors.
+- Quick Category Creation directly from the bookmark editor.
 - Add bookmarks to categories with title, URL, description, and tags.
 - Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
 - Move bookmarks between categories from the editor.
@@ -15,13 +16,14 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Freeform Canvas Layout & Groups
 - Cards are placed in a scrollable canvas layout.
-- Create resizable **Groups** to visually organize cards on the canvas.
-- Drag bookmark cards to reposition them freely, or drag them in and out of groups.
-- Reset layout from the command palette to restore the default arrangement.
+- Create resizable **Groups** from the command palette to visually organize cards on the canvas.
+- Drag bookmark cards to reposition them freely, or drag them in and out of groups seamlessly.
+- Reset layout from the command palette to restore the default arrangement for top-level items.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
 ### Search & Filtering
 - Search titles, URLs, descriptions, and tags with fuzzy match.
+- Auto-arranged wrapped views for search and filtered categories, independent of custom layout positions.
 - Clear and actionable empty states when search yields no results.
 - Filter categories with clickable pills.
 - Empty states feature helpful Call-to-Action (CTA) buttons to quickly create new items or clear filters.
@@ -33,7 +35,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Dark theme defaults to a solid black background.
 - Choose between solid color, gradient, or image backgrounds.
 - Adjust global card opacity for the dashboard.
-- Override opacity for individual cards when editing a bookmark.
+- Override opacity for individual cards when editing a bookmark, including card background images with text hiding.
 - Customize accent colors, font scale, and category badge visibility.
 - **Asset Gallery Previews**: Preview uploaded images and custom icons in a built-in gallery view.
 
@@ -55,10 +57,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Creates timestamped backups in `backups/`.
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
