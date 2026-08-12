@@ -1990,7 +1990,8 @@ function renderAllCards() {
 
 
 function renderSearchResults() {
-  const rows = [];
+  let cardsHtml = '';
+  let matchCount = 0;
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
@@ -2001,19 +2002,24 @@ function renderSearchResults() {
 
     for (const bm of cat.bookmarks) {
       if (!S.showHidden && hiddenBms.has(bm.id)) continue;
+
       const match = catMatch ||
         fuzzyMatch(bm.title,            S.query) ||
         fuzzyMatch(bm.url,              S.query) ||
         fuzzyMatch(bm.description||'',  S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
+
       if (!match) continue;
-      rows.push({ bm, cat });
+
+      // ⚡ Bolt: Accumulate HTML strings directly instead of intermediate array allocations
+      cardsHtml += renderCard(bm, cat, false, true);
+      matchCount++;
     }
   }
 
-  if (!rows.length) {
+  if (matchCount === 0) {
     return `
-      <div class="empty-state">
+      <div class="empty-state" aria-live="polite">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
         <p>No results found for "${esc(S.query)}"</p>
         <button class="btn btn--primary" onclick="handleSearch('')">
@@ -2024,7 +2030,7 @@ function renderSearchResults() {
 
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${cardsHtml}
     </div>`;
 }
 
