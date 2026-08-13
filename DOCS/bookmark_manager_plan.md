@@ -195,7 +195,7 @@ Build a parser utility in Javascript/TypeScript that runs entirely on the client
 Consider adding these advanced features to further elevate the user experience and customizability:
 
 ### A. Vercel/Linear Style Command Palette (`Ctrl + K` or `Cmd + K`)
-Allow power users to navigate the app, switch themes, search bookmarks, filter tags, and execute quick actions purely from the keyboard.
+Allow power users to navigate the app, switch themes, search bookmarks, filter tags, and execute quick actions purely from the keyboard. Support actions like "New Group" and "Edit Category".
 * *Example prompt:* `Implement a keyboard-accessible search palette that overlays the dashboard when Cmd/Ctrl + K is pressed, allowing instant navigation, tag toggling, and page configuration.`
 
 ### B. Drag & Drop Directory Scanning
