@@ -38,7 +38,17 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  // First, strip control chars before decoding
+  const preStripped = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  // Decode HTML entities (e.g. &colon;) since browsers will decode before executing
+  const doc = new DOMParser().parseFromString(preStripped, 'text/html');
+  const decodedUrl = doc.documentElement.textContent || preStripped;
+
+  // Strip control chars again (e.g. from &#x09; becoming tab)
+  const sanitized = decodedUrl.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
