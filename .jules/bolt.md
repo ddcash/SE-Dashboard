@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2025-08-13 - Direct string concatenation in tight render loops
+**Learning:** High-frequency render functions like `renderSearchResults` scale poorly when allocating intermediate arrays to build strings via `.map().join('')`. This causes unnecessary garbage collection pressure and CPU blocking during rapid keystroke events.
+**Action:** Always accumulate HTML strings directly via concatenation inside the primary iteration loop rather than pushing objects to an array for a secondary mapping pass.
