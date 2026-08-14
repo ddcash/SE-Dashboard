@@ -118,6 +118,7 @@ Saves the specific layout overrides for this browser instance:
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
+* Enhance Groups feature to preserve relative coordinates when dragging inside a group and ensure proper dropping bounds.
 * Build a **Card Editor Modal** allowing users to:
   * Select an icon (Lucide library search, external URL image, local favicon, or custom image upload).
   * Customize individual card background colors, borders, and text colors.
@@ -203,6 +204,11 @@ Enable dropping a folder from the local computer filesystem directly onto the we
 
 ### C. Expandable Markdown Notes (Knowledge Card)
 Turn bookmark cards into mini-wikis. Clicking a card can open a slide-over panel displaying a rich text editor supporting Markdown, checklist items, and internal wiki-style links.
+
+### Security Enhancements
+Implement rigorous defenses against cross-site scripting (XSS):
+*   Sanitize all user-input URLs to block malicious protocol obfuscation (e.g., `javascript:`, `data:`).
+*   Use `data-` attributes for dynamic data interpolation in inline event handlers (like `onclick`) instead of direct string replacement, ensuring values remain safely un-executed even after browser entity decoding.
 
 ### D. Single-File Build Bundler (Self-Contained)
 Write a build script (e.g., using `vite-plugin-singlefile`) that bundles all CSS, JS, SVGs, and libraries directly into one single `.html` file. This lets the user carry around a single self-contained application file.
