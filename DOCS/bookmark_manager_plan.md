@@ -129,6 +129,12 @@ Saves the specific layout overrides for this browser instance:
 * **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
 * Support editing and publishing to a remote master file URL via HTTP PUT requests.
 
+### Phase 5: Final Polish, UX, & Performance
+* Ensure top-level items and groups correctly wrap and format when reset layout is called.
+* Optimize rendering array processing for smooth group management.
+* Improve empty state UX in search results.
+* Support inline editing for categories directly.
+
 ---
 
 ## 4. Prompts to Guide Claude
