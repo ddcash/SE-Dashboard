@@ -2022,9 +2022,16 @@ function renderSearchResults() {
       </div>`;
   }
 
+  // ⚡ Bolt: Accumulate HTML string directly to avoid memory churn of intermediate arrays
+  let resultsHtml = '';
+  for (let i = 0; i < rows.length; i++) {
+    const { bm, cat } = rows[i];
+    resultsHtml += renderCard(bm, cat, false, true);
+  }
+
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${resultsHtml}
     </div>`;
 }
 
@@ -2899,11 +2906,38 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
+// ⚡ Bolt: Debounce search input to prevent expensive DOM rebuilds on every keystroke.
+// Explicitly restore focus and cursor position after the delayed render because
+// replacing the entire DOM via innerHTML destroys the focused input element.
+let _searchTimeout;
 function handleSearch(q) {
   S.query = q;
-  render();
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  clearTimeout(_searchTimeout);
+  _searchTimeout = setTimeout(() => {
+    // Save focused element ID and cursor position before render destroys it
+    const activeId = document.activeElement?.id;
+    let cursorStart = null;
+    let cursorEnd = null;
+    if (activeId === 'search-input' && document.activeElement instanceof HTMLInputElement) {
+      cursorStart = document.activeElement.selectionStart;
+      cursorEnd = document.activeElement.selectionEnd;
+    }
+
+    render();
+
+    // Restore focus and cursor position
+    if (activeId === 'search-input') {
+      const inp = document.getElementById('search-input');
+      if (inp) {
+        inp.focus();
+        if (cursorStart !== null && cursorEnd !== null) {
+          inp.setSelectionRange(cursorStart, cursorEnd);
+        } else {
+          inp.setSelectionRange(inp.value.length, inp.value.length);
+        }
+      }
+    }
+  }, 150);
 }
 
 
@@ -3153,19 +3187,28 @@ function updatePalette(q) {
   window._palActions = matchCmds.map(c => c.fn);
   window._palBms = matchBms.map(m => m.bm);
 
-  const cmdsHtml = matchCmds.map((c, i) => `
+  // ⚡ Bolt: Accumulate HTML strings directly to avoid intermediate array allocations in tight loops
+  let cmdsHtml = '';
+  for (let i = 0; i < matchCmds.length; i++) {
+    const c = matchCmds[i];
+    cmdsHtml += `
     <div class="palette-item" onclick="window._palActions[${i}]()">
       <i data-lucide="${c.icon}" style="width:14px;height:14px"></i>
       <span>${esc(c.label)}</span>
       <span class="palette-item-type">Command</span>
-    </div>`).join('');
+    </div>`;
+  }
 
-  const bmsHtml = matchBms.map(({ bm, cat }) => `
+  let bmsHtml = '';
+  for (let i = 0; i < matchBms.length; i++) {
+    const { bm, cat } = matchBms[i];
+    bmsHtml += `
     <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()">
       <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
       <span>${esc(bm.title)}</span>
       <span class="palette-item-type">${esc(cat.name)}</span>
-    </div>`).join('');
+    </div>`;
+  }
 
   const res = document.getElementById('palette-results');
   if (!res) return;
