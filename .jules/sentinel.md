@@ -20,3 +20,8 @@
 **Vulnerability:** User-controlled bookmark IDs (e.g., from imported JSON) and category IDs were directly interpolated into inline `onclick` event handlers (`onclick="trackClick(event,'${bm.id}','${catId}')"`). An attacker could bypass HTML-escaping because the browser decodes HTML entities before evaluating the JavaScript context.
 **Learning:** Interpolating user-supplied strings directly into inline JavaScript event handlers is unsafe, even if HTML-escaped (`esc()`), because the browser decodes HTML entities before evaluating the JavaScript.
 **Prevention:** Store user-provided dynamic identifiers (like IDs or URLs) in `data-` attributes on the DOM element and retrieve them dynamically within the event handler (e.g., `this.closest('.card').dataset.id`), preventing injection via entity decoding.
+
+## 2026-08-16 - Fix XSS via HTML entity-encoded URL protocols
+**Vulnerability:** The `sanitizeUrl` function used regex to strip control characters and block malicious protocols like `javascript:`. However, it failed to account for HTML entity-encoded protocols (e.g., `javascript&colon;`) and entity-encoded control characters (e.g., `java&#x09;script:`), which browsers decode in HTML attributes before execution, allowing XSS.
+**Learning:** When validating URLs against malicious protocols, the input must be decoded (e.g., using `DOMParser`) and control characters stripped both before and after decoding prior to regex matching.
+**Prevention:** Use `DOMParser` to safely decode HTML entities in URLs and re-strip control characters before matching against forbidden protocols.
