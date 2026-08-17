@@ -122,6 +122,7 @@ Saves the specific layout overrides for this browser instance:
   * Select an icon (Lucide library search, external URL image, local favicon, or custom image upload).
   * Customize individual card background colors, borders, and text colors.
   * Set arbitrary parameters (like opening target, description notes).
+  * Manage tags dynamically using visual tag bubbles.
 * Implement **Master File Publishing**: Allow users to share personal categories directly to the master file from within the app.
 
 ### Phase 4: Import / Export & Master Publishing Module
