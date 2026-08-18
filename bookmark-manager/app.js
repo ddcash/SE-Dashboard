@@ -1940,14 +1940,6 @@ function renderAllCards() {
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
-  if (S.cfg.groups) {
-      for (const group of S.cfg.groups) {
-          // Only render groups if NO active category is selected (otherwise we just want a flat list)
-          if (!S.activeCat) {
-              html += renderGroup(group);
-          }
-      }
-  }
 
   for (const cat of S.data.categories) {
     const catHidden  = hiddenCats.has(cat.id);
