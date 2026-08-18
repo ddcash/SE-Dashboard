@@ -38,8 +38,23 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
-  if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+
+  // Strip control characters before decoding
+  let clean = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  // Decode HTML entities
+  let decoded = clean;
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(clean, 'text/html');
+      decoded = doc.documentElement.textContent;
+    } catch (e) {}
+  }
+
+  // Strip control characters after decoding
+  decoded = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  if (/^(javascript|data|vbscript):/i.test(decoded)) return '#';
   return u;
 }
 
