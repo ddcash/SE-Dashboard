@@ -1256,16 +1256,16 @@ function populateMasterEditorVisual() {
     <div class="master-category-panel" data-cat-id="${cat.id}">
       <div class="master-category-header">
         <div>
-          <label>Name</label>
-          <input type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
+          <label for="cat-name-${esc(cat.id)}">Name</label>
+          <input id="cat-name-${esc(cat.id)}" type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
         </div>
         <div>
-          <label>Icon</label>
-          <input type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
+          <label for="cat-icon-${esc(cat.id)}">Icon</label>
+          <input id="cat-icon-${esc(cat.id)}" type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
         </div>
         <div>
-          <label>Color</label>
-          <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
+          <label for="cat-color-${esc(cat.id)}">Color</label>
+          <input id="cat-color-${esc(cat.id)}" type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
         </div>
         <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
       </div>
@@ -1280,7 +1280,7 @@ function populateMasterEditorVisual() {
             </div>
             <div class="master-bookmark-row-bottom">
               <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
-              <div><label>Tags</label><input type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
+              <div><label for="bm-tags-input-${esc(bm.id)}">Tags</label><input id="bm-tags-input-${esc(bm.id)}" type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
               <div class="form-row"><label><input type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
             </div>
           </div>
@@ -1498,51 +1498,51 @@ function openSettingsModal() {
       <div class="settings-grid">
         <section class="settings-section">
           <h3>General</h3>
-          <label>Theme Mode</label>
+          <label for="settings-theme-mode">Theme Mode</label>
           <select id="settings-theme-mode" class="form-input">
             <option value="dark">Dark</option>
             <option value="light">Light</option>
             <option value="system">System</option>
           </select>
-          <label>Accent Color</label>
+          <label for="settings-accent-color">Accent Color</label>
           <input type="color" id="settings-accent-color" class="form-input" value="#89b4fa">
-          <label>Font Scale</label>
+          <label for="settings-font-scale">Font Scale</label>
           <input type="range" id="settings-font-scale" class="form-input" min="0.8" max="1.4" step="0.05" value="1" oninput="document.getElementById('settings-font-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-font-scale-value">100%</span></div>
-          <label>Card Text Scale</label>
+          <label for="settings-card-text-scale">Card Text Scale</label>
           <input type="range" id="settings-card-text-scale" class="form-input" min="0.8" max="1.6" step="0.05" value="1" oninput="document.getElementById('settings-card-text-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-card-text-scale-value">100%</span></div>
-          <label><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
-          <label>Card Opacity</label>
+          <label for="settings-show-category-badge"><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
+          <label for="settings-card-opacity">Card Opacity</label>
           <input type="range" id="settings-card-opacity" class="form-input" min="0.4" max="1" step="0.02" value="0.96" oninput="document.getElementById('settings-card-opacity-value').textContent = Math.round(this.value*100) + '%'">
           <div class="settings-helper"><span id="settings-card-opacity-value">96%</span></div>
         </section>
         <section class="settings-section">
           <h3>Background</h3>
-          <label>Background Type</label>
+          <label for="settings-bg-type">Background Type</label>
           <select id="settings-bg-type" class="form-input" onchange="toggleBgOptions()">
             <option value="solid">Solid</option>
             <option value="gradient">Gradient</option>
             <option value="image">Image</option>
           </select>
           <div id="bg-solid-options" class="bg-options">
-            <label>Solid Color</label>
+            <label for="settings-bg-solid">Solid Color</label>
             <input type="color" id="settings-bg-solid" class="form-input" value="#000000">
           </div>
           <div id="bg-gradient-options" class="bg-options">
-            <label>Gradient Color 1</label>
+            <label for="settings-bg-color1">Gradient Color 1</label>
             <input type="color" id="settings-bg-color1" class="form-input" value="#090910">
-            <label>Gradient Color 2</label>
+            <label for="settings-bg-color2">Gradient Color 2</label>
             <input type="color" id="settings-bg-color2" class="form-input" value="#0e0e1a">
-            <label>Angle</label>
+            <label for="settings-bg-angle">Angle</label>
             <input type="number" id="settings-bg-angle" class="form-input" min="0" max="360" value="135">
           </div>
           <div id="bg-image-options" class="bg-options hidden">
-            <label>Image URL</label>
+            <label for="settings-bg-image-url">Image URL</label>
             <input type="text" id="settings-bg-image-url" class="form-input" placeholder="https://example.com/bg.jpg">
-            <label>Upload Background</label>
+            <label for="settings-bg-image-upload">Upload Background</label>
             <input type="file" id="settings-bg-image-upload" class="form-input" accept="image/*" onchange="handleBackgroundUpload(this)">
-            <label>Overlay Opacity</label>
+            <label for="settings-bg-overlay">Overlay Opacity</label>
             <input type="range" id="settings-bg-overlay" class="form-input" min="0" max="0.6" step="0.05" value="0.16" oninput="document.getElementById('settings-bg-overlay-value').textContent = Math.round(this.value * 100) + '%'">
             <div class="settings-helper"><span id="settings-bg-overlay-value">16%</span></div>
           </div>
@@ -1611,26 +1611,26 @@ function openGroupModal(groupId) {
             value="${esc(group?.title || '')}" placeholder="My Group">
         </div>
         <div class="form-row">
-          <label>Appearance</label>
+          <label for="grp-bg-color">Appearance</label>
           <div style="display:flex; gap:8px;">
-             <input type="text" name="bgColor" class="form-input" placeholder="Background Color (e.g. #333, rgba...)" value="${esc(group?.bgColor || '')}">
+             <input id="grp-bg-color" type="text" name="bgColor" class="form-input" placeholder="Background Color (e.g. #333, rgba...)" value="${esc(group?.bgColor || '')}">
              <input type="text" name="textColor" class="form-input" placeholder="Text Color" value="${esc(group?.textColor || '')}">
           </div>
         </div>
         <div class="form-row">
-          <label>Background Image URL</label>
-          <input type="text" name="bgImage" class="form-input" placeholder="https://..." value="${esc(group?.bgImage || '')}">
+          <label for="grp-bg-image">Background Image URL</label>
+          <input id="grp-bg-image" type="text" name="bgImage" class="form-input" placeholder="https://..." value="${esc(group?.bgImage || '')}">
         </div>
         <div class="form-row">
           <label>Text Style</label>
           <div style="display:flex; gap:16px;">
-             <label class="custom-checkbox">
-               <input type="checkbox" name="textWeight" value="bold" ${group?.textWeight === 'bold' ? 'checked' : ''}>
+             <label for="grp-text-weight" class="custom-checkbox">
+               <input id="grp-text-weight" type="checkbox" name="textWeight" value="bold" ${group?.textWeight === 'bold' ? 'checked' : ''}>
                <div class="checkbox-box"></div>
                Bold
              </label>
-             <label class="custom-checkbox">
-               <input type="checkbox" name="textItalic" value="true" ${group?.textItalic ? 'checked' : ''}>
+             <label for="grp-text-italic" class="custom-checkbox">
+               <input id="grp-text-italic" type="checkbox" name="textItalic" value="true" ${group?.textItalic ? 'checked' : ''}>
                <div class="checkbox-box"></div>
                Italic
              </label>
@@ -2364,7 +2364,7 @@ function openCardModal(catId, bmId) {
             placeholder="Optional notes…">${esc(bm?.description||'')}</textarea>
         </div>
         <div class="form-row">
-          <label>Tags</label>
+          <label for="bm-tags-input">Tags</label>
           <div class="tag-input-container">
              <div id="tag-bubbles" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
                  ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
@@ -2388,15 +2388,15 @@ function openCardModal(catId, bmId) {
         </div>
 
         <div class="form-row">
-          <label><input type="checkbox" name="hideIconMain" ${cs.hideIcon ? 'checked' : ''}> Hide icon on card</label>
+          <label for="bm-hide-icon-main"><input id="bm-hide-icon-main" type="checkbox" name="hideIconMain" ${cs.hideIcon ? 'checked' : ''}> Hide icon on card</label>
           <p class="hint-text">Hide the icon entirely.</p>
         </div>
         <div class="form-row">
-          <label><input type="checkbox" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
+          <label for="bm-hide-category-badge"><input id="bm-hide-category-badge" type="checkbox" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
           <p class="hint-text">Keep the card cleaner by hiding the category label.</p>
         </div>
         <div class="form-row">
-          <label>Card Opacity <span class="hint-inline">(override)</span></label>
+          <label for="card-opacity">Card Opacity <span class="hint-inline">(override)</span></label>
           <input type="range" id="card-opacity" name="cardOpacity" class="form-input" min="0.4" max="1" step="0.02" value="${cs.cardOpacity||''}" oninput="document.getElementById('card-opacity-value').textContent = this.value ? Math.round(this.value*100)+'%' : 'inherit'">
           <div class="settings-helper"><span id="card-opacity-value">${cs.cardOpacity ? Math.round(cs.cardOpacity*100) + '%' : 'inherit'}</span></div>
           <p class="hint-text">Override the global card opacity for this bookmark.</p>
@@ -2455,14 +2455,14 @@ function openCardModal(catId, bmId) {
         <div class="form-section">Custom Style <span class="hint-inline">(optional)</span></div>
         <div class="form-row form-row--cols">
           <div>
-            <label><input type="checkbox" name="useCardColor" ${cs.cardColor?'checked':''}
+            <label for="bm-use-card-color"><input id="bm-use-card-color" type="checkbox" name="useCardColor" ${cs.cardColor?'checked':''}
               onchange="toggleColor(this,'card-color-pick')"> Card Color</label>
             <input type="color" id="card-color-pick" name="cardColor"
               value="${cs.cardColor||'#1e1e2e'}" class="color-input"
               style="display:${cs.cardColor?'':'none'};margin-top:6px">
           </div>
           <div>
-            <label><input type="checkbox" name="useBorderColor" ${cs.borderColor?'checked':''}
+            <label for="bm-use-border-color"><input id="bm-use-border-color" type="checkbox" name="useBorderColor" ${cs.borderColor?'checked':''}
               onchange="toggleColor(this,'border-color-pick')"> Border Color</label>
             <input type="color" id="border-color-pick" name="borderColor"
               value="${cs.borderColor||'#45475a'}" class="color-input"
@@ -2471,33 +2471,33 @@ function openCardModal(catId, bmId) {
         </div>
         <div class="form-row form-row--cols" id="bg-image-options" style="display:${iType==='url' || iType==='local'?'flex':'none'}">
           <div style="flex:1">
-            <label><input type="checkbox" name="useBgImage" ${cs.bgImage?'checked':''}> Use image as background</label>
+            <label for="bm-use-bg-image"><input id="bm-use-bg-image" type="checkbox" name="useBgImage" ${cs.bgImage?'checked':''}> Use image as background</label>
           </div>
           <div style="flex:1">
-            <label><input type="checkbox" name="hideText" ${cs.hideText?'checked':''}> Hide text overlay</label>
+            <label for="bm-hide-text"><input id="bm-hide-text" type="checkbox" name="hideText" ${cs.hideText?'checked':''}> Hide text overlay</label>
           </div>
           <div style="flex:1">
-            <label><input type="checkbox" name="hideIcon" ${cs.hideIcon?'checked':''}> Hide icon on card</label>
+            <label for="bm-hide-icon"><input id="bm-hide-icon" type="checkbox" name="hideIcon" ${cs.hideIcon?'checked':''}> Hide icon on card</label>
           </div>
         </div>
         <div class="form-section">Text Formatting <span class="hint-inline">(optional)</span></div>
         <div class="form-row form-row--cols">
           <div>
-            <label>Text Color</label>
-            <input type="color" name="textColor" value="${cs.textColor||'#ffffff'}" class="color-input">
+            <label for="bm-text-color">Text Color</label>
+            <input id="bm-text-color" type="color" name="textColor" value="${cs.textColor||'#ffffff'}" class="color-input">
           </div>
           <div>
-            <label>Text Size</label>
+            <label for="card-text-size">Text Size</label>
             <input type="range" id="card-text-size" name="textSize" class="form-input" min="0.8" max="1.8" step="0.05" value="${cs.textSize ? parseFloat(cs.textSize) : 1}" oninput="document.getElementById('card-text-size-value').textContent = Math.round(this.value * 100) + '%'">
             <div class="settings-helper"><span id="card-text-size-value">${cs.textSize ? Math.round(parseFloat(cs.textSize) * 100) + '%' : '100%'}</span></div>
           </div>
         </div>
         <div class="form-row form-row--cols">
           <div>
-            <label><input type="checkbox" name="textBold" ${cs.textWeight==='bold'?'checked':''}> Bold text</label>
+            <label for="bm-text-bold"><input id="bm-text-bold" type="checkbox" name="textBold" ${cs.textWeight==='bold'?'checked':''}> Bold text</label>
           </div>
           <div>
-            <label><input type="checkbox" name="textItalic" ${cs.textItalic ? 'checked' : ''}> Italic text</label>
+            <label for="bm-text-italic"><input id="bm-text-italic" type="checkbox" name="textItalic" ${cs.textItalic ? 'checked' : ''}> Italic text</label>
           </div>
         </div>
 
@@ -3171,7 +3171,13 @@ function updatePalette(q) {
   if (!res) return;
 
   if (!cmdsHtml && !bmsHtml) {
-    res.innerHTML = `<div class="palette-empty">No results for "${esc(q)}"</div>`;
+    res.innerHTML = `<div class="palette-empty">
+        <p style="margin-bottom: 12px">No results found for "${esc(q)}"</p>
+        <button class="btn btn--primary" onclick="document.getElementById('palette-input').value=''; updatePalette(''); document.getElementById('palette-input').focus();">
+          <i data-lucide="X" style="width:13px;height:13px"></i> Clear Search
+        </button>
+      </div>`;
+    if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 0);
   } else {
     res.innerHTML =
       (cmdsHtml ? `<div class="palette-section-label">Commands</div>${cmdsHtml}` : '') +
