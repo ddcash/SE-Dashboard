@@ -3094,14 +3094,15 @@ function openPalette() {
   S.paletteOpen = true;
   const el = document.getElementById('palette-overlay');
   el.innerHTML = `
-    <div class="palette">
+    <div class="palette" role="dialog" aria-label="Command Palette">
       <div class="palette-search-wrap">
-        <i data-lucide="Terminal" style="width:15px;height:15px"></i>
+        <i data-lucide="Terminal" style="width:15px;height:15px" aria-hidden="true"></i>
+        <label for="palette-input" class="sr-only">Command palette input</label>
         <input type="text" id="palette-input" class="palette-input" aria-label="Command palette input"
           placeholder="Search bookmarks or type a command…"
           oninput="updatePalette(this.value)"
           onkeydown="onPaletteKey(event)">
-        <kbd style="font-size:11px;color:var(--text3)">ESC</kbd>
+        <kbd style="font-size:11px;color:var(--text3)" aria-hidden="true">ESC</kbd>
       </div>
       <div id="palette-results" class="palette-results"></div>
     </div>`;
@@ -3154,18 +3155,18 @@ function updatePalette(q) {
   window._palBms = matchBms.map(m => m.bm);
 
   const cmdsHtml = matchCmds.map((c, i) => `
-    <div class="palette-item" onclick="window._palActions[${i}]()">
-      <i data-lucide="${c.icon}" style="width:14px;height:14px"></i>
+    <button class="palette-item" onclick="window._palActions[${i}]()" style="width:100%; text-align:left; border:none; background:none; font:inherit; color:inherit;">
+      <i data-lucide="${c.icon}" style="width:14px;height:14px" aria-hidden="true"></i>
       <span>${esc(c.label)}</span>
       <span class="palette-item-type">Command</span>
-    </div>`).join('');
+    </button>`).join('');
 
   const bmsHtml = matchBms.map(({ bm, cat }) => `
-    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()">
-      <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
+    <button class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()" style="width:100%; text-align:left; border:none; background:none; font:inherit; color:inherit;">
+      <i data-lucide="ExternalLink" style="width:14px;height:14px" aria-hidden="true"></i>
       <span>${esc(bm.title)}</span>
       <span class="palette-item-type">${esc(cat.name)}</span>
-    </div>`).join('');
+    </button>`).join('');
 
   const res = document.getElementById('palette-results');
   if (!res) return;
