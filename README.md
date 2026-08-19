@@ -8,14 +8,14 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Bookmark & Category Management
 - Create and edit categories with custom icons and colors.
-- Add bookmarks to categories with title, URL, description, and tags.
+- Add bookmarks to categories with title, URL, description, and tags. (Categories are automatically unfocused when clicking a bookmark).
 - Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
 - Move bookmarks between categories from the editor.
 - **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
 
 ### Freeform Canvas Layout & Groups
 - Cards are placed in a scrollable canvas layout.
-- Create resizable **Groups** to visually organize cards on the canvas.
+- Create resizable **Groups** to visually organize cards on the canvas (Note: Groups only render when no specific active category is selected).
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
@@ -57,8 +57,9 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
 ### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
+- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
+- Enhanced search filtering performance with optimized string matching algorithms (e.g., utilizing cached lowercase strings and loop-invariant hoisting).
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
@@ -66,11 +67,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
 
 ## Installation
 
