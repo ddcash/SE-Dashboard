@@ -1990,7 +1990,9 @@ function renderAllCards() {
 
 
 function renderSearchResults() {
-  const rows = [];
+  // ⚡ Bolt: Accumulate HTML strings directly to avoid intermediate array allocations and map/join overhead
+  let cardsHtml = '';
+  let matchCount = 0;
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
@@ -2007,11 +2009,12 @@ function renderSearchResults() {
         fuzzyMatch(bm.description||'',  S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
-      rows.push({ bm, cat });
+      cardsHtml += renderCard(bm, cat, false, true);
+      matchCount++;
     }
   }
 
-  if (!rows.length) {
+  if (matchCount === 0) {
     return `
       <div class="empty-state">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
@@ -2024,7 +2027,7 @@ function renderSearchResults() {
 
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${cardsHtml}
     </div>`;
 }
 
@@ -2094,11 +2097,17 @@ function renderDashboard() {
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
-  const catPills = cats.map(cat => {
+  // ⚡ Bolt optimization: Accumulate HTML strings directly to prevent memory churn from intermediate mapping arrays
+  let catPills = '';
+  for (const cat of cats) {
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
-    return `
+    // ⚡ Bolt optimization: Avoid intermediate array allocation from .filter() just to get length
+    let visCount = 0;
+    for (const b of cat.bookmarks) {
+      if (!hiddenBms.has(b.id)) visCount++;
+    }
+    catPills += `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
         onclick="setActiveCat(this.dataset.catId)" title="${esc(cat.name)}">
@@ -2106,7 +2115,7 @@ function renderDashboard() {
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
       </button>`;
-  }).join('');
+  }
 
   const masterBanner = S.pendingMasterHandle
     ? `<div class="master-banner">
