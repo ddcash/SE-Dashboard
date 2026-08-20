@@ -158,7 +158,7 @@ Create a premium, dark-mode glassmorphism dashboard UI that works entirely stati
 - Item Customizability: Each bookmark item should support:
   - Custom card background color, border color, and border style.
   - Icon Type selection:
-    - Includes toggle for Hide Icon feature.
+    - Includes toggle for Hide Icon feature on individual cards.
     1. Lucide library icons (dynamic search list).
     2. Auto-fetched favicon (using `https://www.google.com/s2/favicons?domain=...` fallback).
     3. Custom Web Image URL.
