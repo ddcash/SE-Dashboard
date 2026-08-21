@@ -20,13 +20,18 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
+### Command Palette
+- **Keyboard-accessible search palette**: Overlay the dashboard by pressing `Ctrl+K` (or `Cmd+K` on Mac).
+- Execute quick actions purely from the keyboard.
+- Instantly navigate the app, switch themes, search bookmarks, filter tags, toggle hidden items, and configure page layouts.
+- Access the Master Editor directly from the palette.
+
 ### Search & Filtering
 - Search titles, URLs, descriptions, and tags with fuzzy match.
 - Clear and actionable empty states when search yields no results.
 - Filter categories with clickable pills.
 - Empty states feature helpful Call-to-Action (CTA) buttons to quickly create new items or clear filters.
 - Preserve your current card layout when search is cleared.
-- Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette.
 - Toggle hidden items on or off.
 
 ### Appearance & Theme
@@ -55,10 +60,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Creates timestamped backups in `backups/`.
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
