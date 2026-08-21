@@ -1256,16 +1256,16 @@ function populateMasterEditorVisual() {
     <div class="master-category-panel" data-cat-id="${cat.id}">
       <div class="master-category-header">
         <div>
-          <label>Name</label>
-          <input type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
+          <label for="cat-name-${cat.id}">Name</label>
+          <input id="cat-name-${cat.id}" type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
         </div>
         <div>
-          <label>Icon</label>
-          <input type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
+          <label for="cat-icon-${cat.id}">Icon</label>
+          <input id="cat-icon-${cat.id}" type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
         </div>
         <div>
-          <label>Color</label>
-          <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
+          <label for="cat-color-${cat.id}">Color</label>
+          <input id="cat-color-${cat.id}" type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
         </div>
         <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
       </div>
@@ -1273,15 +1273,15 @@ function populateMasterEditorVisual() {
         ${cat.bookmarks.map(bm => `
           <div class="master-bookmark-row" data-bm-id="${bm.id}">
             <div class="master-bookmark-row-top">
-              <div><label>Title</label><input type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
-              <div><label>URL</label><input type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
-              <div><label>Icon</label><input type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
+              <div><label for="bm-title-${bm.id}">Title</label><input id="bm-title-${bm.id}" type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
+              <div><label for="bm-url-${bm.id}">URL</label><input id="bm-url-${bm.id}" type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
+              <div><label for="bm-icon-${bm.id}">Icon</label><input id="bm-icon-${bm.id}" type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
               <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" data-bm-id="${esc(bm.id)}" onclick="deleteMasterBookmark(this.dataset.catId, this.dataset.bmId)">Delete</button>
             </div>
             <div class="master-bookmark-row-bottom">
-              <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
-              <div><label>Tags</label><input type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
-              <div class="form-row"><label><input type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
+              <div><label for="bm-description-${bm.id}">Description</label><input id="bm-description-${bm.id}" type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
+              <div><label for="bm-tags-${bm.id}">Tags</label><input id="bm-tags-${bm.id}" type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
+              <div class="form-row"><label for="bm-hide-category-${bm.id}"><input id="bm-hide-category-${bm.id}" type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
             </div>
           </div>
         `).join('')}
