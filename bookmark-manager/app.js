@@ -37,10 +37,15 @@ function esc(s) {
 
 function sanitizeUrl(url) {
   if (!url) return '';
-  const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
-  if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
-  return u;
+  let u = String(url).trim();
+  u = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  try {
+    const doc = new DOMParser().parseFromString(u, 'text/html');
+    u = doc.documentElement.textContent;
+  } catch (e) {}
+  u = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  if (/^(javascript|data|vbscript):/i.test(u)) return '#';
+  return String(url).trim();
 }
 
 // ⚡ Bolt: Cache lowercased query to avoid O(N) string allocations during loop
