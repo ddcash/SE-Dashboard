@@ -1848,7 +1848,11 @@ function renderCard(bm, cat, dimmed) {
   const catBadge   = hideCatBadge ? '' : `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
                       </span>`;
-  const tags       = (bm.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  let tags = '';
+  const bmTags = bm.tags || [];
+  for (let i = 0; i < bmTags.length; i++) {
+    tags += `<span class="tag">${esc(bmTags[i])}</span>`;
+  }
   const protoTag   = proto
     ? `<span class="proto-tag proto-tag--${proto === 'local' ? 'local' : 'app'}">${proto === 'local' ? 'Local File' : proto + '://'}</span>`
     : '';
@@ -2022,9 +2026,14 @@ function renderSearchResults() {
       </div>`;
   }
 
+  let rowsHtml = '';
+  for (let i = 0; i < rows.length; i++) {
+    rowsHtml += renderCard(rows[i].bm, rows[i].cat, false, true);
+  }
+
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${rowsHtml}
     </div>`;
 }
 
@@ -2094,11 +2103,17 @@ function renderDashboard() {
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
-  const catPills = cats.map(cat => {
+  let catPills = '';
+  for (let i = 0; i < cats.length; i++) {
+    const cat = cats[i];
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
-    return `
+    let visCount = 0;
+    const bms = cat.bookmarks || [];
+    for (let j = 0; j < bms.length; j++) {
+      if (!hiddenBms.has(bms[j].id)) visCount++;
+    }
+    catPills += `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
         onclick="setActiveCat(this.dataset.catId)" title="${esc(cat.name)}">
@@ -2106,7 +2121,7 @@ function renderDashboard() {
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
       </button>`;
-  }).join('');
+  }
 
   const masterBanner = S.pendingMasterHandle
     ? `<div class="master-banner">
