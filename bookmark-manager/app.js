@@ -38,8 +38,12 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
-  if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+  let decoded = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  try {
+    decoded = new DOMParser().parseFromString(decoded, 'text/html').documentElement.textContent || decoded;
+  } catch (e) {}
+  decoded = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  if (/^(javascript|data|vbscript):/i.test(decoded)) return '#';
   return u;
 }
 
