@@ -112,9 +112,11 @@ Saves the specific layout overrides for this browser instance:
   * Load assets dynamically and map them to image tags.
 
 ### Phase 2: Core Frontend UI & Universal Launching
+* Implement strong security features (e.g. strict data-attribute handling, URL protocol filtering) to prevent XSS and malicious protocol injection.
 * Build a premium, glassmorphic card dashboard using CSS variables.
 * Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
 * Enable fuzzy searching across URLs, tags, and custom metadata.
+* Incorporate screen reader announcements (aria-live) for accessibility on dynamic state changes.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
@@ -175,7 +177,7 @@ Add an interactive Card Customization Editor modal and implement layout dragging
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
 2. Drag-and-Drop & Canvas Layout:
    - Users can drag cards to reposition them freely around the canvas layout.
-   - Users can create resizable groups from the command palette and place cards within them.
+   - Users can create resizable groups from the command palette and place cards within them. Cards can be dragged out to remove them.
 3. Publishing: Allow users to publish entire personal categories to the shared master file directly from the category editor.
 Save all modifications instantly back to the directory's files.
 ```
