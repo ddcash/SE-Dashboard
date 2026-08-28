@@ -736,7 +736,7 @@ function openMasterFileModal() {
         </button>
       </div>
       <div style="margin-top:18px; display:flex; gap:10px;">
-        <input type="text" id="master-url-input" class="form-input" placeholder="https://... or C:\... or /mnt/..." style="flex:1;">
+        <input type="text" id="master-url-input" aria-label="Master File URL" class="form-input" placeholder="https://... or C:\... or /mnt/..." style="flex:1;">
         <button class="btn btn--primary" onclick="saveMasterUrl(); closeModal();">Load from URL/Path</button>
       </div>
       <div style="margin-top:18px;">
@@ -746,7 +746,7 @@ function openMasterFileModal() {
             <i data-lucide="FolderSearch" style="width:13px;height:13px"></i>
             Select Folder
           </button>
-          <input type="text" id="master-assets-url-input" class="form-input" placeholder="https://.../assets or C:\...\assets" style="flex:1;">
+          <input type="text" id="master-assets-url-input" aria-label="Master Assets URL" class="form-input" placeholder="https://.../assets or C:\...\assets" style="flex:1;">
           <button class="btn btn--primary" onclick="saveMasterAssetsUrl(); closeModal();">Set URL/Path</button>
         </div>
       </div>
@@ -1498,51 +1498,51 @@ function openSettingsModal() {
       <div class="settings-grid">
         <section class="settings-section">
           <h3>General</h3>
-          <label>Theme Mode</label>
+          <label for="settings-theme-mode">Theme Mode</label>
           <select id="settings-theme-mode" class="form-input">
             <option value="dark">Dark</option>
             <option value="light">Light</option>
             <option value="system">System</option>
           </select>
-          <label>Accent Color</label>
+          <label for="settings-accent-color">Accent Color</label>
           <input type="color" id="settings-accent-color" class="form-input" value="#89b4fa">
-          <label>Font Scale</label>
+          <label for="settings-font-scale">Font Scale</label>
           <input type="range" id="settings-font-scale" class="form-input" min="0.8" max="1.4" step="0.05" value="1" oninput="document.getElementById('settings-font-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-font-scale-value">100%</span></div>
-          <label>Card Text Scale</label>
+          <label for="settings-card-text-scale">Card Text Scale</label>
           <input type="range" id="settings-card-text-scale" class="form-input" min="0.8" max="1.6" step="0.05" value="1" oninput="document.getElementById('settings-card-text-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-card-text-scale-value">100%</span></div>
           <label><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
-          <label>Card Opacity</label>
+          <label for="settings-card-opacity">Card Opacity</label>
           <input type="range" id="settings-card-opacity" class="form-input" min="0.4" max="1" step="0.02" value="0.96" oninput="document.getElementById('settings-card-opacity-value').textContent = Math.round(this.value*100) + '%'">
           <div class="settings-helper"><span id="settings-card-opacity-value">96%</span></div>
         </section>
         <section class="settings-section">
           <h3>Background</h3>
-          <label>Background Type</label>
+          <label for="settings-bg-type">Background Type</label>
           <select id="settings-bg-type" class="form-input" onchange="toggleBgOptions()">
             <option value="solid">Solid</option>
             <option value="gradient">Gradient</option>
             <option value="image">Image</option>
           </select>
           <div id="bg-solid-options" class="bg-options">
-            <label>Solid Color</label>
+            <label for="settings-bg-solid">Solid Color</label>
             <input type="color" id="settings-bg-solid" class="form-input" value="#000000">
           </div>
           <div id="bg-gradient-options" class="bg-options">
-            <label>Gradient Color 1</label>
+            <label for="settings-bg-color1">Gradient Color 1</label>
             <input type="color" id="settings-bg-color1" class="form-input" value="#090910">
-            <label>Gradient Color 2</label>
+            <label for="settings-bg-color2">Gradient Color 2</label>
             <input type="color" id="settings-bg-color2" class="form-input" value="#0e0e1a">
-            <label>Angle</label>
+            <label for="settings-bg-angle">Angle</label>
             <input type="number" id="settings-bg-angle" class="form-input" min="0" max="360" value="135">
           </div>
           <div id="bg-image-options" class="bg-options hidden">
-            <label>Image URL</label>
+            <label for="settings-bg-image-url">Image URL</label>
             <input type="text" id="settings-bg-image-url" class="form-input" placeholder="https://example.com/bg.jpg">
-            <label>Upload Background</label>
+            <label for="settings-bg-image-upload">Upload Background</label>
             <input type="file" id="settings-bg-image-upload" class="form-input" accept="image/*" onchange="handleBackgroundUpload(this)">
-            <label>Overlay Opacity</label>
+            <label for="settings-bg-overlay">Overlay Opacity</label>
             <input type="range" id="settings-bg-overlay" class="form-input" min="0" max="0.6" step="0.05" value="0.16" oninput="document.getElementById('settings-bg-overlay-value').textContent = Math.round(this.value * 100) + '%'">
             <div class="settings-helper"><span id="settings-bg-overlay-value">16%</span></div>
           </div>
@@ -2140,7 +2140,7 @@ function renderDashboard() {
       <div class="header-center">
         <div class="search-wrap">
           <i data-lucide="Search" class="search-icon" style="width:14px;height:14px"></i>
-          <input type="text" id="search-input" class="search-input" aria-label="Search bookmarks"
+          <input type="text" id="search-input" aria-label="Search bookmarks" class="search-input" aria-label="Search bookmarks"
             placeholder="Search… (Ctrl+K for commands)"
             value="${esc(S.query)}"
             oninput="handleSearch(this.value)"
@@ -2370,7 +2370,7 @@ function openCardModal(catId, bmId) {
                  ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
              </div>
              <input type="hidden" id="bm-tags-hidden" name="tags" value="${esc((bm?.tags||[]).join(','))}">
-             <input id="bm-tags-input" type="text" class="form-input" placeholder="Type a tag and press Enter/Comma"
+             <input id="bm-tags-input" aria-label="Tags Input" type="text" class="form-input" placeholder="Type a tag and press Enter/Comma"
                 onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault(); addTagBubble(this.value); this.value='';}">
           </div>
         </div>
@@ -2396,7 +2396,7 @@ function openCardModal(catId, bmId) {
           <p class="hint-text">Keep the card cleaner by hiding the category label.</p>
         </div>
         <div class="form-row">
-          <label>Card Opacity <span class="hint-inline">(override)</span></label>
+          <label for="card-opacity">Card Opacity <span class="hint-inline">(override)</span></label>
           <input type="range" id="card-opacity" name="cardOpacity" class="form-input" min="0.4" max="1" step="0.02" value="${cs.cardOpacity||''}" oninput="document.getElementById('card-opacity-value').textContent = this.value ? Math.round(this.value*100)+'%' : 'inherit'">
           <div class="settings-helper"><span id="card-opacity-value">${cs.cardOpacity ? Math.round(cs.cardOpacity*100) + '%' : 'inherit'}</span></div>
           <p class="hint-text">Override the global card opacity for this bookmark.</p>
@@ -2421,7 +2421,7 @@ function openCardModal(catId, bmId) {
             <p class="hint-text">Fetches <code>/favicon.ico</code> directly from the bookmark's host. Works for any accessible site or internal server. Falls back to a globe icon when the host is unreachable.</p>
           </div>
           <div id="icon-panel-url" class="icon-panel ${iType!=='url'?'hidden':''}">
-            <input type="text" id="icon-url-input" class="form-input"
+            <input type="text" id="icon-url-input" aria-label="Icon URL" class="form-input"
               placeholder="https://example.com/icon.png"
               value="${iType==='url'?esc(iVal):''}"
               oninput="setIconValue(this.value)">
@@ -2455,14 +2455,14 @@ function openCardModal(catId, bmId) {
         <div class="form-section">Custom Style <span class="hint-inline">(optional)</span></div>
         <div class="form-row form-row--cols">
           <div>
-            <label><input type="checkbox" name="useCardColor" ${cs.cardColor?'checked':''}
+            <label for="card-color-pick"><input type="checkbox" name="useCardColor" ${cs.cardColor?'checked':''}
               onchange="toggleColor(this,'card-color-pick')"> Card Color</label>
             <input type="color" id="card-color-pick" name="cardColor"
               value="${cs.cardColor||'#1e1e2e'}" class="color-input"
               style="display:${cs.cardColor?'':'none'};margin-top:6px">
           </div>
           <div>
-            <label><input type="checkbox" name="useBorderColor" ${cs.borderColor?'checked':''}
+            <label for="border-color-pick"><input type="checkbox" name="useBorderColor" ${cs.borderColor?'checked':''}
               onchange="toggleColor(this,'border-color-pick')"> Border Color</label>
             <input type="color" id="border-color-pick" name="borderColor"
               value="${cs.borderColor||'#45475a'}" class="color-input"
@@ -2487,7 +2487,7 @@ function openCardModal(catId, bmId) {
             <input type="color" name="textColor" value="${cs.textColor||'#ffffff'}" class="color-input">
           </div>
           <div>
-            <label>Text Size</label>
+            <label for="card-text-size">Text Size</label>
             <input type="range" id="card-text-size" name="textSize" class="form-input" min="0.8" max="1.8" step="0.05" value="${cs.textSize ? parseFloat(cs.textSize) : 1}" oninput="document.getElementById('card-text-size-value').textContent = Math.round(this.value * 100) + '%'">
             <div class="settings-helper"><span id="card-text-size-value">${cs.textSize ? Math.round(parseFloat(cs.textSize) * 100) + '%' : '100%'}</span></div>
           </div>
@@ -3097,7 +3097,7 @@ function openPalette() {
     <div class="palette">
       <div class="palette-search-wrap">
         <i data-lucide="Terminal" style="width:15px;height:15px"></i>
-        <input type="text" id="palette-input" class="palette-input" aria-label="Command palette input"
+        <input type="text" id="palette-input" aria-label="Command palette input" class="palette-input" aria-label="Command palette input"
           placeholder="Search bookmarks or type a command…"
           oninput="updatePalette(this.value)"
           onkeydown="onPaletteKey(event)">
