@@ -1848,7 +1848,13 @@ function renderCard(bm, cat, dimmed) {
   const catBadge   = hideCatBadge ? '' : `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
                       </span>`;
-  const tags       = (bm.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  // ⚡ Bolt: Use standard loop for string accumulation instead of .map().join() to prevent GC churn
+  let tags = '';
+  if (bm.tags) {
+    for (const t of bm.tags) {
+      tags += `<span class="tag">${esc(t)}</span>`;
+    }
+  }
   const protoTag   = proto
     ? `<span class="proto-tag proto-tag--${proto === 'local' ? 'local' : 'app'}">${proto === 'local' ? 'Local File' : proto + '://'}</span>`
     : '';
@@ -2022,9 +2028,15 @@ function renderSearchResults() {
       </div>`;
   }
 
+  // ⚡ Bolt: Use standard loop instead of .map().join() for accumulation to prevent GC churn
+  let html = '';
+  for(const {bm, cat} of rows) {
+    html += renderCard(bm, cat, false, true);
+  }
+
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${html}
     </div>`;
 }
 
@@ -2094,11 +2106,16 @@ function renderDashboard() {
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
-  const catPills = cats.map(cat => {
+  // ⚡ Bolt: Use standard loops for counting and string accumulation to avoid intermediate array allocations
+  let catPills = '';
+  for (const cat of cats) {
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
-    return `
+    let visCount = 0;
+    for (const b of cat.bookmarks) {
+      if (!hiddenBms.has(b.id)) visCount++;
+    }
+    catPills += `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
         onclick="setActiveCat(this.dataset.catId)" title="${esc(cat.name)}">
@@ -2106,7 +2123,7 @@ function renderDashboard() {
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
       </button>`;
-  }).join('');
+  }
 
   const masterBanner = S.pendingMasterHandle
     ? `<div class="master-banner">
@@ -3153,19 +3170,25 @@ function updatePalette(q) {
   window._palActions = matchCmds.map(c => c.fn);
   window._palBms = matchBms.map(m => m.bm);
 
-  const cmdsHtml = matchCmds.map((c, i) => `
-    <div class="palette-item" onclick="window._palActions[${i}]()">
+  // ⚡ Bolt: Accumulate strings manually instead of .map().join() to avoid array allocations in frequent events
+  let cmdsHtml = '';
+  for (let i = 0; i < matchCmds.length; i++) {
+    const c = matchCmds[i];
+    cmdsHtml += `<div class="palette-item" onclick="window._palActions[${i}]()">
       <i data-lucide="${c.icon}" style="width:14px;height:14px"></i>
       <span>${esc(c.label)}</span>
       <span class="palette-item-type">Command</span>
-    </div>`).join('');
+    </div>`;
+  }
 
-  const bmsHtml = matchBms.map(({ bm, cat }) => `
-    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()">
+  let bmsHtml = '';
+  for (const {bm, cat} of matchBms) {
+    bmsHtml += `<div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()">
       <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
       <span>${esc(bm.title)}</span>
       <span class="palette-item-type">${esc(cat.name)}</span>
-    </div>`).join('');
+    </div>`;
+  }
 
   const res = document.getElementById('palette-results');
   if (!res) return;
