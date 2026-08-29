@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2025-08-29 - Prevent memory churn and GC pauses in innerHTML strings
+**Learning:** In high-frequency vanilla JS render loops (e.g., generating lists of bookmarks on every keystroke), using array-chaining methods like `.filter().length` and `.map().join('')` dynamically creates intermediate, short-lived arrays. In large collections, this causes severe memory allocation overhead and triggers frequent garbage collection (GC) pauses, which ruins the typing experience and CPU performance.
+**Action:** When reconstructing large lists for `.innerHTML` string assignment, accumulate HTML strings using standard `for` loops directly. Do not allocate intermediate arrays for transformations and aggregations when building string templates inside a tight loop.

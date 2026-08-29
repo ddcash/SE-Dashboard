@@ -2022,9 +2022,14 @@ function renderSearchResults() {
       </div>`;
   }
 
+  // ⚡ Bolt optimization: Accumulate HTML strings to prevent intermediate array allocation from .map().join('')
+  let cardsHtml = '';
+  for (let i = 0; i < rows.length; i++) {
+    cardsHtml += renderCard(rows[i].bm, rows[i].cat, false, true);
+  }
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${cardsHtml}
     </div>`;
 }
 
@@ -2094,11 +2099,19 @@ function renderDashboard() {
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
-  const catPills = cats.map(cat => {
+  // ⚡ Bolt optimization: Prevent memory churn and GC pauses by avoiding .filter().length and .map().join('')
+  let catPills = '';
+  for (let i = 0; i < cats.length; i++) {
+    const cat = cats[i];
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
-    return `
+    let visCount = 0;
+    for (let j = 0; j < cat.bookmarks.length; j++) {
+      if (!hiddenBms.has(cat.bookmarks[j].id)) {
+        visCount++;
+      }
+    }
+    catPills += `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
         onclick="setActiveCat(this.dataset.catId)" title="${esc(cat.name)}">
@@ -2106,7 +2119,7 @@ function renderDashboard() {
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
       </button>`;
-  }).join('');
+  }
 
   const masterBanner = S.pendingMasterHandle
     ? `<div class="master-banner">
