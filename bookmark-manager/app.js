@@ -38,8 +38,19 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
+
+  let decoded = u;
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(u, 'text/html');
+      decoded = doc.documentElement.textContent || u;
+    } catch (e) {}
+  }
+
   const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
-  if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+  const sanitizedDecoded = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  if (/^(javascript|data|vbscript):/i.test(sanitized) || /^(javascript|data|vbscript):/i.test(sanitizedDecoded)) return '#';
   return u;
 }
 
