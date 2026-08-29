@@ -117,7 +117,8 @@ Saves the specific layout overrides for this browser instance:
 * Enable fuzzy searching across URLs, tags, and custom metadata.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
-* Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
+* Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere, and explicitly support dragging them into and out of visual groups.
+* Implement a Command Palette (`Ctrl+K`) for quick actions, including "New Group" and "Edit Category".
 * Build a **Card Editor Modal** allowing users to:
   * Select an icon (Lucide library search, external URL image, local favicon, or custom image upload).
   * Customize individual card background colors, borders, and text colors.
@@ -175,7 +176,8 @@ Add an interactive Card Customization Editor modal and implement layout dragging
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
 2. Drag-and-Drop & Canvas Layout:
    - Users can drag cards to reposition them freely around the canvas layout.
-   - Users can create resizable groups from the command palette and place cards within them.
+   - Users can create resizable groups from the command palette and explicitly drag cards into and out of them.
+   - Add Command Palette support for actions like "New Group" and "Edit Category".
 3. Publishing: Allow users to publish entire personal categories to the shared master file directly from the category editor.
 Save all modifications instantly back to the directory's files.
 ```
@@ -194,11 +196,7 @@ Build a parser utility in Javascript/TypeScript that runs entirely on the client
 
 Consider adding these advanced features to further elevate the user experience and customizability:
 
-### A. Vercel/Linear Style Command Palette (`Ctrl + K` or `Cmd + K`)
-Allow power users to navigate the app, switch themes, search bookmarks, filter tags, and execute quick actions purely from the keyboard.
-* *Example prompt:* `Implement a keyboard-accessible search palette that overlays the dashboard when Cmd/Ctrl + K is pressed, allowing instant navigation, tag toggling, and page configuration.`
-
-### B. Drag & Drop Directory Scanning
+### A. Drag & Drop Directory Scanning
 Enable dropping a folder from the local computer filesystem directly onto the webpage. The app scans the directory contents recursively and automatically adds all files (PDFs, images, documents) as `file://` bookmark cards.
 
 ### C. Expandable Markdown Notes (Knowledge Card)
