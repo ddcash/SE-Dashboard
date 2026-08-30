@@ -1,3 +1,8 @@
+## 2026-08-30 - Fix XSS via URL Protocol Obfuscation
+**Vulnerability:** The `sanitizeUrl()` function only stripped raw control characters before regex-matching for dangerous protocols (`javascript:`, `data:`, etc.). Attackers could bypass this by HTML-entity encoding characters within the protocol string (e.g., `javascript&colon;` or `java&#x09;script:`), which the browser decodes in the HTML `href` attribute before execution.
+**Learning:** Browsers decode HTML entities in attributes before executing them as URLs or JavaScript. Simple string/regex filters fail when they don't account for how the browser parses and decodes entity-encoded data.
+**Prevention:** HTML entity decode the URL string (using `DOMParser`) and strip control characters both before and after decoding prior to validating against the unsafe protocol regex.
+
 ## 2024-05-24 - Fix XSS via unescaped quotes, insecure URL protocols, and JS-context injection
 **Vulnerability:**
 1. Unescaped single quotes (`'`) allowed breaking out of HTML attributes.

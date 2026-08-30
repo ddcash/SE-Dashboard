@@ -38,8 +38,13 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
-  if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+  let checkUrl = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  try {
+    const doc = new DOMParser().parseFromString(checkUrl, 'text/html');
+    checkUrl = doc.documentElement.textContent || checkUrl;
+  } catch(e) {}
+  checkUrl = checkUrl.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  if (/^(javascript|data|vbscript):/i.test(checkUrl)) return '#';
   return u;
 }
 
