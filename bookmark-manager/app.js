@@ -1848,7 +1848,13 @@ function renderCard(bm, cat, dimmed) {
   const catBadge   = hideCatBadge ? '' : `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
                         ${renderIcon({ type:'lucide', value: cat?.icon||'Folder' }, 9)} ${esc(cat?.name||'')}
                       </span>`;
-  const tags       = (bm.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  // ⚡ Bolt: Use standard for loop for tags to avoid .map().join('') intermediate arrays
+  let tags = '';
+  if (bm.tags) {
+    for (let i = 0; i < bm.tags.length; i++) {
+      tags += `<span class="tag">${esc(bm.tags[i])}</span>`;
+    }
+  }
   const protoTag   = proto
     ? `<span class="proto-tag proto-tag--${proto === 'local' ? 'local' : 'app'}">${proto === 'local' ? 'Local File' : proto + '://'}</span>`
     : '';
@@ -1990,7 +1996,8 @@ function renderAllCards() {
 
 
 function renderSearchResults() {
-  const rows = [];
+  let html = '';
+  let count = 0;
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
@@ -2007,11 +2014,14 @@ function renderSearchResults() {
         fuzzyMatch(bm.description||'',  S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
-      rows.push({ bm, cat });
+
+      // ⚡ Bolt: Accumulate HTML string directly to avoid array allocations from .push() and .map().join('')
+      html += renderCard(bm, cat, false, true);
+      count++;
     }
   }
 
-  if (!rows.length) {
+  if (count === 0) {
     return `
       <div class="empty-state">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
@@ -2024,7 +2034,7 @@ function renderSearchResults() {
 
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${html}
     </div>`;
 }
 
@@ -2094,11 +2104,18 @@ function renderDashboard() {
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
-  const catPills = cats.map(cat => {
+  // ⚡ Bolt: Accumulate string directly instead of using .map().join('')
+  let catPills = '';
+  for (let i = 0; i < cats.length; i++) {
+    const cat = cats[i];
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
-    return `
+    // ⚡ Bolt: Use a loop counter instead of .filter().length to prevent array allocation
+    let visCount = 0;
+    for (let j = 0; j < cat.bookmarks.length; j++) {
+      if (!hiddenBms.has(cat.bookmarks[j].id)) visCount++;
+    }
+    catPills += `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
         onclick="setActiveCat(this.dataset.catId)" title="${esc(cat.name)}">
@@ -2106,7 +2123,7 @@ function renderDashboard() {
         <span>${esc(cat.name)}</span>
         <span class="cat-pill-count">${visCount}</span>
       </button>`;
-  }).join('');
+  }
 
   const masterBanner = S.pendingMasterHandle
     ? `<div class="master-banner">
