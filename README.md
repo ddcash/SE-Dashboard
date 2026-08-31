@@ -22,14 +22,14 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Search & Filtering
 - Search titles, URLs, descriptions, and tags with fuzzy match.
-- Clear and actionable empty states when search yields no results.
+- Clear and actionable empty states when search yields no results featuring Call-to-Action (CTA) buttons to easily clear filters.
 - Filter categories with clickable pills.
-- Empty states feature helpful Call-to-Action (CTA) buttons to quickly create new items or clear filters.
 - Preserve your current card layout when search is cleared.
 - Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette.
 - Toggle hidden items on or off.
 
 ### Appearance & Theme
+
 - Dark theme defaults to a solid black background.
 - Choose between solid color, gradient, or image backgrounds.
 - Adjust global card opacity for the dashboard.
@@ -56,10 +56,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
-
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
@@ -68,9 +64,9 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
 
 ### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+- **Optimized Rendering**: Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards. Rendering bottlenecks have been mitigated by precomputing string formatting and accumulating HTML strings.
+- **Search Optimization**: Enhanced search filtering performance with optimized string matching algorithms that cache queries.
+- **Security Enhancements (XSS Protection)**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters (e.g. preventing `javascript:` execution).
 
 ## Installation
 
@@ -119,8 +115,8 @@ SE-Dashboard/
 
 ## Disclaimers
 
-This project is intended as a personal local bookmark dashboard. Ensure you regularly backup your chosen data directory, although the application does create automatic snapshots in the `backups/` folder.
+This project is intended as a personal local bookmark dashboard. Ensure you regularly backup your chosen data directory, although the application does create automatic snapshots in the `backups/` folder. The software is provided "as is", without warranty of any kind.
 
 ## License
 
-The project is intended as a personal local bookmark dashboard. There is no license file included in this repository.
+This project is intended as a personal local bookmark dashboard. There is no official license file included in this repository. Use it freely for personal management.
