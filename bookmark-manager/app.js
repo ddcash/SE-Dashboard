@@ -2022,9 +2022,15 @@ function renderSearchResults() {
       </div>`;
   }
 
+  // ⚡ Bolt: Accumulate strings directly to prevent unnecessary array creation from .map().join('')
+  let searchCardsHtml = '';
+  for (let i = 0; i < rows.length; i++) {
+    searchCardsHtml += renderCard(rows[i].bm, rows[i].cat, false, true);
+  }
+
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${searchCardsHtml}
     </div>`;
 }
 
@@ -2097,7 +2103,11 @@ function renderDashboard() {
   const catPills = cats.map(cat => {
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
+    // ⚡ Bolt: Use a for loop instead of .filter().length to avoid intermediate array allocation
+    let visCount = 0;
+    for (let i = 0; i < cat.bookmarks.length; i++) {
+      if (!hiddenBms.has(cat.bookmarks[i].id)) visCount++;
+    }
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
