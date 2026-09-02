@@ -15,8 +15,9 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Freeform Canvas Layout & Groups
 - Cards are placed in a scrollable canvas layout.
-- Create resizable **Groups** to visually organize cards on the canvas.
+- Create resizable **Groups** to visually organize cards on the canvas, complete with custom background images and formatting.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
+- **Auto-arrange** dynamic layouts are supported.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
@@ -93,7 +94,7 @@ Since SE-Dashboard runs entirely in the browser, there is no traditional install
 ## How to use
 
 - **Adding Items:** Start by creating a category, then add bookmarks to it.
-- **Customizing Layout & Groups:** Create groups from the command palette to visually containerize bookmarks. Drag and drop cards around the canvas or into groups to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
+- **Customizing Layout & Groups:** Create groups from the command palette to visually containerize bookmarks. You can set group backgrounds, customize formatting, and use auto-arrange layouts. Drag and drop cards around the canvas or into groups to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
 - **Publishing:** From the Category Editor, you can easily "Publish to Master" to share an entire personal category directly with the shared master file.
 - **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
 - **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
