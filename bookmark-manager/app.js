@@ -3171,11 +3171,30 @@ function updatePalette(q) {
   if (!res) return;
 
   if (!cmdsHtml && !bmsHtml) {
-    res.innerHTML = `<div class="palette-empty">No results for "${esc(q)}"</div>`;
+    res.innerHTML = `<div class="empty-state palette-empty-state">
+      <i data-lucide="SearchX" style="width:48px;height:48px"></i>
+      <p>No results found for "${esc(q)}"</p>
+      <button class="btn btn--primary" id="palette-clear-btn">
+        <i data-lucide="X" style="width:13px;height:13px"></i> Clear Search
+      </button>
+    </div>`;
   } else {
     res.innerHTML =
       (cmdsHtml ? `<div class="palette-section-label">Commands</div>${cmdsHtml}` : '') +
       (bmsHtml  ? `<div class="palette-section-label">Bookmarks</div>${bmsHtml}` : '');
+  }
+
+  // Attach event listener for the new clear search button
+  const clearBtn = document.getElementById('palette-clear-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      const input = document.getElementById('palette-input');
+      if (input) {
+        input.value = '';
+        updatePalette('');
+        input.focus();
+      }
+    });
   }
 
   if (typeof lucide !== 'undefined') lucide.createIcons();
