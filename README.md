@@ -1,5 +1,7 @@
 # SE-Dashboard
 
+![Dashboard Screenshot](https://via.placeholder.com/800x400.png?text=SE-Dashboard+Interface)
+
 ## Description
 
 SE-Dashboard is a local-first bookmark and link manager built to run entirely in the browser. It is designed for personal use, with all data stored on your device in a directory you choose. It works without a server or account by using the browser's File System Access API to read and write files directly in a selected directory.
@@ -11,12 +13,13 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Add bookmarks to categories with title, URL, description, and tags.
 - Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
 - Move bookmarks between categories from the editor.
-- **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
+- **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look, either globally or per-card via the "Hide icon on card" checkbox.
+- **Tag Bubbles**: Easily manage tags with an intuitive bubble interface in the bookmark editor.
 
 ### Freeform Canvas Layout & Groups
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
-- Drag bookmark cards to reposition them freely, or drag them in and out of groups.
+- Drag bookmark cards to reposition them freely anywhere on the canvas, or drag them seamlessly in and out of visual groups. Absolute positioning ensures complex layouts stay intact.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
@@ -62,7 +65,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
-- **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
+- **Publish to Master**: Publish individual bookmarks or entire personal categories directly to the shared master file from the editor modals.
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
