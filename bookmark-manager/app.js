@@ -38,7 +38,13 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  // 🛡️ Sentinel: Decode HTML entities to prevent bypasses like javascript&colon;alert(1)
+  const txt = document.createElement("textarea");
+  txt.innerHTML = u;
+  const decoded = txt.value;
+
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
