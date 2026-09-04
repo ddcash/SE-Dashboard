@@ -158,7 +158,6 @@ Create a premium, dark-mode glassmorphism dashboard UI that works entirely stati
 - Item Customizability: Each bookmark item should support:
   - Custom card background color, border color, and border style.
   - Icon Type selection:
-    - Includes toggle for Hide Icon feature.
     1. Lucide library icons (dynamic search list).
     2. Auto-fetched favicon (using `https://www.google.com/s2/favicons?domain=...` fallback).
     3. Custom Web Image URL.
@@ -175,7 +174,7 @@ Add an interactive Card Customization Editor modal and implement layout dragging
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
 2. Drag-and-Drop & Canvas Layout:
    - Users can drag cards to reposition them freely around the canvas layout.
-   - Users can create resizable groups from the command palette and place cards within them.
+   - Users can create groups from the command palette and place cards within them.
 3. Publishing: Allow users to publish entire personal categories to the shared master file directly from the category editor.
 Save all modifications instantly back to the directory's files.
 ```
