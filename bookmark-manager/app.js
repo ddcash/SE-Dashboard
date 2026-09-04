@@ -2005,7 +2005,12 @@ function renderSearchResults() {
         fuzzyMatch(bm.title,            S.query) ||
         fuzzyMatch(bm.url,              S.query) ||
         fuzzyMatch(bm.description||'',  S.query) ||
-        (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
+        // ⚡ Bolt optimization: replace .some with inline loop for better performance during search
+        (() => {
+          const tgs = bm.tags || [];
+          for (let i = 0; i < tgs.length; i++) if (fuzzyMatch(tgs[i], S.query)) return true;
+          return false;
+        })();
       if (!match) continue;
       rows.push({ bm, cat });
     }
@@ -2097,7 +2102,11 @@ function renderDashboard() {
   const catPills = cats.map(cat => {
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
+    // ⚡ Bolt optimization: avoid array allocation for length calculation
+    let visCount = 0;
+    for (let i = 0; i < cat.bookmarks.length; i++) {
+      if (!hiddenBms.has(cat.bookmarks[i].id)) visCount++;
+    }
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
