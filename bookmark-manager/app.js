@@ -2097,7 +2097,13 @@ function renderDashboard() {
   const catPills = cats.map(cat => {
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
+    // ⚡ Bolt: Replaced .filter(...).length with a standard for-loop and numeric counter.
+    // Why: .filter creates an intermediate array purely to check its length, causing memory churn in this high-frequency render loop.
+    // Impact: Avoids unnecessary array allocation per category per keystroke, reducing GC pauses.
+    let visCount = 0;
+    for (let i = 0; i < cat.bookmarks.length; i++) {
+      if (!hiddenBms.has(cat.bookmarks[i].id)) visCount++;
+    }
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
