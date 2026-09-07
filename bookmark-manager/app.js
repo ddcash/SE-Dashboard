@@ -720,34 +720,34 @@ function openMasterFileModal() {
   openModal(`
     <div class="modal-header">
       <h2>Select Shared Master File</h2>
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <p class="hint-text">Choose a shared master_bookmarks.json file that can be accessed by other users or services.</p>
       <p>Select a central file outside the local app folder, or use the local default file inside this directory.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn btn--primary" onclick="selectMasterFile(); closeModal();">
+        <button type="button" class="btn btn--primary" onclick="selectMasterFile(); closeModal();">
           <i data-lucide="FolderSearch" style="width:13px;height:13px"></i>
           Choose Shared Master File
         </button>
-        <button class="btn btn--ghost" onclick="selectDefaultMasterFile(); closeModal();">
+        <button type="button" class="btn btn--ghost" onclick="selectDefaultMasterFile(); closeModal();">
           <i data-lucide="FileText" style="width:13px;height:13px"></i>
           Use Local master_bookmarks.json
         </button>
       </div>
       <div style="margin-top:18px; display:flex; gap:10px;">
         <input type="text" id="master-url-input" class="form-input" placeholder="https://... or C:\... or /mnt/..." style="flex:1;">
-        <button class="btn btn--primary" onclick="saveMasterUrl(); closeModal();">Load from URL/Path</button>
+        <button type="button" class="btn btn--primary" onclick="saveMasterUrl(); closeModal();">Load from URL/Path</button>
       </div>
       <div style="margin-top:18px;">
         <p class="hint-text">If your shared master file lives alongside a shared <code>assets/</code> folder, select that folder here so the app can load shared icons and images.</p>
         <div style="display:flex; gap:10px;">
-          <button class="btn btn--ghost" onclick="selectMasterAssetsFolder(); closeModal();" style="flex-shrink:0;">
+          <button type="button" class="btn btn--ghost" onclick="selectMasterAssetsFolder(); closeModal();" style="flex-shrink:0;">
             <i data-lucide="FolderSearch" style="width:13px;height:13px"></i>
             Select Folder
           </button>
           <input type="text" id="master-assets-url-input" class="form-input" placeholder="https://.../assets or C:\...\assets" style="flex:1;">
-          <button class="btn btn--primary" onclick="saveMasterAssetsUrl(); closeModal();">Set URL/Path</button>
+          <button type="button" class="btn btn--primary" onclick="saveMasterAssetsUrl(); closeModal();">Set URL/Path</button>
         </div>
       </div>
     </div>`);
@@ -1202,7 +1202,7 @@ function openMasterEditorModal() {
   openModal(`
     <div class="modal-header">
       <h2>Edit Master Bookmarks</h2>
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <div class="master-editor-tabs">
@@ -1256,36 +1256,36 @@ function populateMasterEditorVisual() {
     <div class="master-category-panel" data-cat-id="${cat.id}">
       <div class="master-category-header">
         <div>
-          <label>Name</label>
-          <input type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
+          <label for="cat-name-${esc(cat.id)}">Name</label>
+          <input type="text" id="cat-name-${esc(cat.id)}" class="form-input" name="cat-name" value="${esc(cat.name)}">
         </div>
         <div>
-          <label>Icon</label>
-          <input type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
+          <label for="cat-icon-${esc(cat.id)}">Icon</label>
+          <input type="text" id="cat-icon-${esc(cat.id)}" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
         </div>
         <div>
-          <label>Color</label>
-          <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
+          <label for="cat-color-${esc(cat.id)}">Color</label>
+          <input type="color" id="cat-color-${esc(cat.id)}" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
         </div>
-        <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
+        <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" aria-label="Delete category ${esc(cat.name)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
       </div>
       <div class="master-bookmark-list">
         ${cat.bookmarks.map(bm => `
           <div class="master-bookmark-row" data-bm-id="${bm.id}">
             <div class="master-bookmark-row-top">
-              <div><label>Title</label><input type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
-              <div><label>URL</label><input type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
-              <div><label>Icon</label><input type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
-              <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" data-bm-id="${esc(bm.id)}" onclick="deleteMasterBookmark(this.dataset.catId, this.dataset.bmId)">Delete</button>
+              <div><label for="bm-title-${esc(bm.id)}">Title</label><input type="text" id="bm-title-${esc(bm.id)}" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
+              <div><label for="bm-url-${esc(bm.id)}">URL</label><input type="text" id="bm-url-${esc(bm.id)}" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
+              <div><label for="bm-icon-${esc(bm.id)}">Icon</label><input type="text" id="bm-icon-${esc(bm.id)}" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
+              <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" data-bm-id="${esc(bm.id)}" aria-label="Delete bookmark ${esc(bm.title)}" onclick="deleteMasterBookmark(this.dataset.catId, this.dataset.bmId)">Delete</button>
             </div>
             <div class="master-bookmark-row-bottom">
-              <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
-              <div><label>Tags</label><input type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
-              <div class="form-row"><label><input type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
+              <div><label for="bm-desc-${esc(bm.id)}">Description</label><input type="text" id="bm-desc-${esc(bm.id)}" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
+              <div><label for="bm-tags-${esc(bm.id)}">Tags</label><input type="text" id="bm-tags-${esc(bm.id)}" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
+              <div class="form-row"><label for="bm-hide-cat-${esc(bm.id)}"><input type="checkbox" id="bm-hide-cat-${esc(bm.id)}" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
             </div>
           </div>
         `).join('')}
-        <button type="button" class="btn btn--ghost master-editor-add-btn" data-cat-id="${esc(cat.id)}" onclick="addMasterBookmark(this.dataset.catId)">Add Bookmark</button>
+        <button type="button" class="btn btn--ghost master-editor-add-btn" data-cat-id="${esc(cat.id)}" aria-label="Add bookmark to ${esc(cat.name)}" onclick="addMasterBookmark(this.dataset.catId)">Add Bookmark</button>
       </div>
     </div>
   `).join('');
@@ -1492,57 +1492,57 @@ function openSettingsModal() {
   openModal(`
     <div class="modal-header">
       <h2>Settings</h2>
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body settings-modal-body">
       <div class="settings-grid">
         <section class="settings-section">
           <h3>General</h3>
-          <label>Theme Mode</label>
+          <label for="settings-theme-mode">Theme Mode</label>
           <select id="settings-theme-mode" class="form-input">
             <option value="dark">Dark</option>
             <option value="light">Light</option>
             <option value="system">System</option>
           </select>
-          <label>Accent Color</label>
+          <label for="settings-accent-color">Accent Color</label>
           <input type="color" id="settings-accent-color" class="form-input" value="#89b4fa">
-          <label>Font Scale</label>
+          <label for="settings-font-scale">Font Scale</label>
           <input type="range" id="settings-font-scale" class="form-input" min="0.8" max="1.4" step="0.05" value="1" oninput="document.getElementById('settings-font-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-font-scale-value">100%</span></div>
-          <label>Card Text Scale</label>
+          <label for="settings-card-text-scale">Card Text Scale</label>
           <input type="range" id="settings-card-text-scale" class="form-input" min="0.8" max="1.6" step="0.05" value="1" oninput="document.getElementById('settings-card-text-scale-value').textContent = Math.round(this.value * 100) + '%'">
           <div class="settings-helper"><span id="settings-card-text-scale-value">100%</span></div>
-          <label><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
-          <label>Card Opacity</label>
+          <label for="settings-show-category-badge"><input type="checkbox" id="settings-show-category-badge"> Show category badges</label>
+          <label for="settings-card-opacity">Card Opacity</label>
           <input type="range" id="settings-card-opacity" class="form-input" min="0.4" max="1" step="0.02" value="0.96" oninput="document.getElementById('settings-card-opacity-value').textContent = Math.round(this.value*100) + '%'">
           <div class="settings-helper"><span id="settings-card-opacity-value">96%</span></div>
         </section>
         <section class="settings-section">
           <h3>Background</h3>
-          <label>Background Type</label>
+          <label for="settings-bg-type">Background Type</label>
           <select id="settings-bg-type" class="form-input" onchange="toggleBgOptions()">
             <option value="solid">Solid</option>
             <option value="gradient">Gradient</option>
             <option value="image">Image</option>
           </select>
           <div id="bg-solid-options" class="bg-options">
-            <label>Solid Color</label>
+            <label for="settings-bg-solid">Solid Color</label>
             <input type="color" id="settings-bg-solid" class="form-input" value="#000000">
           </div>
           <div id="bg-gradient-options" class="bg-options">
-            <label>Gradient Color 1</label>
+            <label for="settings-bg-color1">Gradient Color 1</label>
             <input type="color" id="settings-bg-color1" class="form-input" value="#090910">
-            <label>Gradient Color 2</label>
+            <label for="settings-bg-color2">Gradient Color 2</label>
             <input type="color" id="settings-bg-color2" class="form-input" value="#0e0e1a">
-            <label>Angle</label>
+            <label for="settings-bg-angle">Angle</label>
             <input type="number" id="settings-bg-angle" class="form-input" min="0" max="360" value="135">
           </div>
           <div id="bg-image-options" class="bg-options hidden">
-            <label>Image URL</label>
+            <label for="settings-bg-image-url">Image URL</label>
             <input type="text" id="settings-bg-image-url" class="form-input" placeholder="https://example.com/bg.jpg">
-            <label>Upload Background</label>
+            <label for="settings-bg-image-upload">Upload Background</label>
             <input type="file" id="settings-bg-image-upload" class="form-input" accept="image/*" onchange="handleBackgroundUpload(this)">
-            <label>Overlay Opacity</label>
+            <label for="settings-bg-overlay">Overlay Opacity</label>
             <input type="range" id="settings-bg-overlay" class="form-input" min="0" max="0.6" step="0.05" value="0.16" oninput="document.getElementById('settings-bg-overlay-value').textContent = Math.round(this.value * 100) + '%'">
             <div class="settings-helper"><span id="settings-bg-overlay-value">16%</span></div>
           </div>
@@ -1580,7 +1580,7 @@ function openCategoryEditModal() {
   openModal(`
     <div class="modal-header">
       <h2>Edit Category</h2>
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       ${rows || '<p class="hint">No categories available to edit.</p>'}
@@ -1601,7 +1601,7 @@ function openGroupModal(groupId) {
       ${group ? `<button type="button" class="btn btn--danger" style="margin-right: 12px;" data-group-id="${esc(groupId)}" onclick="deleteGroup(this.dataset.groupId)">
           <i data-lucide="Trash2" style="width:13px;height:13px"></i> Delete
       </button>` : ''}
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="group-form" onsubmit="submitGroup(event, '${groupId || ''}')">
@@ -1618,8 +1618,8 @@ function openGroupModal(groupId) {
           </div>
         </div>
         <div class="form-row">
-          <label>Background Image URL</label>
-          <input type="text" name="bgImage" class="form-input" placeholder="https://..." value="${esc(group?.bgImage || '')}">
+          <label for="grp-bgImage-${esc(group?.id || 'new')}">Background Image URL</label>
+          <input id="grp-bgImage-${esc(group?.id || 'new')}" type="text" name="bgImage" class="form-input" placeholder="https://..." value="${esc(group?.bgImage || '')}">
         </div>
         <div class="form-row">
           <label>Text Style</label>
@@ -1720,7 +1720,7 @@ function openCategoryDeleteModal() {
   openModal(`
     <div class="modal-header">
       <h2>Delete or Hide Category</h2>
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <p class="hint-text">Select a category to remove. Master-provided categories can only be hidden.</p>
@@ -1859,10 +1859,10 @@ function renderCard(bm, cat, dimmed) {
     ? `<span class="hidden-badge"><i data-lucide="EyeOff" style="width:9px;height:9px"></i> hidden</span>`
     : '';
   const hideBtn = hidden
-    ? `<button class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks', this.closest('.card').dataset.id)">
+    ? `<button type="button" class="btn-icon btn-icon--unhide" title="Unhide" aria-label="Unhide bookmark" onclick="unhideItem('bookmarks', this.closest('.card').dataset.id)">
          <i data-lucide="Eye" style="width:12px;height:12px"></i>
        </button>`
-    : `<button class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks', this.closest('.card').dataset.id)">
+    : `<button type="button" class="btn-icon btn-icon--hide" title="Hide from view" aria-label="Hide bookmark" onclick="hideItem('bookmarks', this.closest('.card').dataset.id)">
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
@@ -1889,10 +1889,10 @@ function renderCard(bm, cat, dimmed) {
         </div>`}
       </a>
       <div class="card-actions" onclick="event.stopPropagation()">
-        ${pos.groupId ? `<button class="btn-icon" title="Remove from Group" aria-label="Remove from group" onclick="removeFromGroup(this.closest('.card').dataset.id)">
+        ${pos.groupId ? `<button type="button" class="btn-icon" title="Remove from Group" aria-label="Remove from group" onclick="removeFromGroup(this.closest('.card').dataset.id)">
           <i data-lucide="ListMinus" style="width:12px;height:12px"></i>
         </button>` : ''}
-        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal(this.closest('.card').dataset.cat, this.closest('.card').dataset.id)">
+        <button type="button" class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit bookmark" onclick="openCardModal(this.closest('.card').dataset.cat, this.closest('.card').dataset.id)">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
         ${hideBtn}
@@ -1926,7 +1926,7 @@ function renderGroup(group, innerHTML = '') {
           ${innerHTML}
       </div>
       <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal(this.closest('.card').dataset.id)">
+        <button type="button" class="btn-icon btn-icon--edit" title="Edit" aria-label="Edit group" onclick="openGroupModal(this.closest('.card').dataset.id)">
           <i data-lucide="Pencil" style="width:12px;height:12px"></i>
         </button>
       </div>
@@ -2016,7 +2016,7 @@ function renderSearchResults() {
       <div class="empty-state">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
         <p>No results found for "${esc(S.query)}"</p>
-        <button class="btn btn--primary" onclick="handleSearch('')">
+        <button type="button" class="btn btn--primary" onclick="handleSearch('')">
           <i data-lucide="X" style="width:13px;height:13px"></i> Clear Search
         </button>
       </div>`;
@@ -2060,12 +2060,12 @@ function renderConnect() {
     <div class="connect-screen"><div class="connect-card">
       ${logo}<h1>Bookmark Manager</h1>
       <p>Grant access to resume your last session.</p>
-      <button class="btn btn--primary btn--lg" onclick="handleResume()">
+      <button type="button" class="btn btn--primary btn--lg" onclick="handleResume()">
         <i data-lucide="FolderOpen" style="width:17px;height:17px"></i>
         Resume &ldquo;${esc(S.pendingHandle.name)}&rdquo;
       </button>
       <p style="margin:14px 0 6px;color:var(--text3);font-size:12px">or</p>
-      <button class="btn btn--ghost" onclick="handleConnect()">Connect Different Directory</button>
+      <button type="button" class="btn btn--ghost" onclick="handleConnect()">Connect Different Directory</button>
     </div></div>`;
 
   // First visit
@@ -2073,7 +2073,7 @@ function renderConnect() {
     <div class="connect-screen"><div class="connect-card">
       ${logo}<h1>Bookmark Manager</h1>
       <p>A local-first bookmark manager. All data stays on your device — no servers, no accounts, no tracking.</p>
-      <button class="btn btn--primary btn--lg" onclick="handleConnect()">
+      <button type="button" class="btn btn--primary btn--lg" onclick="handleConnect()">
         <i data-lucide="FolderOpen" style="width:17px;height:17px"></i>
         Connect Directory
       </button>
@@ -2099,7 +2099,7 @@ function renderDashboard() {
     const catHidden = hiddenCats.has(cat.id);
     const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
     return `
-      <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
+      <button type="button" class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
         onclick="setActiveCat(this.dataset.catId)" title="${esc(cat.name)}">
         ${renderIcon({ type:'lucide', value: cat.icon||'Folder' }, 12)}
@@ -2111,12 +2111,12 @@ function renderDashboard() {
   const masterBanner = S.pendingMasterHandle
     ? `<div class="master-banner">
          <p><strong>Master file access expired.</strong> Grant access to resume using the shared master file.</p>
-         <button class="btn btn--primary" onclick="handleResumeMaster()">Resume Shared Master File</button>
+         <button type="button" class="btn btn--primary" onclick="handleResumeMaster()">Resume Shared Master File</button>
        </div>`
     : (!S.masterHandle && !S.cfg.masterFileUrl && !S.cfg.masterPrompted)
       ? `<div class="master-banner">
            <p><strong>Master file not configured.</strong> Select or create a shared master file to get started.</p>
-           <button class="btn btn--ghost" onclick="openMasterFileModal()">Configure Master File</button>
+           <button type="button" class="btn btn--ghost" onclick="openMasterFileModal()">Configure Master File</button>
          </div>`
       : '';
 
@@ -2145,26 +2145,26 @@ function renderDashboard() {
             value="${esc(S.query)}"
             oninput="handleSearch(this.value)"
             onkeydown="if(event.key==='Escape')handleSearch('')">
-          ${S.query ? `<button class="search-clear" onclick="handleSearch('')" aria-label="Clear search">
+          ${S.query ? `<button type="button" class="search-clear" onclick="handleSearch('')" aria-label="Clear search">
             <i data-lucide="X" style="width:12px;height:12px"></i></button>` : ''}
         </div>
       </div>
       <div class="header-right">
         ${hiddenTotal > 0 ? `
-        <button class="btn ${S.showHidden ? 'btn--hidden-active' : 'btn--ghost'}" onclick="toggleShowHidden()"
+        <button type="button" class="btn ${S.showHidden ? 'btn--hidden-active' : 'btn--ghost'}" onclick="toggleShowHidden()"
           title="${S.showHidden ? 'Click to hide hidden items again' : `${hiddenTotal} item${hiddenTotal>1?'s':''} hidden — click to reveal`}">
           <i data-lucide="${S.showHidden ? 'Eye' : 'EyeOff'}" style="width:13px;height:13px"></i>
           <span>${S.showHidden ? 'Showing hidden' : hiddenTotal + ' hidden'}</span>
         </button>` : ''}
-        <button class="btn btn--ghost" onclick="openImportModal()" title="Import bookmarks">
+        <button type="button" class="btn btn--ghost" onclick="openImportModal()" title="Import bookmarks">
           <i data-lucide="Upload" style="width:13px;height:13px"></i>
           <span>Import</span>
         </button>
-        <button class="btn btn--ghost" onclick="exportData()" title="Export bookmarks">
+        <button type="button" class="btn btn--ghost" onclick="exportData()" title="Export bookmarks">
           <i data-lucide="Download" style="width:13px;height:13px"></i>
           <span>Export</span>
         </button>
-        <button class="btn btn--primary" onclick="openNewBookmarkModal()" title="Add bookmark">
+        <button type="button" class="btn btn--primary" onclick="openNewBookmarkModal()" title="Add bookmark">
           <i data-lucide="Plus" style="width:13px;height:13px"></i>
           <span>Bookmark</span>
         </button>
@@ -2173,7 +2173,7 @@ function renderDashboard() {
 
     <div class="cat-filter-bar">
       ${catPills}
-      <button class="cat-pill-action cat-pill-action--cat" onclick="openCategoryModal(null)" title="New category">
+      <button type="button" class="cat-pill-action cat-pill-action--cat" onclick="openCategoryModal(null)" title="New category">
         <i data-lucide="FolderPlus" style="width:13px;height:13px"></i> New Category
       </button>
     </div>
@@ -2183,7 +2183,7 @@ function renderDashboard() {
         <div class="empty-state">
           <i data-lucide="BookMarked" style="width:48px;height:48px"></i>
           <p>No categories yet. Create one to start adding bookmarks.</p>
-          <button class="btn btn--primary" onclick="openCategoryModal(null)">
+          <button type="button" class="btn btn--primary" onclick="openCategoryModal(null)">
             <i data-lucide="FolderPlus" style="width:13px;height:13px"></i> Create Category
           </button>
         </div>` : ''}
@@ -2340,10 +2340,10 @@ function openCardModal(catId, bmId) {
   openModal(`
     <div class="modal-header">
       <h2>${bm ? 'Edit Bookmark' : 'New Bookmark'}</h2>
-      ${bm && !isMaster ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" data-cat-id="${esc(catId)}" data-bm-id="${esc(bmId)}" onclick="publishBookmark(this.dataset.catId, this.dataset.bmId)">
+      ${bm && !isMaster ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" data-cat-id="${esc(catId)}" data-bm-id="${esc(bmId)}" aria-label="Publish bookmark to Master" onclick="publishBookmark(this.dataset.catId, this.dataset.bmId)">
           <i data-lucide="UploadCloud" style="width:13px;height:13px"></i> Publish to Master
       </button>` : ''}
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
@@ -2364,7 +2364,7 @@ function openCardModal(catId, bmId) {
             placeholder="Optional notes…">${esc(bm?.description||'')}</textarea>
         </div>
         <div class="form-row">
-          <label>Tags</label>
+          <label for="bm-tags-input">Tags</label>
           <div class="tag-input-container">
              <div id="tag-bubbles" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
                  ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
@@ -2388,15 +2388,15 @@ function openCardModal(catId, bmId) {
         </div>
 
         <div class="form-row">
-          <label><input type="checkbox" name="hideIconMain" ${cs.hideIcon ? 'checked' : ''}> Hide icon on card</label>
+          <label for="bm-hideIconMain"><input type="checkbox" id="bm-hideIconMain" name="hideIconMain" ${cs.hideIcon ? 'checked' : ''}> Hide icon on card</label>
           <p class="hint-text">Hide the icon entirely.</p>
         </div>
         <div class="form-row">
-          <label><input type="checkbox" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
+          <label for="bm-hideCategoryBadge"><input type="checkbox" id="bm-hideCategoryBadge" name="hideCategoryBadge" ${cs.hideCategoryBadge ? 'checked' : ''}> Hide category badge on card</label>
           <p class="hint-text">Keep the card cleaner by hiding the category label.</p>
         </div>
         <div class="form-row">
-          <label>Card Opacity <span class="hint-inline">(override)</span></label>
+          <label for="card-opacity">Card Opacity <span class="hint-inline">(override)</span></label>
           <input type="range" id="card-opacity" name="cardOpacity" class="form-input" min="0.4" max="1" step="0.02" value="${cs.cardOpacity||''}" oninput="document.getElementById('card-opacity-value').textContent = this.value ? Math.round(this.value*100)+'%' : 'inherit'">
           <div class="settings-helper"><span id="card-opacity-value">${cs.cardOpacity ? Math.round(cs.cardOpacity*100) + '%' : 'inherit'}</span></div>
           <p class="hint-text">Override the global card opacity for this bookmark.</p>
@@ -2471,33 +2471,33 @@ function openCardModal(catId, bmId) {
         </div>
         <div class="form-row form-row--cols" id="bg-image-options" style="display:${iType==='url' || iType==='local'?'flex':'none'}">
           <div style="flex:1">
-            <label><input type="checkbox" name="useBgImage" ${cs.bgImage?'checked':''}> Use image as background</label>
+            <label for="bm-useBgImage"><input type="checkbox" id="bm-useBgImage" name="useBgImage" ${cs.bgImage?'checked':''}> Use image as background</label>
           </div>
           <div style="flex:1">
-            <label><input type="checkbox" name="hideText" ${cs.hideText?'checked':''}> Hide text overlay</label>
+            <label for="bm-hideText"><input type="checkbox" id="bm-hideText" name="hideText" ${cs.hideText?'checked':''}> Hide text overlay</label>
           </div>
           <div style="flex:1">
-            <label><input type="checkbox" name="hideIcon" ${cs.hideIcon?'checked':''}> Hide icon on card</label>
+            <label for="bm-hideIcon"><input type="checkbox" id="bm-hideIcon" name="hideIcon" ${cs.hideIcon?'checked':''}> Hide icon on card</label>
           </div>
         </div>
         <div class="form-section">Text Formatting <span class="hint-inline">(optional)</span></div>
         <div class="form-row form-row--cols">
           <div>
-            <label>Text Color</label>
-            <input type="color" name="textColor" value="${cs.textColor||'#ffffff'}" class="color-input">
+            <label for="bm-textColor">Text Color</label>
+            <input type="color" id="bm-textColor" name="textColor" value="${cs.textColor||'#ffffff'}" class="color-input">
           </div>
           <div>
-            <label>Text Size</label>
+            <label for="card-text-size">Text Size</label>
             <input type="range" id="card-text-size" name="textSize" class="form-input" min="0.8" max="1.8" step="0.05" value="${cs.textSize ? parseFloat(cs.textSize) : 1}" oninput="document.getElementById('card-text-size-value').textContent = Math.round(this.value * 100) + '%'">
             <div class="settings-helper"><span id="card-text-size-value">${cs.textSize ? Math.round(parseFloat(cs.textSize) * 100) + '%' : '100%'}</span></div>
           </div>
         </div>
         <div class="form-row form-row--cols">
           <div>
-            <label><input type="checkbox" name="textBold" ${cs.textWeight==='bold'?'checked':''}> Bold text</label>
+            <label for="bm-textBold"><input type="checkbox" id="bm-textBold" name="textBold" ${cs.textWeight==='bold'?'checked':''}> Bold text</label>
           </div>
           <div>
-            <label><input type="checkbox" name="textItalic" ${cs.textItalic ? 'checked' : ''}> Italic text</label>
+            <label for="bm-textItalic"><input type="checkbox" id="bm-textItalic" name="textItalic" ${cs.textItalic ? 'checked' : ''}> Italic text</label>
           </div>
         </div>
 
@@ -2594,10 +2594,10 @@ function openCategoryModal(catId) {
   openModal(`
     <div class="modal-header">
       <h2>${cat ? 'Edit Category' : 'New Category'}</h2>
-      ${cat && !cat.__master ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" data-cat-id="${esc(catId)}" onclick="publishCategory(this.dataset.catId)">
+      ${cat && !cat.__master ? `<button type="button" class="btn btn--primary" style="margin-right: 12px;" data-cat-id="${esc(catId)}" aria-label="Publish category to Master" onclick="publishCategory(this.dataset.catId)">
           <i data-lucide="UploadCloud" style="width:13px;height:13px"></i> Publish to Master
       </button>` : ''}
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
@@ -2638,7 +2638,7 @@ function openImportModal() {
   openModal(`
     <div class="modal-header">
       <h2>Import Bookmarks</h2>
-      <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
+      <button type="button" class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
       <p class="hint-text">Supports Chrome/Safari HTML export, JSON, and CSV files.</p>
