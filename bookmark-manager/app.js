@@ -2097,7 +2097,12 @@ function renderDashboard() {
   const catPills = cats.map(cat => {
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
+    // ⚡ Bolt: Avoid .filter().length intermediate array allocation in render loop
+    // Impact: Prevents memory churn and GC pauses during high-frequency innerHTML updates
+    let visCount = 0;
+    for (let i = 0; i < cat.bookmarks.length; i++) {
+      if (!hiddenBms.has(cat.bookmarks[i].id)) visCount++;
+    }
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
