@@ -12,3 +12,6 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+## 2026-09-08 - Prevent Intermediate Array Allocation in Render Loop
+**Learning:** In high-frequency vanilla JS render loops (e.g., bookmark-manager's innerHTML renders), using `.filter(...).length` to count matching items pointlessly allocates intermediate arrays, causing memory churn and GC pauses.
+**Action:** Use a standard `for` loop with a numeric counter variable instead of `.filter(...).length` for counting items to optimize performance and prevent memory churn.
