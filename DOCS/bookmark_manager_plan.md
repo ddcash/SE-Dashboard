@@ -174,8 +174,10 @@ Add an interactive Card Customization Editor modal and implement layout dragging
    - Set custom styles: Choose custom HSL/Hex colors for the card background, border, and text.
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
 2. Drag-and-Drop & Canvas Layout:
-   - Users can drag cards to reposition them freely around the canvas layout.
+   - Users can drag cards to reposition them freely around the canvas layout, intelligently switching to absolute layout mode when necessary.
    - Users can create resizable groups from the command palette and place cards within them.
+   - Removing an item from a group dynamically updates the canvas.
+   - Interacting with groups or specific links automatically unfocuses the current category if one is active.
 3. Publishing: Allow users to publish entire personal categories to the shared master file directly from the category editor.
 Save all modifications instantly back to the directory's files.
 ```

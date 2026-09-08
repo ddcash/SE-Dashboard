@@ -17,6 +17,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
+- **Absolute Layout Toggle**: Canvas dragging intelligently switches to absolute layout mode when appropriate to ensure smooth interactions.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
