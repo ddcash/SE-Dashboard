@@ -35,10 +35,25 @@ function esc(s) {
     .replace(/'/g,'&#39;');
 }
 
+// 🛡️ Sentinel: Sanitize URL after decoding HTML entities to prevent XSS bypasses
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  let decoded = u;
+  if (typeof document !== 'undefined') {
+    try {
+      const txt = document.createElement('textarea');
+      txt.innerHTML = u;
+      decoded = txt.value;
+    } catch(e) {}
+  } else {
+    decoded = u.replace(/&#(\d+);?/g, (_, d) => String.fromCharCode(parseInt(d, 10)))
+               .replace(/&#x([a-f0-9]+);?/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+               .replace(/&colon;?/gi, ':')
+               .replace(/&tab;?/gi, '\t')
+               .replace(/&newline;?/gi, '\n');
+  }
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
