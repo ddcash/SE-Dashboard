@@ -1252,36 +1252,36 @@ function populateMasterEditorVisual() {
   if (!container) return;
   container.innerHTML = '';
   const categories = S.masterData.categories || [];
-  const html = categories.map(cat => `
+  const html = categories.map((cat, cIdx) => `
     <div class="master-category-panel" data-cat-id="${cat.id}">
       <div class="master-category-header">
         <div>
-          <label>Name</label>
-          <input type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
+          <label for="master-cat-name-${cIdx}">Name</label>
+          <input type="text" id="master-cat-name-${cIdx}" class="form-input" name="cat-name" value="${esc(cat.name)}">
         </div>
         <div>
-          <label>Icon</label>
-          <input type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
+          <label for="master-cat-icon-${cIdx}">Icon</label>
+          <input type="text" id="master-cat-icon-${cIdx}" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
         </div>
         <div>
-          <label>Color</label>
-          <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
+          <label for="master-cat-color-${cIdx}">Color</label>
+          <input type="color" id="master-cat-color-${cIdx}" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
         </div>
         <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
       </div>
       <div class="master-bookmark-list">
-        ${cat.bookmarks.map(bm => `
+        ${cat.bookmarks.map((bm, bIdx) => `
           <div class="master-bookmark-row" data-bm-id="${bm.id}">
             <div class="master-bookmark-row-top">
-              <div><label>Title</label><input type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
-              <div><label>URL</label><input type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
-              <div><label>Icon</label><input type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
+              <div><label for="master-bm-title-${cIdx}-${bIdx}">Title</label><input type="text" id="master-bm-title-${cIdx}-${bIdx}" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
+              <div><label for="master-bm-url-${cIdx}-${bIdx}">URL</label><input type="text" id="master-bm-url-${cIdx}-${bIdx}" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
+              <div><label for="master-bm-icon-${cIdx}-${bIdx}">Icon</label><input type="text" id="master-bm-icon-${cIdx}-${bIdx}" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
               <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" data-bm-id="${esc(bm.id)}" onclick="deleteMasterBookmark(this.dataset.catId, this.dataset.bmId)">Delete</button>
             </div>
             <div class="master-bookmark-row-bottom">
-              <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
-              <div><label>Tags</label><input type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
-              <div class="form-row"><label><input type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
+              <div><label for="master-bm-desc-${cIdx}-${bIdx}">Description</label><input type="text" id="master-bm-desc-${cIdx}-${bIdx}" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
+              <div><label for="master-bm-tags-${cIdx}-${bIdx}">Tags</label><input type="text" id="master-bm-tags-${cIdx}-${bIdx}" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
+              <div class="form-row"><label for="master-bm-hide-${cIdx}-${bIdx}"><input type="checkbox" id="master-bm-hide-${cIdx}-${bIdx}" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
             </div>
           </div>
         `).join('')}
