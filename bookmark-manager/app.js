@@ -43,20 +43,18 @@ function sanitizeUrl(url) {
   return u;
 }
 
-// ⚡ Bolt: Cache lowercased query to avoid O(N) string allocations during loop
+// ⚡ Bolt: Use pre-compiled regex for O(1) fuzzy match construction and faster native matching
 let _lastFuzzyQ = null;
-let _lastFuzzyQLower = null;
+let _lastFuzzyQRegex = null;
 
 function fuzzyMatch(str, q) {
   if (!q) return true;
   if (q !== _lastFuzzyQ) {
     _lastFuzzyQ = q;
-    _lastFuzzyQLower = q.toLowerCase();
+    const qEscaped = q.split('').map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+    _lastFuzzyQRegex = new RegExp(qEscaped, 'i');
   }
-  str = String(str).toLowerCase();
-  let i = 0;
-  for (const ch of _lastFuzzyQLower) { i = str.indexOf(ch, i); if (i === -1) return false; i++; }
-  return true;
+  return _lastFuzzyQRegex.test(String(str));
 }
 
 // ═══════════════════════════════════════════════════════════════
