@@ -37,9 +37,23 @@ function esc(s) {
 
 function sanitizeUrl(url) {
   if (!url) return '';
-  const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
-  if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+  let u = String(url).trim();
+
+  // 🛡️ Sentinel: Decode HTML entities to prevent XSS protocol bypass
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = u;
+    // Check against the decoded version
+    const decoded = textarea.value;
+    const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+    if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+  } catch (e) {
+    // Fallback if no DOM is available
+    const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+    if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+  }
+
+  // We still return the original string, safely validated.
   return u;
 }
 
