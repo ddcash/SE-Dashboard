@@ -736,7 +736,7 @@ function openMasterFileModal() {
         </button>
       </div>
       <div style="margin-top:18px; display:flex; gap:10px;">
-        <input type="text" id="master-url-input" class="form-input" placeholder="https://... or C:\... or /mnt/..." style="flex:1;">
+        <input type="text" id="master-url-input" class="form-input" placeholder="https://... or C:\... or /mnt/..." style="flex:1;" aria-label="Shared master file URL or path">
         <button class="btn btn--primary" onclick="saveMasterUrl(); closeModal();">Load from URL/Path</button>
       </div>
       <div style="margin-top:18px;">
@@ -746,7 +746,7 @@ function openMasterFileModal() {
             <i data-lucide="FolderSearch" style="width:13px;height:13px"></i>
             Select Folder
           </button>
-          <input type="text" id="master-assets-url-input" class="form-input" placeholder="https://.../assets or C:\...\assets" style="flex:1;">
+          <input type="text" id="master-assets-url-input" class="form-input" placeholder="https://.../assets or C:\...\assets" style="flex:1;" aria-label="Shared master assets URL or path">
           <button class="btn btn--primary" onclick="saveMasterAssetsUrl(); closeModal();">Set URL/Path</button>
         </div>
       </div>
@@ -2424,7 +2424,8 @@ function openCardModal(catId, bmId) {
             <input type="text" id="icon-url-input" class="form-input"
               placeholder="https://example.com/icon.png"
               value="${iType==='url'?esc(iVal):''}"
-              oninput="setIconValue(this.value)">
+              oninput="setIconValue(this.value)"
+              aria-label="Icon image URL">
           </div>
           <div id="icon-panel-local" class="icon-panel ${iType!=='local'?'hidden':''}">
             <div class="form-row">
