@@ -35,10 +35,17 @@ function esc(s) {
     .replace(/'/g,'&#39;');
 }
 
+let _sanitizerTextarea = null;
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  // Decode HTML entities before checking protocol, as browsers decode attributes before evaluation
+  if (!_sanitizerTextarea) _sanitizerTextarea = document.createElement('textarea');
+  _sanitizerTextarea.innerHTML = u;
+  const decoded = _sanitizerTextarea.value;
+
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
