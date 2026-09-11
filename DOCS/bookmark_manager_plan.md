@@ -156,7 +156,7 @@ Create a premium, dark-mode glassmorphism dashboard UI that works entirely stati
   - Local files and folders (file:///...) — Ensure this works natively without URL validation errors (which typically block local files on normal HTTP servers).
   - App-specific schemes (e.g., vscode://, obsidian://, spotify://, slack://).
 - Item Customizability: Each bookmark item should support:
-  - Custom card background color, border color, and border style.
+  - Custom card background color, full card background image, border color, and border style.
   - Icon Type selection:
     - Includes toggle for Hide Icon feature.
     1. Lucide library icons (dynamic search list).
@@ -171,7 +171,7 @@ Create a premium, dark-mode glassmorphism dashboard UI that works entirely stati
 Add an interactive Card Customization Editor modal and implement layout dragging:
 1. Card Editor Modal: When a user clicks "Edit" on any card, show a modal where they can:
    - Rename the bookmark, change the URL, edit description notes, and manage tags.
-   - Set custom styles: Choose custom HSL/Hex colors for the card background, border, and text.
+   - Set custom styles: Choose custom HSL/Hex colors for the card background, border, and text. Support for full card background images.
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
 2. Drag-and-Drop & Canvas Layout:
    - Users can drag cards to reposition them freely around the canvas layout.
