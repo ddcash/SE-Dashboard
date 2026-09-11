@@ -35,10 +35,17 @@ function esc(s) {
     .replace(/'/g,'&#39;');
 }
 
+// 🛡️ Sentinel: Fix XSS via HTML entities in URLs (decode entities before protocol matching)
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  let decoded = u;
+  if (typeof document !== 'undefined') {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = u;
+    decoded = txt.value;
+  }
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
