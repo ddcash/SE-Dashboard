@@ -17,6 +17,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
+- **Dynamic Layouts**: Refined auto-arrange layout modes for categories, groups, and cards ensuring a tidy dashboard.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
@@ -32,6 +33,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 ### Appearance & Theme
 - Dark theme defaults to a solid black background.
 - Choose between solid color, gradient, or image backgrounds.
+- **Full Card Background Images**: Support for full card background images with custom text overlay styling for better readability.
 - Adjust global card opacity for the dashboard.
 - Override opacity for individual cards when editing a bookmark.
 - Customize accent colors, font scale, and category badge visibility.
@@ -56,21 +58,18 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
-
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
+- **Master Assets Persistence**: Uploaded assets in the master file configuration are seamlessly persisted and managed locally.
 
 ### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, minimizing GC allocations during drag-and-drop to ensure maximum framerates.
+- Enhanced search filtering performance with optimized fuzzy string matching query parsing.
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, URL protocol obfuscation filters, and context-aware URL sanitization.
 
 ## Installation
 
