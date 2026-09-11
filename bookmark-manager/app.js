@@ -2141,12 +2141,15 @@ function renderDashboard() {
         <div class="search-wrap">
           <i data-lucide="Search" class="search-icon" style="width:14px;height:14px"></i>
           <input type="text" id="search-input" class="search-input" aria-label="Search bookmarks"
-            placeholder="Search… (Ctrl+K for commands)"
+            placeholder="Search…"
             value="${esc(S.query)}"
             oninput="handleSearch(this.value)"
             onkeydown="if(event.key==='Escape')handleSearch('')">
           ${S.query ? `<button class="search-clear" onclick="handleSearch('')" aria-label="Clear search">
-            <i data-lucide="X" style="width:12px;height:12px"></i></button>` : ''}
+            <i data-lucide="X" style="width:12px;height:12px"></i></button>` : `<div style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; display:flex; gap:4px;">
+            <kbd style="font-size:11px; color:var(--text3); background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:1px 5px; font-family:inherit;">${/Mac|iPod|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl'}</kbd>
+            <kbd style="font-size:11px; color:var(--text3); background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:1px 5px; font-family:inherit;">K</kbd>
+          </div>`}
         </div>
       </div>
       <div class="header-right">
