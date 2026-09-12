@@ -17,6 +17,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
+- Easily remove items from groups which places them back on the main canvas.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
@@ -27,6 +28,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Empty states feature helpful Call-to-Action (CTA) buttons to quickly create new items or clear filters.
 - Preserve your current card layout when search is cleared.
 - Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette.
+- Access quick actions like creating new groups, editing categories, and deleting categories directly from the palette.
 - Toggle hidden items on or off.
 
 ### Appearance & Theme
