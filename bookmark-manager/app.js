@@ -62,8 +62,22 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+// ⚡ Bolt: O(1) lookups for isHidden to prevent UI thrashing
+// What: Replaced O(N) array `.includes()` with an O(1) cached Set.
+// Why: isHidden is called on every card during render(). O(N) lookups multiply to cause significant UI thrashing.
+// Impact: Changes O(N) hidden lookups to O(1) in the tight render loop.
+let _hiddenCache = {};
+let _hiddenArrays = {};
+
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  if (!S.cfg.hidden || !S.cfg.hidden[type]) return false;
+  const arr = S.cfg.hidden[type];
+  // ⚡ Bolt: Dynamically initialize cache safely, use reference equality and length check
+  if (_hiddenArrays[type] !== arr || !_hiddenCache[type] || _hiddenCache[type].size !== arr.length) {
+    _hiddenArrays[type] = arr;
+    _hiddenCache[type] = new Set(arr);
+  }
+  return _hiddenCache[type].has(id);
 }
 
 function hideItem(type, id) {
