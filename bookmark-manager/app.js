@@ -62,8 +62,30 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+// ⚡ Bolt: Cache hidden arrays into Sets to avoid O(N) lookup operations.
+// Centralizing the cache prevents redundant array allocations and Set re-creations across render functions.
+const _hiddenSets = {
+  refs: { bookmarks: null, categories: null },
+  lens: { bookmarks: -1, categories: -1 },
+  sets: { bookmarks: null, categories: null }
+};
+
+function getHiddenSet(type) {
+  const arr = S.cfg.hidden?.[type];
+  if (!arr) return new Set();
+
+  // Invalidate cache if array reference or length changes (push, splice, or reassignment)
+  if (_hiddenSets.refs[type] !== arr || _hiddenSets.lens[type] !== arr.length) {
+    _hiddenSets.refs[type] = arr;
+    _hiddenSets.lens[type] = arr.length;
+    _hiddenSets.sets[type] = new Set(arr);
+  }
+
+  return _hiddenSets.sets[type];
+}
+
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  return getHiddenSet(type).has(id);
 }
 
 function hideItem(type, id) {
@@ -168,7 +190,7 @@ function autoArrangeCards() {
   }
 
   // ⚡ Bolt: Cache hidden lookups to a Set for O(1) checks during sorting
-  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+  const hiddenBms = getHiddenSet('bookmarks');
 
   allBms.sort((a, b) => {
     const aHidden = hiddenBms.has(a.id) ? 1 : 0;
@@ -1937,8 +1959,8 @@ function renderAllCards() {
   let cardsHtml = '';
 
   // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
-  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
-  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+  const hiddenCats = getHiddenSet('categories');
+  const hiddenBms = getHiddenSet('bookmarks');
 
   if (S.cfg.groups) {
       for (const group of S.cfg.groups) {
@@ -1991,8 +2013,8 @@ function renderAllCards() {
 
 function renderSearchResults() {
   const rows = [];
-  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
-  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+  const hiddenCats = getHiddenSet('categories');
+  const hiddenBms = getHiddenSet('bookmarks');
 
   for (const cat of S.data.categories) {
     if (!S.showHidden && hiddenCats.has(cat.id)) continue;
@@ -2091,8 +2113,8 @@ function renderDashboard() {
   const hiddenTotal    = hiddenBmCount + hiddenCatCount;
 
   // ⚡ Bolt optimization: O(1) lookups for hidden status
-  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
-  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
+  const hiddenCats = getHiddenSet('categories');
+  const hiddenBms = getHiddenSet('bookmarks');
 
   const catPills = cats.map(cat => {
     const active   = S.activeCat === cat.id;
