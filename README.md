@@ -10,8 +10,9 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Create and edit categories with custom icons and colors.
 - Add bookmarks to categories with title, URL, description, and tags.
 - Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
-- Move bookmarks between categories from the editor.
-- **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
+- Move bookmarks between categories from the editor, or create new categories directly inline.
+- Manage tags visually with an interactive bubble UI.
+- **Card Display Settings**: Toggle the visibility of icons, text, and category badges for a cleaner look.
 
 ### Freeform Canvas Layout & Groups
 - Cards are placed in a scrollable canvas layout.

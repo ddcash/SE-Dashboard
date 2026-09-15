@@ -120,8 +120,9 @@ Saves the specific layout overrides for this browser instance:
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
 * Build a **Card Editor Modal** allowing users to:
   * Select an icon (Lucide library search, external URL image, local favicon, or custom image upload).
-  * Customize individual card background colors, borders, and text colors.
-  * Set arbitrary parameters (like opening target, description notes).
+  * Customize individual card background colors, borders, and text colors, and toggle text/badge visibility.
+  * Set arbitrary parameters (like opening target, description notes), and manage tags with a visual bubble UI.
+  * Create new categories directly from the modal.
 * Implement **Master File Publishing**: Allow users to share personal categories directly to the master file from within the app.
 
 ### Phase 4: Import / Export & Master Publishing Module
@@ -170,8 +171,9 @@ Create a premium, dark-mode glassmorphism dashboard UI that works entirely stati
 ```text
 Add an interactive Card Customization Editor modal and implement layout dragging:
 1. Card Editor Modal: When a user clicks "Edit" on any card, show a modal where they can:
-   - Rename the bookmark, change the URL, edit description notes, and manage tags.
-   - Set custom styles: Choose custom HSL/Hex colors for the card background, border, and text.
+   - Rename the bookmark, change the URL, edit description notes, and manage tags via interactive bubbles.
+   - Create new categories inline without leaving the editor.
+   - Set custom styles: Choose custom HSL/Hex colors for the card background, border, and text, and toggle text/category badge visibility.
    - Upload a custom card thumbnail (saves to the `/assets/` directory) or select a Lucide icon.
 2. Drag-and-Drop & Canvas Layout:
    - Users can drag cards to reposition them freely around the canvas layout.
