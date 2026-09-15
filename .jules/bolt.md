@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2026-09-15 - Inline fallback allocations defeating reference equality checks
+**Learning:** When optimizing code by caching arrays as Sets for O(1) lookups, using inline fallback allocations (e.g., `const arr = S.cfg.hidden[type] || [];`) dynamically allocates a new array reference on every call if the source is undefined. This entirely defeats reference-equality cache invalidation checks (e.g., `cachedRef !== arr`), causing the cache to continuously rebuild and trashing the garbage collector.
+**Action:** Always explicitly check for undefined truthiness and return early, rather than using inline fallback allocations, when relying on reference equality to invalidate caches.
