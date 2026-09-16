@@ -62,8 +62,28 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+const _cachedHidden = {};
+
+// ⚡ Bolt optimization:
+// 💡 What: Cache hidden id arrays into Sets using dynamically initialized entries, keyed by type.
+// 🎯 Why: isHidden is called for every rendered card. Previously, it fell back to an O(N) array scan on the S.cfg.hidden array for every call, causing enormous CPU thrashing in tight innerHTML render loops (such as real-time search).
+// 📊 Impact: Converts O(N) array lookups into O(1) Set lookups, significantly reducing main-thread blocking during large DOM reconstructions. Cache invalidation tracks both reference equality and array length to accurately detect in-place mutations (like .push()).
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  const arr = S.cfg.hidden?.[type];
+  if (!arr) return false;
+
+  let cache = _cachedHidden[type];
+  if (!cache) {
+    cache = _cachedHidden[type] = { ref: null, len: -1, set: null };
+  }
+
+  if (cache.ref !== arr || cache.len !== arr.length) {
+    cache.ref = arr;
+    cache.len = arr.length;
+    cache.set = new Set(arr);
+  }
+
+  return cache.set.has(id);
 }
 
 function hideItem(type, id) {
