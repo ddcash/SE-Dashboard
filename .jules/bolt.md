@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2025-07-08 - O(N) Array Includes inside tight render loops
+**Learning:** Checking for hidden bookmarks in tight innerHTML loops via `isHidden(type, id)` which uses `Array.includes()` causes O(N) operations inside a loop that's already O(M) where N is number of hidden items and M is total bookmarks. This leads to severe lag during real-time UI updates (search/filtering/rendering).
+**Action:** Use cached `Set` objects for O(1) lookups. When caching objects that might be mutated in-place (like `.push()`), track and compare both the array reference and the `.length` for correct invalidation, and ensure explicit undefined checks before fallback allocations.
