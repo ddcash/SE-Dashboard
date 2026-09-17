@@ -62,8 +62,30 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+let _cachedHidden = {};
+let _cachedHiddenRef = {};
+let _cachedHiddenLen = {};
+
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  const arr = S.cfg.hidden?.[type];
+  if (!arr) return false;
+
+  // ⚡ Bolt optimization: O(1) hidden lookups using cached Sets.
+  // We track reference equality and length because in-place mutations
+  // (like .push()) won't change the reference.
+  if (!_cachedHidden[type]) {
+    _cachedHidden[type] = new Set();
+    _cachedHiddenRef[type] = null;
+    _cachedHiddenLen[type] = -1;
+  }
+
+  if (_cachedHiddenRef[type] !== arr || _cachedHiddenLen[type] !== arr.length) {
+    _cachedHiddenRef[type] = arr;
+    _cachedHiddenLen[type] = arr.length;
+    _cachedHidden[type] = new Set(arr);
+  }
+
+  return _cachedHidden[type].has(id);
 }
 
 function hideItem(type, id) {
