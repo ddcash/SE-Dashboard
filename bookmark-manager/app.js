@@ -38,7 +38,24 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  let decoded = u;
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = u;
+    decoded = textarea.value;
+  } catch (e) {
+    decoded = u.replace(/&(#(?:\d+)|#x(?:[0-9a-fA-F]+)|[a-zA-Z]+);/g, (match, entity) => {
+      if (entity.toLowerCase().startsWith('#x')) return String.fromCharCode(parseInt(entity.slice(2), 16));
+      if (entity.startsWith('#')) return String.fromCharCode(parseInt(entity.slice(1), 10));
+      if (entity.toLowerCase() === 'colon') return ':';
+      if (entity.toLowerCase() === 'tab') return '\t';
+      if (entity.toLowerCase() === 'newline') return '\n';
+      return match;
+    });
+  }
+
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
