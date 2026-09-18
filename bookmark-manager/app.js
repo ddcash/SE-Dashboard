@@ -62,8 +62,26 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+const _cachedHidden = {};
+const _cachedHiddenRefs = {};
+const _cachedHiddenLens = {};
+
+// ⚡ Bolt: Optimize isHidden with O(1) Set caching.
+// What: Replaced inline array allocation `(S.cfg.hidden?.[type] || [])` and `.includes()` with a Set cache.
+// Why: `isHidden` is called inside `renderCard` for every card on every render.
+//      The inline `|| []` dynamically allocates a new array if undefined, defeating GC and reference checks.
+//      `.includes()` is an O(N) lookup.
+// Impact: Changes O(N) lookups inside tight render loops to O(1) and prevents unbounded array allocations.
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  const arr = S.cfg.hidden?.[type];
+  if (!arr) return false;
+
+  if (!_cachedHidden[type] || _cachedHiddenRefs[type] !== arr || _cachedHiddenLens[type] !== arr.length) {
+    _cachedHidden[type] = new Set(arr);
+    _cachedHiddenRefs[type] = arr;
+    _cachedHiddenLens[type] = arr.length;
+  }
+  return _cachedHidden[type].has(id);
 }
 
 function hideItem(type, id) {

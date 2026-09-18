@@ -12,3 +12,6 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+## 2025-07-08 - Inline array allocations defeat caching and GC in tight loops
+**Learning:** Using `(S.cfg.hidden?.[type] || [])` inside a frequently called function (like `isHidden` during `render()`) creates a new array reference every time if the property is undefined. This defeats reference equality checks (`ref !== arr`) for cache invalidation and forces the garbage collector to clean up unbounded allocations.
+**Action:** When writing caching layers that depend on reference equality, always check for undefined truthiness explicitly (`if (!arr) return false;`) and avoid allocating inline fallback structures (`|| []`) that generate new object references.
