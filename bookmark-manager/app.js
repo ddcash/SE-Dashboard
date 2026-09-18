@@ -1256,16 +1256,16 @@ function populateMasterEditorVisual() {
     <div class="master-category-panel" data-cat-id="${cat.id}">
       <div class="master-category-header">
         <div>
-          <label>Name</label>
-          <input type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
+          <label for="cat-name-${esc(cat.id)}">Name</label>
+          <input id="cat-name-${esc(cat.id)}" type="text" class="form-input" name="cat-name" value="${esc(cat.name)}">
         </div>
         <div>
-          <label>Icon</label>
-          <input type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
+          <label for="cat-icon-${esc(cat.id)}">Icon</label>
+          <input id="cat-icon-${esc(cat.id)}" type="text" class="form-input" name="cat-icon" value="${esc(cat.icon)}">
         </div>
         <div>
-          <label>Color</label>
-          <input type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
+          <label for="cat-color-${esc(cat.id)}">Color</label>
+          <input id="cat-color-${esc(cat.id)}" type="color" class="form-input" name="cat-color" value="${esc(cat.color || '#6366f1')}">
         </div>
         <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" onclick="deleteMasterCategory(this.dataset.catId)">Delete Category</button>
       </div>
@@ -1273,15 +1273,15 @@ function populateMasterEditorVisual() {
         ${cat.bookmarks.map(bm => `
           <div class="master-bookmark-row" data-bm-id="${bm.id}">
             <div class="master-bookmark-row-top">
-              <div><label>Title</label><input type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
-              <div><label>URL</label><input type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
-              <div><label>Icon</label><input type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
+              <div><label for="bm-title-${esc(bm.id)}">Title</label><input id="bm-title-${esc(bm.id)}" type="text" class="form-input" name="bm-title" value="${esc(bm.title)}"></div>
+              <div><label for="bm-url-${esc(bm.id)}">URL</label><input id="bm-url-${esc(bm.id)}" type="text" class="form-input" name="bm-url" value="${esc(bm.url)}"></div>
+              <div><label for="bm-icon-${esc(bm.id)}">Icon</label><input id="bm-icon-${esc(bm.id)}" type="text" class="form-input" name="bm-icon" value="${esc(bm.icon?.value || 'Link')}"></div>
               <button type="button" class="btn btn--danger" data-cat-id="${esc(cat.id)}" data-bm-id="${esc(bm.id)}" onclick="deleteMasterBookmark(this.dataset.catId, this.dataset.bmId)">Delete</button>
             </div>
             <div class="master-bookmark-row-bottom">
-              <div><label>Description</label><input type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
-              <div><label>Tags</label><input type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
-              <div class="form-row"><label><input type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
+              <div><label for="bm-desc-${esc(bm.id)}">Description</label><input id="bm-desc-${esc(bm.id)}" type="text" class="form-input" name="bm-description" value="${esc(bm.description||'')}"></div>
+              <div><label for="bm-tags-${esc(bm.id)}">Tags</label><input id="bm-tags-${esc(bm.id)}" type="text" class="form-input" name="bm-tags" value="${esc((bm.tags||[]).join(', '))}"></div>
+              <div class="form-row"><label for="bm-hide-cat-${esc(bm.id)}"><input id="bm-hide-cat-${esc(bm.id)}" type="checkbox" name="bm-hide-category" ${bm.customStyle?.hideCategoryBadge ? 'checked' : ''}> Hide category badge</label></div>
             </div>
           </div>
         `).join('')}
@@ -1611,26 +1611,26 @@ function openGroupModal(groupId) {
             value="${esc(group?.title || '')}" placeholder="My Group">
         </div>
         <div class="form-row">
-          <label>Appearance</label>
+          <label for="grp-bgColor">Appearance</label>
           <div style="display:flex; gap:8px;">
-             <input type="text" name="bgColor" class="form-input" placeholder="Background Color (e.g. #333, rgba...)" value="${esc(group?.bgColor || '')}">
-             <input type="text" name="textColor" class="form-input" placeholder="Text Color" value="${esc(group?.textColor || '')}">
+             <input id="grp-bgColor" type="text" name="bgColor" class="form-input" placeholder="Background Color (e.g. #333, rgba...)" value="${esc(group?.bgColor || '')}" aria-label="Background Color">
+             <input id="grp-textColor" type="text" name="textColor" class="form-input" placeholder="Text Color" value="${esc(group?.textColor || '')}" aria-label="Text Color">
           </div>
         </div>
         <div class="form-row">
-          <label>Background Image URL</label>
-          <input type="text" name="bgImage" class="form-input" placeholder="https://..." value="${esc(group?.bgImage || '')}">
+          <label for="grp-bgImage">Background Image URL</label>
+          <input id="grp-bgImage" type="text" name="bgImage" class="form-input" placeholder="https://..." value="${esc(group?.bgImage || '')}">
         </div>
         <div class="form-row">
           <label>Text Style</label>
           <div style="display:flex; gap:16px;">
-             <label class="custom-checkbox">
-               <input type="checkbox" name="textWeight" value="bold" ${group?.textWeight === 'bold' ? 'checked' : ''}>
+             <label class="custom-checkbox" for="grp-textWeight">
+               <input id="grp-textWeight" type="checkbox" name="textWeight" value="bold" ${group?.textWeight === 'bold' ? 'checked' : ''}>
                <div class="checkbox-box"></div>
                Bold
              </label>
-             <label class="custom-checkbox">
-               <input type="checkbox" name="textItalic" value="true" ${group?.textItalic ? 'checked' : ''}>
+             <label class="custom-checkbox" for="grp-textItalic">
+               <input id="grp-textItalic" type="checkbox" name="textItalic" value="true" ${group?.textItalic ? 'checked' : ''}>
                <div class="checkbox-box"></div>
                Italic
              </label>
