@@ -38,7 +38,16 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  // Manually decode HTML entities to prevent protocol obfuscation bypasses
+  const decoded = u.replace(/&#(\d+);?/g, (_, dec) => String.fromCharCode(dec))
+                   .replace(/&#x([a-fA-F0-9]+);?/ig, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+                   .replace(/&([a-z]+);?/ig, (match, name) => {
+                     const entities = { colon: ':', tab: '\t', newline: '\n', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+                     return entities[name.toLowerCase()] || match;
+                   });
+
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
