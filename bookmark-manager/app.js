@@ -62,8 +62,24 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+// ⚡ Bolt: Cache array to Set for O(1) lookups
+// 💡 What: Replaced O(N) array .includes() with O(1) Set .has() in tight loop function.
+// 🎯 Why: isHidden is called repeatedly during render loops. O(N) lookup degrades performance as lists grow.
+// 📊 Impact: Significantly reduces CPU thrashing in large list rendering.
+let _cachedHiddenRef = {};
+let _cachedHiddenLen = {};
+let _cachedHiddenSet = {};
+
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  const arr = S.cfg.hidden?.[type];
+  if (!arr) return false;
+
+  if (_cachedHiddenRef[type] !== arr || _cachedHiddenLen[type] !== arr.length) {
+    _cachedHiddenRef[type] = arr;
+    _cachedHiddenLen[type] = arr.length;
+    _cachedHiddenSet[type] = new Set(arr);
+  }
+  return _cachedHiddenSet[type].has(id);
 }
 
 function hideItem(type, id) {
