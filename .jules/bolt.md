@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2025-07-08 - Garbage collection thrashing from array allocations in render loops
+**Learning:** In the bookmark-manager app, using array-creation methods like `.filter(b => !hiddenBms.has(b.id)).length` or `[...].filter(Boolean).join(';')` inside high-frequency render loops (e.g., `renderDashboard`, `renderCard`, `renderGroup`) causes significant garbage collection (GC) thrashing and performance degradation, especially during rapid keystrokes in search.
+**Action:** Avoid allocating temporary arrays in tight loops. Replace `.filter().length` with simple `for` loops and counter variables. Replace array `filter(Boolean).join()` patterns with direct string concatenation and `if` statements.
