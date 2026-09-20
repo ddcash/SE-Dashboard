@@ -58,7 +58,13 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Performance & Security Improvements
 - Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
+- Cached theme settings and optimized innerHTML loops to prevent layout thrashing and CPU blocking.
+- O(1) performance optimization for hidden items lookups using Set data structures.
+- Strict XSS protection by moving dynamic identifiers to data attributes to prevent inline JS execution via HTML entity decoding bypass, along with prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
+
+### Accessibility Improvements
+- Added screen reader support to toast notifications.
+- Ensured dynamically generated settings modals use proper labeling (`for` attributes matching `id`s) to guarantee accessibility for screen readers and keyboard users.
 
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
@@ -66,11 +72,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
-
-### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
 
 ## Installation
 
