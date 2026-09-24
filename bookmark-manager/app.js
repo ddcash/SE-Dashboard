@@ -1830,19 +1830,17 @@ function renderCard(bm, cat, dimmed) {
   const cardTextScale = cs.textSize ? parseFloat(cs.textSize) : 1;
   const cardColorStyle = cs.cardColor ? (isBgImage ? `background-color:${esc(cs.cardColor)}` : `background:${esc(cs.cardColor)}`) : '';
   const bgImageStyle = isBgImage && bgImgSrc ? `background-image:url("${bgImgSrc}");background-size:cover;background-position:center center;background-repeat:no-repeat` : '';
-  const inlineStyle = [
-    pos.w ? `width:${pos.w}px` : '',
-    pos.h ? `height:${pos.h}px` : '',
-    !(S.activeCat || S.query) && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
-    `--card-opacity:${cardOpacity}`,
-    `--card-local-text-scale:${cardTextScale}`,
-    cardColorStyle,
-    bgImageStyle,
-    cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
-    cs.textColor ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
-    cs.textWeight === 'bold' && !cs.hideText ? 'font-weight:bold' : '',
-    cs.textItalic && !cs.hideText ? 'font-style:italic' : '',
-  ].filter(Boolean).join(';');
+
+  let inlineStyle = pos.w ? `width:${pos.w}px` : '';
+  if (pos.h) inlineStyle += (inlineStyle ? ';' : '') + `height:${pos.h}px`;
+  if (!(S.activeCat || S.query) && pos.groupId && pos.x !== undefined) inlineStyle += (inlineStyle ? ';' : '') + `left:${pos.x}px !important; top:${pos.y}px !important;`;
+  inlineStyle += (inlineStyle ? ';' : '') + `--card-opacity:${cardOpacity};--card-local-text-scale:${cardTextScale}`;
+  if (cardColorStyle) inlineStyle += (inlineStyle ? ';' : '') + cardColorStyle;
+  if (bgImageStyle) inlineStyle += (inlineStyle ? ';' : '') + bgImageStyle;
+  if (cs.borderColor) inlineStyle += (inlineStyle ? ';' : '') + `border-color:${esc(cs.borderColor)}`;
+  if (cs.textColor) inlineStyle += (inlineStyle ? ';' : '') + `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};`;
+  if (cs.textWeight === 'bold' && !cs.hideText) inlineStyle += (inlineStyle ? ';' : '') + 'font-weight:bold';
+  if (cs.textItalic && !cs.hideText) inlineStyle += (inlineStyle ? ';' : '') + 'font-style:italic';
 
   const catColor   = esc(cat?.color || '#6366f1');
   const catBadge   = hideCatBadge ? '' : `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
@@ -1866,11 +1864,10 @@ function renderCard(bm, cat, dimmed) {
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
-  const classes = ['card',
-    hidden  ? 'card--hidden' : '',
-    dimmed  ? 'card--dim'    : '',
-    pos.groupId ? 'card--grouped' : '',
-  ].filter(Boolean).join(' ');
+  let classes = 'card';
+  if (hidden) classes += ' card--hidden';
+  if (dimmed) classes += ' card--dim';
+  if (pos.groupId) classes += ' card--grouped';
 
   return `
     <div class="${classes}" data-id="${esc(bm.id)}" data-cat="${esc(catId)}" style="${inlineStyle}">
@@ -1904,13 +1901,11 @@ function renderCard(bm, cat, dimmed) {
 
 function renderGroup(group, innerHTML = '') {
     const pos = S.cfg.cardPositions?.[group.id] || { x: 0, y: 0 };
-    const inlineStyle = [
-        pos.w ? `width:${pos.w}px` : '',
-        pos.h ? `height:${pos.h}px` : '',
-        group.bgImage ? `background-image:url('${esc(group.bgImage)}');background-size:cover;background-position:center;` : '',
-        group.bgColor ? `background-color:${esc(group.bgColor)};` : '',
-        group.textColor ? `color:${esc(group.textColor)};--text:${esc(group.textColor)};` : ''
-    ].filter(Boolean).join(';');
+    let inlineStyle = pos.w ? `width:${pos.w}px` : '';
+    if (pos.h) inlineStyle += (inlineStyle ? ';' : '') + `height:${pos.h}px`;
+    if (group.bgImage) inlineStyle += (inlineStyle ? ';' : '') + `background-image:url('${esc(group.bgImage)}');background-size:cover;background-position:center`;
+    if (group.bgColor) inlineStyle += (inlineStyle ? ';' : '') + `background-color:${esc(group.bgColor)}`;
+    if (group.textColor) inlineStyle += (inlineStyle ? ';' : '') + `color:${esc(group.textColor)};--text:${esc(group.textColor)}`;
 
     return `
     <div class="card card--group" data-id="${esc(group.id)}" style="${inlineStyle}">
@@ -1944,7 +1939,7 @@ function renderAllCards() {
       for (const group of S.cfg.groups) {
           // Only render groups if NO active category is selected (otherwise we just want a flat list)
           if (!S.activeCat) {
-              html += renderGroup(group);
+              cardsHtml += renderGroup(group);
           }
       }
   }
