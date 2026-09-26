@@ -56,10 +56,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
-
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
@@ -67,10 +63,14 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - The master editor supports both a visual category/bookmark editor and a raw JSON editor.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
 
+### Accessibility Improvements
+- **Modals & Forms**: Clear programmatic associations between labels and inputs for improved screen reader compatibility.
+- **Empty States**: Accessible empty states that gracefully fall back with clear call-to-actions, ensuring navigation continuity.
+
 ### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+- **Fast DOM Rendering**: Highly optimized DOM rendering (including group injections) utilizing native event loop bindings, preventing garbage collection thrashing in high-frequency rendering loops by avoiding array allocations.
+- **Efficient Filtering**: Enhanced search filtering with O(1) set caching algorithms for hidden status checks.
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, entity decoding bypass prevention, and URL protocol obfuscation filters.
 
 ## Installation
 
