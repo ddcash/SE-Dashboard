@@ -1360,13 +1360,6 @@ input[type="color"].form-input::-moz-color-swatch,
   padding: 1px 6px;
 }
 
-.palette-empty {
-  padding: 24px;
-  text-align: center;
-  color: var(--text3);
-  font-size: 13px;
-}
-
 /* ═══════════════════════════════════════════════
    TOAST
 ═══════════════════════════════════════════════ */
