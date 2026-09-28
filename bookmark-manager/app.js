@@ -1604,7 +1604,7 @@ function openGroupModal(groupId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="group-form" onsubmit="submitGroup(event, '${groupId || ''}')">
+      <form id="group-form" data-group-id="${esc(groupId || '')}" onsubmit="submitGroup(event, this.dataset.groupId)">
         <div class="form-row">
           <label for="grp-title">Group Title</label>
           <input id="grp-title" type="text" name="title" class="form-input" required
@@ -2346,7 +2346,7 @@ function openCardModal(catId, bmId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="card-form" onsubmit="submitCard(event,'${catId}','${bmId||''}')">
+      <form id="card-form" data-cat-id="${esc(catId)}" data-bm-id="${esc(bmId||'')}" onsubmit="submitCard(event, this.dataset.catId, this.dataset.bmId)">
         <div class="form-row">
           <label for="bm-title">Title *</label>
           <input id="bm-title" type="text" name="title" class="form-input" required
@@ -2600,7 +2600,7 @@ function openCategoryModal(catId) {
       <button class="btn-icon" aria-label="Close" onclick="closeModal()"><i data-lucide="X" style="width:15px;height:15px"></i></button>
     </div>
     <div class="modal-body">
-      <form id="cat-form" onsubmit="submitCategory(event,'${catId||''}')">
+      <form id="cat-form" data-cat-id="${esc(catId||'')}" onsubmit="submitCategory(event, this.dataset.catId)">
         <div class="form-row">
           <label for="cat-name">Name *</label>
           <input id="cat-name" type="text" name="name" class="form-input" required
