@@ -1,29 +1,12 @@
-# Plan: Serverless, Local-First Bookmark & Link Manager
+# Bookmark Manager Implementation Plan
 
-This plan outlines the architecture, data schemas, implementation steps, and specific developer prompts to build a bookmark manager that runs **100% in the browser** by opening a single HTML file directly (`file:///.../index.html`), with no local web server or background database processes required.
+## 1. Core Architecture (Local-First Application)
 
----
+The application is built to run entirely inside the browser locally by simply opening the `index.html` file.
 
-## 1. Architecture Overview
-
-To achieve direct file persistence, asset storage, and absolute local control without running a local web server, the application is designed around the **Directory Access API**.
-
-```mermaid
-graph TD
-    User([User's Browser]) <--> |Directory Access API| LocalFolder[Bookmarks Folder]
-    LocalFolder --> MasterConfig[master_bookmarks.json]
-    LocalFolder --> LocalSettings[local_settings.json]
-    LocalFolder --> Backups[backups/]
-    LocalFolder --> Assets[assets/]
-    Assets --> CustomIcons[custom_images & favicons]
-    ImportFile[Chrome/Safari HTML or CSV] -->|File Drag & Drop / Input| User
-```
-
-### Key Architectural Decisions
-1. **Directory Access API**: The browser requests permission to access a local folder (e.g., `bookmarks-data/`).
-   * **Structured Files**: Manages `master_bookmarks.json`, `local_settings.json`, and dated snapshots in a `/backups/` sub-directory.
-   * **Local Image & Asset Storage**: Custom icons or images are saved into an `/assets/` subdirectory. When displaying cards, the app reads these images from the disk and converts them to temporary Object URLs (`URL.createObjectURL`).
-2. **Universal Link Support**: Because the application runs under the browser's native local file protocol (`file:///.../index.html`), it has fewer security restrictions compared to sandboxed web servers. It can natively launch:
+### Why Browser-Direct (`file://` Protocol)?
+1. **Local System Access**: Using the browser's native File System Access API (`window.showDirectoryPicker`), we can ask the user to select a local folder on their computer. The app will then natively read and write files directly to that folder without requiring a backend server.
+2. **Native Deep Links & Protocol Handling**: By running on the browser's native local file protocol (`file:///.../index.html`), it has fewer security restrictions compared to sandboxed web servers. It can natively launch:
    * **Web Pages**: `https://...`, `http://...`
    * **Local Files & Folders**: `file:///C:/path/to/document.pdf` or `file:///Users/username/Projects` (supported because the host page is on the `file://` protocol).
    * **App Deep Links**: Custom schemes like `vscode://`, `obsidian://`, `spotify://`, `zoommtg://`, `slack://`, etc.
@@ -123,6 +106,10 @@ Saves the specific layout overrides for this browser instance:
   * Customize individual card background colors, borders, and text colors.
   * Set arbitrary parameters (like opening target, description notes).
 * Implement **Master File Publishing**: Allow users to share personal categories directly to the master file from within the app.
+* **Groups & Auto-Arrange Features**:
+  * Allow setting custom styles (background color, border color/width/style) for layout groups.
+  * Implement auto-arrange layout options for both the canvas and individual groups (Row, Column, Grid) to automatically position cards.
+  * Improve drag and drop logic to handle collision, container expansion, and complex dragging behavior.
 
 ### Phase 4: Import / Export & Master Publishing Module
 * Build a parser to import standard HTML Netscape bookmarks files, CSVs, and JSONs.
@@ -176,6 +163,7 @@ Add an interactive Card Customization Editor modal and implement layout dragging
 2. Drag-and-Drop & Canvas Layout:
    - Users can drag cards to reposition them freely around the canvas layout.
    - Users can create resizable groups from the command palette and place cards within them.
+   - Users can customize the style of the groups, as well as select auto-arrange layout options for the canvas and groups (Row, Column, Grid).
 3. Publishing: Allow users to publish entire personal categories to the shared master file directly from the category editor.
 Save all modifications instantly back to the directory's files.
 ```
