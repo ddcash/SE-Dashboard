@@ -62,8 +62,27 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+// ⚡ Bolt optimization: Cache hidden arrays as Sets for O(1) lookups instead of O(N) Array.includes.
+// We use reference equality AND length checks to detect mutations since arrays might be mutated in place.
+// This reduces GC pressure and CPU thrashing during frequent re-renders.
+const _cachedHidden = {};
+const _cachedHiddenRefs = {};
+const _cachedHiddenLen = {};
+
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  const arr = S.cfg.hidden?.[type];
+  if (!arr) return false;
+
+  if (_cachedHiddenRefs[type] !== arr || _cachedHiddenLen[type] !== arr.length) {
+    if (!_cachedHidden[type]) _cachedHidden[type] = new Set();
+    else _cachedHidden[type].clear();
+    for (let i = 0; i < arr.length; i++) {
+      _cachedHidden[type].add(arr[i]);
+    }
+    _cachedHiddenRefs[type] = arr;
+    _cachedHiddenLen[type] = arr.length;
+  }
+  return _cachedHidden[type].has(id);
 }
 
 function hideItem(type, id) {
