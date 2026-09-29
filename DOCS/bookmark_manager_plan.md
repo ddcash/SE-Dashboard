@@ -129,6 +129,11 @@ Saves the specific layout overrides for this browser instance:
 * **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
 * Support editing and publishing to a remote master file URL via HTTP PUT requests.
 
+### Phase 5: Security, Performance, & Accessibility (Ongoing)
+* **Security**: Implement robust XSS protections. Prevent URL protocol obfuscation (`javascript:`, `data:`). Avoid interpolating dynamic user input directly into inline event handlers, and strictly use `data-*` attributes to prevent entity-decoding bypass vulnerabilities.
+* **Performance**: Optimize DOM rendering to strictly avoid array-allocations in high-frequency rendering loops (e.g. pointer movements, keystrokes). Implement O(1) set caching for faster element lookups.
+* **Accessibility**: Enhance dynamic empty states with ARIA regions and explicit actions. Ensure dynamically generated templates programmatically associate `label` and `input` elements using matching `for`/`id` attributes.
+
 ---
 
 ## 4. Prompts to Guide Claude
