@@ -12,3 +12,6 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+## 2026-09-30 - GC thrashing from repeated Set allocations in render loops
+**Learning:** Allocating `new Set(S.cfg.hidden?.bookmarks)` inside high-frequency render functions like `renderDashboard` or `renderSearchResults` causes severe garbage collection (GC) thrashing and degrades performance on every keystroke. Because the arrays only mutate when a user hides/unhides an item, we can cache the Sets globally.
+**Action:** Optimize hidden status checks by using a globally cached Set that validates against the array reference and length to avoid redundant O(N) array-to-Set conversions during continuous render loops.

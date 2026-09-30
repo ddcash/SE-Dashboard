@@ -62,8 +62,22 @@ function fuzzyMatch(str, q) {
 // ═══════════════════════════════════════════════════════════════
 //  VISIBILITY HELPERS  (stored in local_settings, never touches master file)
 // ═══════════════════════════════════════════════════════════════
+const _cachedHidden = {};
+const _lastHiddenRef = {};
+const _lastHiddenLen = {};
+
+// ⚡ Bolt optimization: global cached Set for hidden status lookups (prevents GC thrashing and O(n) array scans in hot render loops)
 function isHidden(type, id) {
-  return (S.cfg.hidden?.[type] || []).includes(id);
+  if (!S.cfg.hidden) S.cfg.hidden = { bookmarks: [], categories: [] };
+  if (!S.cfg.hidden[type]) S.cfg.hidden[type] = [];
+
+  const arr = S.cfg.hidden[type];
+  if (_lastHiddenRef[type] !== arr || _lastHiddenLen[type] !== arr.length) {
+    _cachedHidden[type] = new Set(arr);
+    _lastHiddenRef[type] = arr;
+    _lastHiddenLen[type] = arr.length;
+  }
+  return _cachedHidden[type].has(id);
 }
 
 function hideItem(type, id) {
@@ -167,12 +181,9 @@ function autoArrangeCards() {
       }
   }
 
-  // ⚡ Bolt: Cache hidden lookups to a Set for O(1) checks during sorting
-  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
-
   allBms.sort((a, b) => {
-    const aHidden = hiddenBms.has(a.id) ? 1 : 0;
-    const bHidden = hiddenBms.has(b.id) ? 1 : 0;
+    const aHidden = isHidden('bookmarks', a.id) ? 1 : 0;
+    const bHidden = isHidden('bookmarks', b.id) ? 1 : 0;
     return aHidden - bHidden;
   });
 
@@ -1936,10 +1947,6 @@ function renderGroup(group, innerHTML = '') {
 function renderAllCards() {
   let cardsHtml = '';
 
-  // ⚡ Bolt optimization: Use Sets for O(1) hidden status lookups instead of O(n) array scans
-  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
-  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
-
   if (S.cfg.groups) {
       for (const group of S.cfg.groups) {
           // Only render groups if NO active category is selected (otherwise we just want a flat list)
@@ -1950,11 +1957,11 @@ function renderAllCards() {
   }
 
   for (const cat of S.data.categories) {
-    const catHidden  = hiddenCats.has(cat.id);
+    const catHidden  = isHidden('categories', cat.id);
     if (!S.showHidden && catHidden) continue;
 
     for (const bm of cat.bookmarks) {
-      const bmHidden = hiddenBms.has(bm.id);
+      const bmHidden = isHidden('bookmarks', bm.id);
       if (!S.showHidden && bmHidden) continue;
 
       // If a category filter is active, entirely skip cards not in that category
@@ -1991,16 +1998,14 @@ function renderAllCards() {
 
 function renderSearchResults() {
   const rows = [];
-  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
-  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
   for (const cat of S.data.categories) {
-    if (!S.showHidden && hiddenCats.has(cat.id)) continue;
+    if (!S.showHidden && isHidden('categories', cat.id)) continue;
     // ⚡ Bolt: Hoist loop-invariant category name match to avoid redundant work per bookmark
     const catMatch = fuzzyMatch(cat.name || '', S.query);
 
     for (const bm of cat.bookmarks) {
-      if (!S.showHidden && hiddenBms.has(bm.id)) continue;
+      if (!S.showHidden && isHidden('bookmarks', bm.id)) continue;
       const match = catMatch ||
         fuzzyMatch(bm.title,            S.query) ||
         fuzzyMatch(bm.url,              S.query) ||
@@ -2090,14 +2095,10 @@ function renderDashboard() {
   const hiddenCatCount = (S.cfg.hidden?.categories || []).length;
   const hiddenTotal    = hiddenBmCount + hiddenCatCount;
 
-  // ⚡ Bolt optimization: O(1) lookups for hidden status
-  const hiddenCats = new Set(S.cfg.hidden?.categories || []);
-  const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
-
   const catPills = cats.map(cat => {
     const active   = S.activeCat === cat.id;
-    const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
+    const catHidden = isHidden('categories', cat.id);
+    const visCount = cat.bookmarks.filter(b => !isHidden('bookmarks', b.id)).length;
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
