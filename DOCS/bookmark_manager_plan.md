@@ -113,6 +113,9 @@ Saves the specific layout overrides for this browser instance:
 
 ### Phase 2: Core Frontend UI & Universal Launching
 * Build a premium, glassmorphic card dashboard using CSS variables.
+* **Accessibility**: Ensure ARIA labels and explicit label associations are implemented (especially in modals) to support screen readers, and provide robust, actionable empty states for search/command palette.
+* **Performance Architecture**: Optimize DOM rendering. Specifically, use simple `for` loops in high-frequency rendering and utilize O(1) Set caching for features like hidden items to prevent Garbage Collection (GC) thrashing on every keystroke.
+* **Security Architecture**: Implement robust XSS protection protocols on rendering inline events using strict `data-*` attribute handling rather than direct variable interpolation, and prevent URL protocol obfuscation (`javascript:`, `data:`).
 * Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
 * Enable fuzzy searching across URLs, tags, and custom metadata.
 
