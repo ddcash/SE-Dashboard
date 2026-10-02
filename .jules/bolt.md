@@ -12,3 +12,7 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+
+## 2025-07-15 - Inefficient DOM construction arrays
+**Learning:** In the vanilla JS app using string reconstruction via innerHTML on every keystroke `.filter(Boolean).join()` causes numerous extra garbage collection events that affect framerate heavily when rendering long list of cards or groups.
+**Action:** Avoid allocating arrays via array filters/joins and use string concatenations combined with standard logic flows instead, also apply traditional iterations directly for counting without allocating extra arrays `cat.bookmarks.filter(...).length`.
