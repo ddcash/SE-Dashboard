@@ -129,6 +129,11 @@ Saves the specific layout overrides for this browser instance:
 * **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
 * Support editing and publishing to a remote master file URL via HTTP PUT requests.
 
+### Phase 5: Performance, Security & Accessibility Hardening
+* **Performance (GC Mitigation):** Avoid array allocations (like `.filter().length` or `.join()`) inside high-frequency render loops. Cache dynamic properties (e.g., hidden items) globally using `Set` objects to guarantee O(1) lookups and eliminate Garbage Collection (GC) thrashing.
+* **Security (XSS Prevention):** Never interpolate dynamic, user-controlled variables directly into inline event handler strings. Always store HTML-escaped variables in `data-*` attributes and retrieve them via `this.dataset` inside the handler.
+* **Accessibility (A11y):** Ensure all dynamically generated form elements have explicit `id` and `for` label associations, incorporating unique identifiers to prevent collisions across rendered lists.
+
 ---
 
 ## 4. Prompts to Guide Claude
