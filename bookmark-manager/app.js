@@ -3171,7 +3171,11 @@ function updatePalette(q) {
   if (!res) return;
 
   if (!cmdsHtml && !bmsHtml) {
-    res.innerHTML = `<div class="palette-empty">No results for "${esc(q)}"</div>`;
+    res.innerHTML = `
+      <div class="palette-empty">
+        <i data-lucide="SearchX" style="width:24px;height:24px"></i>
+        <div>No results for "${esc(q)}"</div>
+      </div>`;
   } else {
     res.innerHTML =
       (cmdsHtml ? `<div class="palette-section-label">Commands</div>${cmdsHtml}` : '') +
