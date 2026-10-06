@@ -1361,6 +1361,11 @@ input[type="color"].form-input::-moz-color-swatch,
 }
 
 .palette-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
   padding: 24px;
   text-align: center;
   color: var(--text3);
