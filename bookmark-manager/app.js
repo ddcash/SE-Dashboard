@@ -3171,7 +3171,13 @@ function updatePalette(q) {
   if (!res) return;
 
   if (!cmdsHtml && !bmsHtml) {
-    res.innerHTML = `<div class="palette-empty">No results for "${esc(q)}"</div>`;
+    res.innerHTML = `<div class="palette-empty">
+      <i data-lucide="SearchX" style="width:32px;height:32px;margin-bottom:12px;opacity:0.5;display:inline-block"></i>
+      <div style="margin-bottom:12px;">No results for "${esc(q)}"</div>
+      <button class="btn btn--primary" onclick="updatePalette(''); document.getElementById('palette-input').value=''; document.getElementById('palette-input').focus();" style="margin: 0 auto;">
+        <i data-lucide="X" style="width:13px;height:13px"></i> Clear Search
+      </button>
+    </div>`;
   } else {
     res.innerHTML =
       (cmdsHtml ? `<div class="palette-section-label">Commands</div>${cmdsHtml}` : '') +
