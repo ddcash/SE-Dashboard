@@ -1799,7 +1799,7 @@ function renderIcon(icon, size = 16) {
     if (!url && S.cfg.masterAssetsUrl) url = S.cfg.masterAssetsUrl + '/' + icon.value;
     if (url) {
       const fb = `this.parentNode.innerHTML='<i data-lucide=\\'Image\\' style=\\'width:${size}px;height:${size}px\\'></i>';if(typeof lucide!=='undefined')lucide.createIcons();`;
-      return `<img src="${url}" class="card-favicon" loading="lazy" onerror="${fb}">`;
+      return `<img src="${esc(url)}" class="card-favicon" loading="lazy" onerror="${fb}">`;
     }
     return `<i data-lucide="Image" style="width:${size}px;height:${size}px"></i>`;
   }
@@ -2448,7 +2448,7 @@ function openCardModal(catId, bmId) {
             </div>
             ` : '<p class="hint-text">Upload an image to use it here.</p>'}
             ${iType==='local' && (S.assetUrls[iVal] || S.cfg.masterAssetsUrl)
-              ? `<img src="${S.assetUrls[iVal] || (S.cfg.masterAssetsUrl + '/' + iVal)}" class="icon-preview-img">` : ''}
+              ? `<img src="${esc(S.assetUrls[iVal] || (S.cfg.masterAssetsUrl + '/' + iVal))}" class="icon-preview-img">` : ''}
           </div>
         </div>
 
