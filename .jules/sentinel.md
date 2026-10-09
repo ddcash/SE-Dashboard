@@ -20,3 +20,8 @@
 **Vulnerability:** User-controlled bookmark IDs (e.g., from imported JSON) and category IDs were directly interpolated into inline `onclick` event handlers (`onclick="trackClick(event,'${bm.id}','${catId}')"`). An attacker could bypass HTML-escaping because the browser decodes HTML entities before evaluating the JavaScript context.
 **Learning:** Interpolating user-supplied strings directly into inline JavaScript event handlers is unsafe, even if HTML-escaped (`esc()`), because the browser decodes HTML entities before evaluating the JavaScript.
 **Prevention:** Store user-provided dynamic identifiers (like IDs or URLs) in `data-` attributes on the DOM element and retrieve them dynamically within the event handler (e.g., `this.closest('.card').dataset.id`), preventing injection via entity decoding.
+
+## 2024-10-09 - XSS in HTML Event Handlers via Entity Decoding
+**Vulnerability:** XSS possible through dynamic variable interpolation inside inline HTML event handlers (e.g., `onsubmit="fn('${id}')"`), because browsers decode HTML entities in these attributes before executing the JavaScript.
+**Learning:** `esc()` is insufficient inside event handler attributes because `&#39;` is decoded back to `'`, allowing quote breakout.
+**Prevention:** Store HTML-escaped variables in `data-*` attributes and retrieve them dynamically using `this.dataset` within the event handler.
