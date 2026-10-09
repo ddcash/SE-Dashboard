@@ -22,7 +22,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Search & Filtering
 - Search titles, URLs, descriptions, and tags with fuzzy match.
-- Clear and actionable empty states when search yields no results.
+- Clear and actionable empty states when search yields no results, including enhanced command palette empty states with intuitive icons and actions.
 - Filter categories with clickable pills.
 - Empty states feature helpful Call-to-Action (CTA) buttons to quickly create new items or clear filters.
 - Preserve your current card layout when search is cleared.
@@ -56,10 +56,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
-
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
@@ -69,8 +65,10 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 
 ### Performance & Security Improvements
 - Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
+- Reduced Garbage Collection (GC) pressure by avoiding array creations in render loops.
 - Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, local icon rendering, and URL protocol obfuscation filters.
+- **Accessibility Improvements**: Explicit `for` and `id` associations for Master Editor inputs to improve form accessibility.
 
 ## Installation
 
