@@ -212,3 +212,18 @@ Provide a simple javascript-based "Add Bookmark" bookmarklet that users can drag
 
 ### F. Ideas and Enhancements
 Future ideas and enhancements are tracked in the `Ideas and Enhancements.md` file.
+
+---
+
+## 6. Architectural Guidelines & Best Practices
+
+To ensure long-term maintainability, security, and performance, the following guidelines must be adhered to:
+
+### A. Performance (Bolt)
+* **Avoid Array Allocations in Render Loops:** Prevent Garbage Collection (GC) thrashing by avoiding array-creation methods (like \`.filter().length\` or \`[...].filter(Boolean).join()\`) inside high-frequency render loops (e.g., \`renderDashboard\`, \`renderCard\`). Use simple \`for\` loops and direct string concatenation.
+
+### B. Security (Sentinel)
+* **Strict XSS Prevention:** Never interpolate dynamic, user-controlled variables directly into inline event handlers (e.g., \`onsubmit="fn('${id}')"\`). Instead, store HTML-escaped variables in \`data-*\` attributes and retrieve them dynamically via \`this.dataset\`. Ensure all variables interpolated into HTML attributes are safely encoded using the \`esc()\` function.
+
+### C. Accessibility (Palette)
+* **Explicit Form Associations:** Always use explicit \`for\` and \`id\` attributes on form elements to associate labels with inputs. When dynamically generating forms in loops, ensure \`id\` attributes include unique identifiers to prevent collisions.
