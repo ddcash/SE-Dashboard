@@ -1,7 +1,9 @@
 # SE-Dashboard
 
-## Description
+## Title
+SE-Dashboard
 
+## Description
 SE-Dashboard is a local-first bookmark and link manager built to run entirely in the browser. It is designed for personal use, with all data stored on your device in a directory you choose. It works without a server or account by using the browser's File System Access API to read and write files directly in a selected directory.
 
 ## Features
@@ -12,21 +14,24 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Change bookmark icons using built-in Lucide icons, favicon fetch from website hosts, custom image URLs, or uploaded local images.
 - Move bookmarks between categories from the editor.
 - **Hide Icon Setting**: Toggle the visibility of icons for a cleaner look.
+- **Accessibility Improvements**: Enhanced forms with explicit ID and `for` attribute associations for improved screen reader compatibility, and ARIA labels for tag removal buttons.
 
 ### Freeform Canvas Layout & Groups
 - Cards are placed in a scrollable canvas layout.
 - Create resizable **Groups** to visually organize cards on the canvas.
 - Drag bookmark cards to reposition them freely, or drag them in and out of groups.
+- **Group Management**: Create new groups directly from the command palette, and explicitly remove cards from groups.
 - Reset layout from the command palette to restore the default arrangement.
 - **Layout Persistence**: Positions (including group assignments) are securely saved in `local_settings.json` and persist across sessions.
 
 ### Search & Filtering
-- Search titles, URLs, descriptions, and tags with fuzzy match.
+- Search titles, URLs, descriptions, and tags with fuzzy match. (Optimized with early length checks and pre-compiled RegEx for blazing fast results).
 - Clear and actionable empty states when search yields no results.
 - Filter categories with clickable pills.
 - Empty states feature helpful Call-to-Action (CTA) buttons to quickly create new items or clear filters.
 - Preserve your current card layout when search is cleared.
 - Use keyboard shortcut `Ctrl+K` / `Cmd+K` to open the command palette.
+- **Command Palette Enhancements**: Improved empty states with icons, clear actions, and keyboard shortcut hints directly in the search bar. Edit categories directly from the command palette.
 - Toggle hidden items on or off.
 
 ### Appearance & Theme
@@ -56,21 +61,17 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
-
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
 - Open the command palette with `Ctrl+K` / `Cmd+K` and select **Edit Master Bookmarks**.
-- The master editor supports both a visual category/bookmark editor and a raw JSON editor.
+- The master editor supports both a visual category/bookmark editor and a raw JSON editor, with full accessibility compliance via explicit ARIA labels and ID associations.
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
 
 ### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+- **Performance**: Highly optimized DOM rendering and efficient native event loop bindings. Avoids array creation and Garbage Collection (GC) thrashing in tight render loops by using string concatenation instead of `.filter().join()`.
+- **Optimization**: O(1) Set caching for hidden items lookups to ensure maximum framerates even on large dashboards.
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, URL protocol obfuscation filters, and prevention of HTML entity encoding bypass in URL sanitization and local icon rendering.
 
 ## Installation
 
@@ -96,9 +97,9 @@ Since SE-Dashboard runs entirely in the browser, there is no traditional install
 - **Customizing Layout & Groups:** Create groups from the command palette to visually containerize bookmarks. Drag and drop cards around the canvas or into groups to arrange your dashboard visually. The positions are automatically saved and persistent across sessions.
 - **Publishing:** From the Category Editor, you can easily "Publish to Master" to share an entire personal category directly with the shared master file.
 - **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
-- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
+- **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), safely update the shared `master_bookmarks.json` file via the master editor, edit categories, and create new groups.
 - **Restoring Sessions:** When you reopen the app, it can resume the last directory if browser permissions are still granted. If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
-- **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`, `test_xss.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. Run `node test_xss.js` to verify URL sanitization.
+- **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`.
 
 ### File Structure
 
@@ -123,4 +124,4 @@ This project is intended as a personal local bookmark dashboard. Ensure you regu
 
 ## License
 
-The project is intended as a personal local bookmark dashboard. There is no license file included in this repository.
+This project is intended as a personal local bookmark dashboard. There is no license file included in this repository.
