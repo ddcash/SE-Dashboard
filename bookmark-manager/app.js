@@ -28,11 +28,10 @@ let _lastModified = 0; // tracks master_bookmarks.json mtime for external-change
 // ═══════════════════════════════════════════════════════════════
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+const _escMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 function esc(s) {
-  return String(s ?? '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
+  // ⚡ Bolt optimization: Use map lookup for faster HTML escaping
+  return String(s ?? '').replace(/[&<>"']/g, m => _escMap[m]);
 }
 
 function sanitizeUrl(url) {
