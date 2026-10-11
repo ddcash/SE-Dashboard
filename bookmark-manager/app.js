@@ -1950,6 +1950,10 @@ function renderAllCards() {
   }
 
   for (const cat of S.data.categories) {
+    // ⚡ Bolt optimization: Hoist loop-invariant category filter out of inner bookmark loop
+    // to prevent redundant iterations over thousands of skipped bookmarks.
+    if (S.activeCat && S.activeCat !== cat.id) continue;
+
     const catHidden  = hiddenCats.has(cat.id);
     if (!S.showHidden && catHidden) continue;
 
@@ -1957,8 +1961,6 @@ function renderAllCards() {
       const bmHidden = hiddenBms.has(bm.id);
       if (!S.showHidden && bmHidden) continue;
 
-      // If a category filter is active, entirely skip cards not in that category
-      if (S.activeCat && S.activeCat !== cat.id) continue;
       const dimmed = false;
 
       const pos = S.cfg.cardPositions?.[bm.id];
