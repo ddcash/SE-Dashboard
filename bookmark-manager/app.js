@@ -35,12 +35,28 @@ function esc(s) {
     .replace(/'/g,'&#39;');
 }
 
+// ⚡ Bolt: Cache textarea to avoid DOM allocations on every sanitizeUrl call
+let _sharedTextArea = null;
+
 function sanitizeUrl(url) {
   if (!url) return '';
-  const u = String(url).trim();
+  const original = String(url).trim();
+  let u = original;
+
+  // 🛡️ Sentinel: Decode HTML entities before checking to prevent entity-encoded XSS bypass
+  try {
+    if (typeof document !== 'undefined') {
+      if (!_sharedTextArea) _sharedTextArea = document.createElement('textarea');
+      _sharedTextArea.innerHTML = u;
+      u = _sharedTextArea.value;
+    }
+  } catch (e) {
+    // Ignore if not in DOM environment
+  }
+
   const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
-  return u;
+  return original;
 }
 
 // ⚡ Bolt: Cache lowercased query to avoid O(N) string allocations during loop
