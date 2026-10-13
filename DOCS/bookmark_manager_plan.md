@@ -129,6 +129,11 @@ Saves the specific layout overrides for this browser instance:
 * **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
 * Support editing and publishing to a remote master file URL via HTTP PUT requests.
 
+### Phase 5: Performance, Security, and Accessibility Improvements
+* **Performance Optimizations**: Reduce Garbage Collection (GC) thrashing in render loops, optimize loop-invariant variables, and improve `esc` function efficiency.
+* **Security Enhancements**: Mitigate Cross-Site Scripting (XSS) risks by migrating inline HTML event handlers to secure `data-*` attributes and addressing HTML entity decoding bypasses.
+* **Accessibility and UX**: Ensure proper `<label for="...">` associations for dynamically generated master editor forms and implement actionable, visually distinct empty states in the command palette search.
+
 ---
 
 ## 4. Prompts to Guide Claude
