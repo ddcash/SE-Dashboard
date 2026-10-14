@@ -35,10 +35,22 @@ function esc(s) {
     .replace(/'/g,'&#39;');
 }
 
+let _sharedTextArea = null;
+
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  let decoded = u;
+  if (typeof document !== 'undefined') {
+    try {
+      if (!_sharedTextArea) _sharedTextArea = document.createElement('textarea');
+      _sharedTextArea.innerHTML = u;
+      decoded = _sharedTextArea.value;
+    } catch (e) {}
+  }
+
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
