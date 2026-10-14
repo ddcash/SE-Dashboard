@@ -2744,10 +2744,15 @@ async function handleIconUpload(input) {
   } catch (e) { showToast('Upload failed: ' + e.message); }
 }
 
+let _filterTimeout;
 function filterIcons(q) {
-  document.querySelectorAll('.icon-option').forEach(btn => {
-    btn.style.display = fuzzyMatch(btn.dataset.icon, q) ? '' : 'none';
-  });
+  // ⚡ Bolt optimization: Debounce icon filtering to prevent UI thread blocking
+  clearTimeout(_filterTimeout);
+  _filterTimeout = setTimeout(() => {
+    document.querySelectorAll('.icon-option').forEach(btn => {
+      btn.style.display = fuzzyMatch(btn.dataset.icon, q) ? '' : 'none';
+    });
+  }, 150);
 }
 
 function toggleColor(checkbox, pickerId) {
@@ -2899,11 +2904,16 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
+let _searchTimeout;
 function handleSearch(q) {
-  S.query = q;
-  render();
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  // ⚡ Bolt optimization: Debounce search to prevent expensive full DOM re-renders on every keystroke
+  clearTimeout(_searchTimeout);
+  _searchTimeout = setTimeout(() => {
+    S.query = q;
+    render();
+    const inp = document.getElementById('search-input');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }, 150);
 }
 
 
