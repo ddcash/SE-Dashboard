@@ -35,12 +35,23 @@ function esc(s) {
     .replace(/'/g,'&#39;');
 }
 
+let _sharedTextArea = null;
+
 function sanitizeUrl(url) {
   if (!url) return '';
-  const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  let u = String(url).trim();
+
+  if (typeof document !== 'undefined') {
+    try {
+      if (!_sharedTextArea) _sharedTextArea = document.createElement('textarea');
+      _sharedTextArea.innerHTML = u;
+      u = _sharedTextArea.value;
+    } catch (e) {}
+  }
+
+  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
-  return u;
+  return String(url).trim();
 }
 
 // ⚡ Bolt: Cache lowercased query to avoid O(N) string allocations during loop
