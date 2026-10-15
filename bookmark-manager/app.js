@@ -1830,19 +1830,19 @@ function renderCard(bm, cat, dimmed) {
   const cardTextScale = cs.textSize ? parseFloat(cs.textSize) : 1;
   const cardColorStyle = cs.cardColor ? (isBgImage ? `background-color:${esc(cs.cardColor)}` : `background:${esc(cs.cardColor)}`) : '';
   const bgImageStyle = isBgImage && bgImgSrc ? `background-image:url("${bgImgSrc}");background-size:cover;background-position:center center;background-repeat:no-repeat` : '';
-  const inlineStyle = [
-    pos.w ? `width:${pos.w}px` : '',
-    pos.h ? `height:${pos.h}px` : '',
-    !(S.activeCat || S.query) && pos.groupId && pos.x !== undefined ? `left:${pos.x}px !important; top:${pos.y}px !important;` : '',
-    `--card-opacity:${cardOpacity}`,
-    `--card-local-text-scale:${cardTextScale}`,
-    cardColorStyle,
-    bgImageStyle,
-    cs.borderColor ? `border-color:${esc(cs.borderColor)}` : '',
-    cs.textColor ? `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};` : '',
-    cs.textWeight === 'bold' && !cs.hideText ? 'font-weight:bold' : '',
-    cs.textItalic && !cs.hideText ? 'font-style:italic' : '',
-  ].filter(Boolean).join(';');
+
+  // ⚡ Bolt optimization: Use string building instead of array filter/join to eliminate temporary object allocation per card
+  let inlineStyle = '';
+  if (pos.w) inlineStyle += `width:${pos.w}px;`;
+  if (pos.h) inlineStyle += `height:${pos.h}px;`;
+  if (!(S.activeCat || S.query) && pos.groupId && pos.x !== undefined) inlineStyle += `left:${pos.x}px !important; top:${pos.y}px !important;`;
+  inlineStyle += `--card-opacity:${cardOpacity};--card-local-text-scale:${cardTextScale};`;
+  if (cardColorStyle) inlineStyle += `${cardColorStyle};`;
+  if (bgImageStyle) inlineStyle += `${bgImageStyle};`;
+  if (cs.borderColor) inlineStyle += `border-color:${esc(cs.borderColor)};`;
+  if (cs.textColor) inlineStyle += `color:${esc(cs.textColor)}; --text:${esc(cs.textColor)}; --text3:${esc(cs.textColor)};`;
+  if (cs.textWeight === 'bold' && !cs.hideText) inlineStyle += 'font-weight:bold;';
+  if (cs.textItalic && !cs.hideText) inlineStyle += 'font-style:italic;';
 
   const catColor   = esc(cat?.color || '#6366f1');
   const catBadge   = hideCatBadge ? '' : `<span class="card-cat-badge" style="background:${catColor}22;color:${catColor};border-color:${catColor}44">
@@ -1866,11 +1866,11 @@ function renderCard(bm, cat, dimmed) {
          <i data-lucide="EyeOff" style="width:12px;height:12px"></i>
        </button>`;
 
-  const classes = ['card',
-    hidden  ? 'card--hidden' : '',
-    dimmed  ? 'card--dim'    : '',
-    pos.groupId ? 'card--grouped' : '',
-  ].filter(Boolean).join(' ');
+  // ⚡ Bolt optimization: Construct class string dynamically to avoid allocating arrays and calling .filter() per card on every render
+  let classes = 'card';
+  if (hidden) classes += ' card--hidden';
+  if (dimmed) classes += ' card--dim';
+  if (pos.groupId) classes += ' card--grouped';
 
   return `
     <div class="${classes}" data-id="${esc(bm.id)}" data-cat="${esc(catId)}" style="${inlineStyle}">
@@ -2097,7 +2097,12 @@ function renderDashboard() {
   const catPills = cats.map(cat => {
     const active   = S.activeCat === cat.id;
     const catHidden = hiddenCats.has(cat.id);
-    const visCount = cat.bookmarks.filter(b => !hiddenBms.has(b.id)).length;
+
+    // ⚡ Bolt optimization: Count visible bookmarks manually instead of .filter() to prevent GC pressure from large temporary arrays
+    let visCount = 0;
+    for (const b of cat.bookmarks) {
+      if (!hiddenBms.has(b.id)) visCount++;
+    }
     return `
       <button class="cat-pill ${active ? 'cat-pill--active' : ''} ${catHidden ? 'cat-pill--hidden' : ''}"
         style="--pill-color:${esc(cat.color||'#6366f1')}" data-cat-id="${esc(cat.id)}"
