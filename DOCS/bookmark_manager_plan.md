@@ -118,10 +118,11 @@ Saves the specific layout overrides for this browser instance:
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
-* Build a **Card Editor Modal** allowing users to:
+* Build an accessible **Card Editor Modal** allowing users to:
   * Select an icon (Lucide library search, external URL image, local favicon, or custom image upload).
   * Customize individual card background colors, borders, and text colors.
   * Set arbitrary parameters (like opening target, description notes).
+  * *Note on Accessibility:* Ensure all form inputs dynamically generated for this and other modals (like Settings and the Master Editor) have explicitly associated `id` and `for` attributes for screen readers.
 * Implement **Master File Publishing**: Allow users to share personal categories directly to the master file from within the app.
 
 ### Phase 4: Import / Export & Master Publishing Module
@@ -197,6 +198,7 @@ Consider adding these advanced features to further elevate the user experience a
 ### A. Vercel/Linear Style Command Palette (`Ctrl + K` or `Cmd + K`)
 Allow power users to navigate the app, switch themes, search bookmarks, filter tags, and execute quick actions purely from the keyboard.
 * *Example prompt:* `Implement a keyboard-accessible search palette that overlays the dashboard when Cmd/Ctrl + K is pressed, allowing instant navigation, tag toggling, and page configuration.`
+* *UI Note:* The command palette search has been implemented, including enhanced "Empty States" that feature relevant icons and clear action buttons to prevent user dead ends when no search results are found.
 
 ### B. Drag & Drop Directory Scanning
 Enable dropping a folder from the local computer filesystem directly onto the webpage. The app scans the directory contents recursively and automatically adds all files (PDFs, images, documents) as `file://` bookmark cards.
