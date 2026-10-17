@@ -2302,7 +2302,7 @@ function addTagBubble(val) {
 
    const span = document.createElement('span');
    span.className = 'tag-bubble';
-   span.innerHTML = `${esc(val)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button>`;
+   span.innerHTML = `${esc(val)} <button type="button" class="tag-remove" aria-label="Remove tag" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button>`;
    container.appendChild(span);
    updateTagsInput();
 }
@@ -2367,7 +2367,7 @@ function openCardModal(catId, bmId) {
           <label>Tags</label>
           <div class="tag-input-container">
              <div id="tag-bubbles" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
-                 ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
+                 ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" aria-label="Remove tag" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
              </div>
              <input type="hidden" id="bm-tags-hidden" name="tags" value="${esc((bm?.tags||[]).join(','))}">
              <input id="bm-tags-input" type="text" class="form-input" placeholder="Type a tag and press Enter/Comma"
@@ -2404,11 +2404,11 @@ function openCardModal(catId, bmId) {
 
         <div class="form-section">Icon</div>
         <div class="form-row">
-          <div class="icon-type-tabs">
-            <button type="button" class="icon-tab ${iType==='lucide'?'active':''}" onclick="switchIconTab(this,'lucide')">Lucide</button>
-            <button type="button" class="icon-tab ${iType==='favicon'?'active':''}" onclick="switchIconTab(this,'favicon')">Favicon</button>
-            <button type="button" class="icon-tab ${iType==='url'?'active':''}" onclick="switchIconTab(this,'url')">Image URL</button>
-            <button type="button" class="icon-tab ${iType==='local'?'active':''}" onclick="switchIconTab(this,'local')">Upload</button>
+          <div class="icon-type-tabs" role="tablist">
+            <button type="button" class="icon-tab ${iType==='lucide'?'active':''}" onclick="switchIconTab(this,'lucide')" aria-selected="${iType==='lucide'}" role="tab">Lucide</button>
+            <button type="button" class="icon-tab ${iType==='favicon'?'active':''}" onclick="switchIconTab(this,'favicon')" aria-selected="${iType==='favicon'}" role="tab">Favicon</button>
+            <button type="button" class="icon-tab ${iType==='url'?'active':''}" onclick="switchIconTab(this,'url')" aria-selected="${iType==='url'}" role="tab">Image URL</button>
+            <button type="button" class="icon-tab ${iType==='local'?'active':''}" onclick="switchIconTab(this,'local')" aria-selected="${iType==='local'}" role="tab">Upload</button>
           </div>
           <input type="hidden" name="iconType" value="${iType}">
           <input type="hidden" name="iconValue" value="${esc(iVal)}">
@@ -2441,8 +2441,8 @@ function openCardModal(catId, bmId) {
             <div class="asset-gallery" style="max-height: 200px; overflow-y: auto; resize: vertical;">
               ${Object.entries(S.assetUrls).map(([name, url]) => `
                 <button type="button" class="asset-thumb ${iType==='local' && iVal===name ? 'selected' : ''}"
-                  data-asset-name="${esc(name)}" onclick="selectLocalAsset(this.dataset.assetName)">
-                  <img src="${url}" alt="Asset" loading="lazy" onmouseenter="showAssetPreview(this.src)" onmouseleave="hideAssetPreview()"/>
+                  data-asset-name="${esc(name)}" onclick="selectLocalAsset(this.dataset.assetName)" aria-label="Select asset ${esc(name)}">
+                  <img src="${url}" alt="Asset ${esc(name)}" loading="lazy" onmouseenter="showAssetPreview(this.src)" onmouseleave="hideAssetPreview()"/>
                 </button>
               `).join('')}
             </div>
@@ -2677,8 +2677,12 @@ function pickLucideIcon(el, name) {
 }
 
 function switchIconTab(el, type) {
-  document.querySelectorAll('.icon-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.icon-tab').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
   el.classList.add('active');
+  el.setAttribute('aria-selected', 'true');
   document.querySelectorAll('.icon-panel').forEach(p => p.classList.add('hidden'));
   document.getElementById(`icon-panel-${type}`)?.classList.remove('hidden');
   const form = document.getElementById('card-form');
