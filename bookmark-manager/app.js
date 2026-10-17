@@ -35,10 +35,22 @@ function esc(s) {
     .replace(/'/g,'&#39;');
 }
 
+function decodeHtmlEntities(text) {
+  if (typeof DOMParser === 'undefined') return text;
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/html');
+    return doc.documentElement.textContent;
+  } catch (e) {
+    return text;
+  }
+}
+
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  const decoded = decodeHtmlEntities(u);
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
