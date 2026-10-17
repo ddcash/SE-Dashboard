@@ -112,9 +112,11 @@ Saves the specific layout overrides for this browser instance:
   * Load assets dynamically and map them to image tags.
 
 ### Phase 2: Core Frontend UI & Universal Launching
+* Implement search and filtering with debounced inputs for fluid responsiveness.
+* Replace intermediate array allocations with direct string concatenation for rendering cards & layouts.
 * Build a premium, glassmorphic card dashboard using CSS variables.
 * Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
-* Enable fuzzy searching across URLs, tags, and custom metadata.
+* Enable fuzzy searching across URLs, tags, and custom metadata, ensuring empty states dynamically announce to screen readers via `aria-live`.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
