@@ -129,6 +129,11 @@ Saves the specific layout overrides for this browser instance:
 * **Publish to Master**: Allow pushing individual bookmarks or entire categories directly to the shared `master_bookmarks.json` file. Prompt to delete local copies post-publish to avoid duplication.
 * Support editing and publishing to a remote master file URL via HTTP PUT requests.
 
+### Phase 5: Accessibility, Performance, & Security
+* Implement robust ARIA labeling and structural accessibility to ensure semantic support for screen readers across the dashboard and master editor interfaces.
+* Optimize high-frequency render loops to minimize array allocations and garbage collection (GC) pressure, ensuring sustained framerates on large dashboards.
+* Enforce strict security protocols, including extensive input sanitization, HTML entity decoding, and protection against URL protocol obfuscation to prevent Cross-Site Scripting (XSS).
+
 ---
 
 ## 4. Prompts to Guide Claude
