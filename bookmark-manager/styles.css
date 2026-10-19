@@ -1361,10 +1361,18 @@ input[type="color"].form-input::-moz-color-swatch,
 }
 
 .palette-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   padding: 24px;
   text-align: center;
   color: var(--text3);
   font-size: 13px;
+}
+.palette-empty p {
+  margin: 0;
+  color: var(--text3);
 }
 
 /* ═══════════════════════════════════════════════
