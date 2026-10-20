@@ -5,3 +5,6 @@
 ## 2026-07-15 - Search Empty State Pattern
 **Learning:** When search yields no results, presenting unstyled text without clear actions leaves users feeling stuck and breaks the visual immersion of the app.
 **Action:** Always use the `.empty-state` container pattern with a relevant icon and a clear call-to-action button (like "Clear Search") for empty result states to maintain consistency and guide the user out of the dead end.
+## 2024-10-20 - Added ARIA label to remove tag buttons
+**Learning:** In the bookmark-manager app, tag bubbles with "x" buttons for removal dynamically generated via JS lacked `aria-label`s, making them inaccessible to screen readers.
+**Action:** Always verify that dynamically created interactive elements (like tag removal buttons) include proper `aria-label` attributes to ensure they are fully accessible.
