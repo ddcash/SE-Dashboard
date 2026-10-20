@@ -28,11 +28,12 @@ let _lastModified = 0; // tracks master_bookmarks.json mtime for external-change
 // ═══════════════════════════════════════════════════════════════
 const uid = () => Math.random().toString(36).slice(2, 10);
 
+const _escapeRegex = /[&<>"']/g;
+const _escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
 function esc(s) {
-  return String(s ?? '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
+  // ⚡ Bolt optimization: Use single regex pass and map lookup to reduce GC pressure and speed up HTML escaping
+  return String(s ?? '').replace(_escapeRegex, m => _escapeMap[m]);
 }
 
 function sanitizeUrl(url) {
