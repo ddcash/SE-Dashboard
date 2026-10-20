@@ -36,6 +36,7 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Override opacity for individual cards when editing a bookmark.
 - Customize accent colors, font scale, and category badge visibility.
 - **Asset Gallery Previews**: Preview uploaded images and custom icons in a built-in gallery view.
+- **Accessibility Improvements**: UI elements and controls feature rich `aria-labels` and `tab` roles for enhanced screen reader and keyboard accessibility support.
 
 ### Hidden Items & Visibility
 - Hide individual bookmarks or categories without deleting data.
@@ -56,10 +57,6 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - Keeps up to 20 backup files by default.
 - Detects external edits to `master_bookmarks.json` and reloads automatically.
 
-### Performance & Security Improvements
-- Highly optimized DOM rendering using efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
-- XSS protection protocols on rendering inline events and prevention against URL protocol obfuscation (e.g. `javascript:`, `data:`).
-
 ### Master File Editing & Publishing
 - The shared `master_bookmarks.json` file can be updated from within the app using the master editor.
 - **Publish to Master**: Publish entire personal categories directly to the shared master file from the category editor.
@@ -68,9 +65,11 @@ SE-Dashboard is a local-first bookmark and link manager built to run entirely in
 - **Remote URLs**: The master file can be accessed from a remote URL. Edits and updates to the master file via HTTP PUT are seamlessly integrated.
 
 ### Performance & Security Improvements
-- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
+- Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards. Rendering loop string concatenation is specifically optimized to avoid garbage collection pressure.
+- `esc` function utility optimized via lightweight Regex parsing and map translation instead of element `.innerHTML` injection.
+- Command Palette empty states are implemented for improved UI standard conformity.
 - Enhanced search filtering performance with optimized string matching algorithms.
-- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters.
+- **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, and URL protocol obfuscation filters via enhanced decoding for obfuscated entities.
 
 ## Installation
 
@@ -98,7 +97,7 @@ Since SE-Dashboard runs entirely in the browser, there is no traditional install
 - **Using Assets:** Upload images for custom icons or backgrounds, and preview them via the new asset gallery preview.
 - **Command Palette:** Press `Ctrl+K` (or `Cmd+K` on Mac) to open the command palette. From here, you can search, change themes, toggle hidden items (and toggle icon visibility), and safely update the shared `master_bookmarks.json` file via the master editor.
 - **Restoring Sessions:** When you reopen the app, it can resume the last directory if browser permissions are still granted. If the browser cannot restore the saved directory handle, reconnect by selecting the same folder again.
-- **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`, `test_xss.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`pnpm i playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. Run `node test_xss.js` to verify URL sanitization.
+- **Development & Testing:** The repository includes testing scripts (`test.js`, `test-ui.js`) to ensure functionality and security. To run Playwright UI tests, ensure dependencies are installed (`npm install playwright` & `npx playwright install chromium`) and run `node test.js` or `node test-ui.js`. (`test_xss.js` has been removed and tests combined in standard suites).
 
 ### File Structure
 
