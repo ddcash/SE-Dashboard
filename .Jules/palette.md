@@ -5,3 +5,6 @@
 ## 2026-07-15 - Search Empty State Pattern
 **Learning:** When search yields no results, presenting unstyled text without clear actions leaves users feeling stuck and breaks the visual immersion of the app.
 **Action:** Always use the `.empty-state` container pattern with a relevant icon and a clear call-to-action button (like "Clear Search") for empty result states to maintain consistency and guide the user out of the dead end.
+## 2023-10-24 - Dynamic Element Accessibility
+**Learning:** Dynamically generated icon-only buttons often lack accessibility attributes.
+**Action:** Ensure injected HTML templates include `aria-label` attributes.
