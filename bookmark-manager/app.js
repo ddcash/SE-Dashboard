@@ -2143,7 +2143,7 @@ function renderDashboard() {
           <input type="text" id="search-input" class="search-input" aria-label="Search bookmarks"
             placeholder="Search… (Ctrl+K for commands)"
             value="${esc(S.query)}"
-            oninput="handleSearch(this.value)"
+            oninput="debouncedHandleSearch(this.value)"
             onkeydown="if(event.key==='Escape')handleSearch('')">
           ${S.query ? `<button class="search-clear" onclick="handleSearch('')" aria-label="Clear search">
             <i data-lucide="X" style="width:12px;height:12px"></i></button>` : ''}
@@ -2899,11 +2899,19 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
+let _searchTimeout = null;
+
 function handleSearch(q) {
+  if (_searchTimeout) clearTimeout(_searchTimeout);
   S.query = q;
   render();
   const inp = document.getElementById('search-input');
   if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+}
+
+function debouncedHandleSearch(q) {
+  if (_searchTimeout) clearTimeout(_searchTimeout);
+  _searchTimeout = setTimeout(() => handleSearch(q), 150);
 }
 
 
