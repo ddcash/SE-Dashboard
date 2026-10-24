@@ -38,7 +38,19 @@ function esc(s) {
 function sanitizeUrl(url) {
   if (!url) return '';
   const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+
+  // 🛡️ Sentinel: Decode HTML entities iteratively before sanitization to prevent XSS bypasses
+  // Avoid DOMParser for performance in render loops.
+  const decoded = u.replace(/&(?:#x([a-fA-F0-9]+)|#([0-9]+)|([a-zA-Z0-9]+));?/ig, (match, hex, dec, name) => {
+    if (hex) return String.fromCharCode(parseInt(hex, 16));
+    if (dec) return String.fromCharCode(parseInt(dec, 10));
+    const map = { amp: '&', apos: "'", gt: '>', lt: '<', quot: '"', colon: ':' };
+    return name && map[name.toLowerCase()] ? map[name.toLowerCase()] : match;
+  });
+
+  // Strip control characters and unicode replacement characters
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '');
+
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
   return u;
 }
