@@ -1940,8 +1940,10 @@ function renderAllCards() {
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
+  let html = '';
   if (S.cfg.groups) {
-      for (const group of S.cfg.groups) {
+      for (let i = 0; i < S.cfg.groups.length; i++) {
+          const group = S.cfg.groups[i];
           // Only render groups if NO active category is selected (otherwise we just want a flat list)
           if (!S.activeCat) {
               html += renderGroup(group);
@@ -1949,11 +1951,16 @@ function renderAllCards() {
       }
   }
 
-  for (const cat of S.data.categories) {
+  // ⚡ Bolt: Replace for...of loops with standard for loops in the hot render path
+  // Standard for-loops avoid the iterator allocation overhead of for...of,
+  // slightly reducing GC pressure when generating cards for a large canvas.
+  for (let i = 0; i < S.data.categories.length; i++) {
+    const cat = S.data.categories[i];
     const catHidden  = hiddenCats.has(cat.id);
     if (!S.showHidden && catHidden) continue;
 
-    for (const bm of cat.bookmarks) {
+    for (let j = 0; j < cat.bookmarks.length; j++) {
+      const bm = cat.bookmarks[j];
       const bmHidden = hiddenBms.has(bm.id);
       if (!S.showHidden && bmHidden) continue;
 
@@ -1973,9 +1980,10 @@ function renderAllCards() {
     }
   }
 
-  let html = '';
+  html = '';
   if (S.cfg.groups) {
-      for (const group of S.cfg.groups) {
+      for (let i = 0; i < S.cfg.groups.length; i++) {
+          const group = S.cfg.groups[i];
           // Only render groups if NO active category is selected (otherwise we just want a flat list)
           if (!S.activeCat) {
               const content = window._groupHtml?.[group.id] || '';
@@ -1990,16 +1998,19 @@ function renderAllCards() {
 
 
 function renderSearchResults() {
-  const rows = [];
+  let html = '';
+  let count = 0;
   const hiddenCats = new Set(S.cfg.hidden?.categories || []);
   const hiddenBms = new Set(S.cfg.hidden?.bookmarks || []);
 
-  for (const cat of S.data.categories) {
+  for (let i = 0; i < S.data.categories.length; i++) {
+    const cat = S.data.categories[i];
     if (!S.showHidden && hiddenCats.has(cat.id)) continue;
     // ⚡ Bolt: Hoist loop-invariant category name match to avoid redundant work per bookmark
     const catMatch = fuzzyMatch(cat.name || '', S.query);
 
-    for (const bm of cat.bookmarks) {
+    for (let j = 0; j < cat.bookmarks.length; j++) {
+      const bm = cat.bookmarks[j];
       if (!S.showHidden && hiddenBms.has(bm.id)) continue;
       const match = catMatch ||
         fuzzyMatch(bm.title,            S.query) ||
@@ -2007,11 +2018,15 @@ function renderSearchResults() {
         fuzzyMatch(bm.description||'',  S.query) ||
         (bm.tags||[]).some(t => fuzzyMatch(t, S.query));
       if (!match) continue;
-      rows.push({ bm, cat });
+
+      // ⚡ Bolt: Accumulate HTML directly as a string instead of mapping and joining an array of objects.
+      // This eliminates O(N) array allocations and garbage collection pressure in tight render loops.
+      html += renderCard(bm, cat, false, true);
+      count++;
     }
   }
 
-  if (!rows.length) {
+  if (count === 0) {
     return `
       <div class="empty-state">
         <i data-lucide="SearchX" style="width:48px;height:48px"></i>
@@ -2024,7 +2039,7 @@ function renderSearchResults() {
 
   return `
     <div class="search-results search-results--cards">
-      ${rows.map(({ bm, cat }) => renderCard(bm, cat, false, true)).join('')}
+      ${html}
     </div>`;
 }
 
@@ -3135,15 +3150,27 @@ function updatePalette(q) {
   ];
 
   const matchCmds = CMDS.filter(c => fuzzyMatch(c.label, q));
-  const matchBms  = [];
+
+  let bmsHtml = '';
+  let bmCount = 0;
+  window._palBms = [];
 
   if (q) {
     outer:
-    for (const cat of S.data.categories) {
-      for (const bm of cat.bookmarks) {
+    for (let i = 0; i < S.data.categories.length; i++) {
+      const cat = S.data.categories[i];
+      for (let j = 0; j < cat.bookmarks.length; j++) {
+        const bm = cat.bookmarks[j];
         if (fuzzyMatch(bm.title, q) || fuzzyMatch(bm.url, q) || (bm.tags||[]).some(t => fuzzyMatch(t, q))) {
-          matchBms.push({ bm, cat });
-          if (matchBms.length >= 8) break outer;
+          window._palBms.push(bm);
+          bmsHtml += `
+    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()">
+      <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
+      <span>${esc(bm.title)}</span>
+      <span class="palette-item-type">${esc(cat.name)}</span>
+    </div>`;
+          bmCount++;
+          if (bmCount >= 8) break outer;
         }
       }
     }
@@ -3151,21 +3178,17 @@ function updatePalette(q) {
 
   // Store action refs
   window._palActions = matchCmds.map(c => c.fn);
-  window._palBms = matchBms.map(m => m.bm);
 
-  const cmdsHtml = matchCmds.map((c, i) => `
+  let cmdsHtml = '';
+  for (let i = 0; i < matchCmds.length; i++) {
+    const c = matchCmds[i];
+    cmdsHtml += `
     <div class="palette-item" onclick="window._palActions[${i}]()">
       <i data-lucide="${c.icon}" style="width:14px;height:14px"></i>
       <span>${esc(c.label)}</span>
       <span class="palette-item-type">Command</span>
-    </div>`).join('');
-
-  const bmsHtml = matchBms.map(({ bm, cat }) => `
-    <div class="palette-item" data-url="${esc(sanitizeUrl(bm.url))}" onclick="window.open(this.getAttribute('data-url'),'_blank');closePalette()">
-      <i data-lucide="ExternalLink" style="width:14px;height:14px"></i>
-      <span>${esc(bm.title)}</span>
-      <span class="palette-item-type">${esc(cat.name)}</span>
-    </div>`).join('');
+    </div>`;
+  }
 
   const res = document.getElementById('palette-results');
   if (!res) return;
