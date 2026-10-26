@@ -12,3 +12,6 @@
 ## 2025-07-06 - Redundant operations in tight loops (search/filter)
 **Learning:** Because the app reconstructs the DOM using `innerHTML` on every search keystroke, any small overhead multiplies enormously across large lists. Generating thousands of new strings via `.toLowerCase()` and re-evaluating loop-invariant string matches for `category.name` on every single bookmark in that category creates enormous CPU thrashing.
 **Action:** When iterating over collections on high-frequency events (like keystrokes): 1) Precompute and cache string formatting (e.g., lowercased queries). 2) Hoist evaluations of parent/loop-invariant properties (like category names) out of the inner loop to skip redundant work.
+## 2024-05-18 - Debouncing Search and Palette Render
+**Learning:** In the bookmark-manager app, the UI is reconstructed using `innerHTML` string concatenation on every search keystroke in both the main view and the command palette. High-frequency input handlers must be debounced to prevent synchronous array filtering and full DOM re-creation from blocking the main thread.
+**Action:** Debounce high-frequency input handlers (like search and command palette input) to prevent excessive GC pressure and performance bottlenecks.
