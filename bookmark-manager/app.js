@@ -2899,11 +2899,22 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
+let _searchTimeout = null;
 function handleSearch(q) {
-  S.query = q;
-  render();
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  clearTimeout(_searchTimeout);
+  if (!q) {
+    S.query = q;
+    render();
+    const inp = document.getElementById('search-input');
+    if (inp) { inp.focus(); inp.setSelectionRange(0, 0); }
+    return;
+  }
+  _searchTimeout = setTimeout(() => {
+    S.query = q;
+    render();
+    const inp = document.getElementById('search-input');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }, 150);
 }
 
 
@@ -3118,7 +3129,19 @@ function closePalette() {
   el.innerHTML = '';
 }
 
+let _paletteTimeout = null;
 function updatePalette(q) {
+  clearTimeout(_paletteTimeout);
+  if (!q) {
+    _renderPalette(q);
+    return;
+  }
+  _paletteTimeout = setTimeout(() => {
+    _renderPalette(q);
+  }, 150);
+}
+
+function _renderPalette(q) {
   const CMDS = [
     { label: 'New Category',      icon: 'FolderPlus', fn: () => { closePalette(); openCategoryModal(null); } },
     { label: 'New Group',         icon: 'Layout',    fn: () => { closePalette(); openGroupModal(null); } },
