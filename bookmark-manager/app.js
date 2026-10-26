@@ -2302,7 +2302,7 @@ function addTagBubble(val) {
 
    const span = document.createElement('span');
    span.className = 'tag-bubble';
-   span.innerHTML = `${esc(val)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button>`;
+   span.innerHTML = `${esc(val)} <button type="button" class="tag-remove" aria-label="Remove tag ${esc(val)}" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button>`;
    container.appendChild(span);
    updateTagsInput();
 }
@@ -2364,10 +2364,10 @@ function openCardModal(catId, bmId) {
             placeholder="Optional notes…">${esc(bm?.description||'')}</textarea>
         </div>
         <div class="form-row">
-          <label>Tags</label>
+          <label for="bm-tags-input">Tags</label>
           <div class="tag-input-container">
              <div id="tag-bubbles" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
-                 ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
+                 ${(bm?.tags||[]).map(t => `<span class="tag-bubble">${esc(t)} <button type="button" class="tag-remove" aria-label="Remove tag ${esc(t)}" onclick="this.parentElement.remove(); updateTagsInput()">&times;</button></span>`).join('')}
              </div>
              <input type="hidden" id="bm-tags-hidden" name="tags" value="${esc((bm?.tags||[]).join(','))}">
              <input id="bm-tags-input" type="text" class="form-input" placeholder="Type a tag and press Enter/Comma"
@@ -2380,7 +2380,7 @@ function openCardModal(catId, bmId) {
             <select id="bm-category" name="categoryId" class="form-input" style="flex:1;" ${isMaster ? 'disabled' : ''}>
               ${catOptions}
             </select>
-            <button type="button" class="btn btn--ghost" onclick="openNewCategoryFromEditor()" title="New Category">
+            <button type="button" class="btn btn--ghost" onclick="openNewCategoryFromEditor()" title="New Category" aria-label="New Category">
                <i data-lucide="Plus" style="width:14px;height:14px"></i>
             </button>
           </div>
