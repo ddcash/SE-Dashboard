@@ -113,8 +113,9 @@ Saves the specific layout overrides for this browser instance:
 
 ### Phase 2: Core Frontend UI & Universal Launching
 * Build a premium, glassmorphic card dashboard using CSS variables.
-* Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks.
-* Enable fuzzy searching across URLs, tags, and custom metadata.
+* Allow links to accept any text scheme (`file://`, `vscode://`, etc.) without standard URL input validation blocks, whilst mitigating HTML entity decoding protocol obfuscations.
+* Enable fuzzy searching across URLs, tags, and custom metadata, utilizing debouncing and direct string concatenation (omitting array allocations) to eliminate GC thrashing and UI blocking.
+* Implement robust accessibility support including `aria-live` on empty states and `aria-labels` on icon-only actions.
 
 ### Phase 3: Drag-and-Drop & Customization Modal
 * Build a free-form **Draggable Canvas Layout** allowing users to drag cards anywhere and optionally group them visually.
