@@ -2899,11 +2899,24 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
+let _searchTimeout = null;
 function handleSearch(q) {
   S.query = q;
-  render();
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  clearTimeout(_searchTimeout);
+
+  const exec = () => {
+    render();
+    const inp = document.getElementById('search-input');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  };
+
+  // ⚡ Bolt: Debounce search render to prevent synchronous O(N) array filtering
+  // and full DOM re-creation from blocking the main thread on every keystroke.
+  if (q === '') {
+    exec();
+  } else {
+    _searchTimeout = setTimeout(exec, 150);
+  }
 }
 
 
