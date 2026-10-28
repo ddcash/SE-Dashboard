@@ -2899,11 +2899,15 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
+let _searchTimeout = null;
 function handleSearch(q) {
   S.query = q;
-  render();
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  if (_searchTimeout) clearTimeout(_searchTimeout);
+  _searchTimeout = setTimeout(() => {
+    render();
+    const inp = document.getElementById('search-input');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }, 150);
 }
 
 
@@ -3118,7 +3122,15 @@ function closePalette() {
   el.innerHTML = '';
 }
 
+let _paletteTimeout = null;
 function updatePalette(q) {
+  if (_paletteTimeout) clearTimeout(_paletteTimeout);
+  _paletteTimeout = setTimeout(() => {
+    updatePaletteInner(q);
+  }, 150);
+}
+
+function updatePaletteInner(q) {
   const CMDS = [
     { label: 'New Category',      icon: 'FolderPlus', fn: () => { closePalette(); openCategoryModal(null); } },
     { label: 'New Group',         icon: 'Layout',    fn: () => { closePalette(); openGroupModal(null); } },
