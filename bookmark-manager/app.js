@@ -3208,10 +3208,18 @@ document.addEventListener('keydown', e => {
     S.paletteOpen ? closePalette() : openPalette();
   }
   if (e.key === 'Escape' && S.paletteOpen) closePalette();
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('modal-overlay');
+    if (modal && modal.classList.contains('visible')) closeModal();
+  }
 });
 
 document.getElementById('palette-overlay').addEventListener('click', e => {
   if (e.target.id === 'palette-overlay') closePalette();
+});
+
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target.id === 'modal-overlay') closeModal();
 });
 
 
