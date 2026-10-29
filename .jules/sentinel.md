@@ -20,3 +20,7 @@
 **Vulnerability:** User-controlled bookmark IDs (e.g., from imported JSON) and category IDs were directly interpolated into inline `onclick` event handlers (`onclick="trackClick(event,'${bm.id}','${catId}')"`). An attacker could bypass HTML-escaping because the browser decodes HTML entities before evaluating the JavaScript context.
 **Learning:** Interpolating user-supplied strings directly into inline JavaScript event handlers is unsafe, even if HTML-escaped (`esc()`), because the browser decodes HTML entities before evaluating the JavaScript.
 **Prevention:** Store user-provided dynamic identifiers (like IDs or URLs) in `data-` attributes on the DOM element and retrieve them dynamically within the event handler (e.g., `this.closest('.card').dataset.id`), preventing injection via entity decoding.
+## 2024-10-29 - [HTML Entity Decoding in URL Sanitization]
+**Technical Issue:** Simple regex validation for protocols in URLs can be evaded if the URL contains HTML entities that the browser decodes prior to execution.
+**Learning:** URL sanitization functions must perform lightweight decoding of numeric and safe named entities, and strip invalid control characters (including the unicode replacement character \uFFFD) before applying protocol allow-lists or block-lists.
+**Prevention:** Incorporate a robust yet lightweight entity decoding step (e.g. using String.fromCharCode) prior to protocol validation in custom URL sanitization logic, avoiding heavy DOMParser operations in tight render loops.
