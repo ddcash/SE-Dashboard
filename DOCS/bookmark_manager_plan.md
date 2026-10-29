@@ -212,3 +212,6 @@ Provide a simple javascript-based "Add Bookmark" bookmarklet that users can drag
 
 ### F. Ideas and Enhancements
 Future ideas and enhancements are tracked in the `Ideas and Enhancements.md` file.
+
+### G. Performance & Security Enhancements
+Advanced DOM rendering strategies and robust URL protocol sanitization filters are integrated into core updates.
