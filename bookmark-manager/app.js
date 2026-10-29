@@ -37,9 +37,23 @@ function esc(s) {
 
 function sanitizeUrl(url) {
   if (!url) return '';
-  const u = String(url).trim();
-  const sanitized = u.replace(/[\x00-\x20\x7F-\x9F]/g, '');
+  let u = String(url).trim();
+
+  // Lightweight HTML entity decoding to prevent bypasses
+  let decoded = u.replace(/&#(\d+);?/g, (_, d) => String.fromCharCode(parseInt(d, 10)))
+                 .replace(/&#[xX]([0-9a-fA-F]+);?/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+
+  const named = Object.create(null);
+  named.colon = ':'; named.tab = '\t'; named.newline = '\n';
+  decoded = decoded.replace(/&([a-zA-Z]+);?/g, (m, n) => {
+    const l = n.toLowerCase();
+    return named[l] !== undefined ? named[l] : m;
+  });
+
+  // Strip control characters and unicode replacement character (\uFFFD)
+  const sanitized = decoded.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '');
   if (/^(javascript|data|vbscript):/i.test(sanitized)) return '#';
+
   return u;
 }
 
