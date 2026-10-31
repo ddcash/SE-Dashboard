@@ -5,3 +5,6 @@
 ## 2026-07-15 - Search Empty State Pattern
 **Learning:** When search yields no results, presenting unstyled text without clear actions leaves users feeling stuck and breaks the visual immersion of the app.
 **Action:** Always use the `.empty-state` container pattern with a relevant icon and a clear call-to-action button (like "Clear Search") for empty result states to maintain consistency and guide the user out of the dead end.
+## 2024-10-31 - ARIA Labels for Dynamic Tag Removals
+**Learning:** Icon-only removal buttons inside dynamically generated or user-created tags need explicit ARIA labels specifying what tag is being removed so screen reader users aren't met with ambiguous "button" or generic "close" announcements.
+**Action:** Always verify that dynamic list items featuring deletion/removal actions include context-aware ARIA labels.
