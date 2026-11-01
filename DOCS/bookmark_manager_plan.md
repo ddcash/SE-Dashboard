@@ -212,3 +212,9 @@ Provide a simple javascript-based "Add Bookmark" bookmarklet that users can drag
 
 ### F. Ideas and Enhancements
 Future ideas and enhancements are tracked in the `Ideas and Enhancements.md` file.
+
+### Phase 5: Security, Accessibility & Performance Polish
+* Highly optimized DOM rendering (including group injections) and efficient native event loop bindings, ensuring maximum framerates even on large dashboards.
+* Enhanced search filtering performance with optimized string matching algorithms and **debounced search input** to prevent main thread blocking.
+* **Security Enhancements**: Robust protection against XSS vulnerabilities via strict data-attribute handling for inline events, URL protocol obfuscation filters, and prevention of sanitization bypass via HTML entity evasion.
+* **Accessibility (a11y)**: Improved accessibility with intuitive modal dismissal (via Escape key and backdrop clicks) and ARIA labels for tag removal buttons and category forms.
