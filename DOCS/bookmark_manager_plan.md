@@ -123,6 +123,7 @@ Saves the specific layout overrides for this browser instance:
   * Customize individual card background colors, borders, and text colors.
   * Set arbitrary parameters (like opening target, description notes).
 * Implement **Master File Publishing**: Allow users to share personal categories directly to the master file from within the app.
+* **Groups**: Users can create resizable groups from the command palette and place cards within them. Groups support custom styling and backgrounds, and have an auto-arrange feature.
 
 ### Phase 4: Import / Export & Master Publishing Module
 * Build a parser to import standard HTML Netscape bookmarks files, CSVs, and JSONs.
