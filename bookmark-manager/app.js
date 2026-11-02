@@ -2899,11 +2899,19 @@ function trackClick(event, bmId, catId) {
 // ═══════════════════════════════════════════════════════════════
 //  SEARCH
 // ═══════════════════════════════════════════════════════════════
+let _searchTimeout = null;
 function handleSearch(q) {
-  S.query = q;
-  render();
-  const inp = document.getElementById('search-input');
-  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  clearTimeout(_searchTimeout);
+  _searchTimeout = setTimeout(() => {
+    S.query = q;
+    const activeEl = document.activeElement;
+    const isSearchFocused = activeEl && activeEl.id === 'search-input';
+    render();
+    if (isSearchFocused) {
+      const inp = document.getElementById('search-input');
+      if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    }
+  }, 150);
 }
 
 
